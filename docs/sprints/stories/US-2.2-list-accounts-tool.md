@@ -2,7 +2,7 @@
 id: US-2.2
 title: "list_accounts tool over MCP stdio"
 epic: EPIC-2
-status: in-progress
+status: review
 priority: P1
 points: 5
 sprint: sprint-2026-W32
@@ -66,31 +66,31 @@ while it is at it.
   different user — rather than returning nothing.
 - [x] **AC-9** — The leading count agrees in number: `1 linked account.` / `2 linked
   accounts.`
-- [ ] **AC-10** — `tools/list` reports exactly one tool, `list_accounts`, with
+- [x] **AC-10** — `tools/list` reports exactly one tool, `list_accounts`, with
   `readOnlyHint: true` and `openWorldHint: true`, and an empty `inputSchema.properties`.
-- [ ] **AC-11** — The tool description states that `id` is the `accountId` other endpoints
+- [x] **AC-11** — The tool description states that `id` is the `accountId` other endpoints
   take and that `login` is not. Asserted on the description text, because this is the
   sentence that prevents a whole class of downstream failure.
-- [ ] **AC-12** — **Given** a successful call, **When** the result is returned, **Then** it
+- [x] **AC-12** — **Given** a successful call, **When** the result is returned, **Then** it
   carries both a text `content` block and `structuredContent`, **And**
   `structuredContent` validates against `outputSchema`, **And** it is an object with an
   `accounts` key rather than a bare array.
-- [ ] **AC-13** — **Given** a 403 from the API, **When** the tool returns, **Then**
+- [x] **AC-13** — **Given** a 403 from the API, **When** the tool returns, **Then**
   `isError` is true and the text names the `accounts:read` scope.
-- [ ] **AC-14** — **Given** a network failure, **When** the tool returns, **Then** the
+- [x] **AC-14** — **Given** a network failure, **When** the tool returns, **Then** the
   text carries the underlying cause (e.g. `ENOTFOUND`), not a bare "fetch failed".
-- [ ] **AC-15** — An error result contains no API key, and carries `content` only — no
+- [x] **AC-15** — An error result contains no API key, and carries `content` only — no
   `structuredContent`, since there is no successful payload to describe.
-- [ ] **AC-16** — **Given** a failed call, **When** the client lists tools again, **Then**
+- [x] **AC-16** — **Given** a failed call, **When** the client lists tools again, **Then**
   the session is still alive. A tool error is returned, never thrown out of the callback.
-- [ ] **AC-17** — **Given** a cancelled tool call, **When** it aborts, **Then** the
+- [x] **AC-17** — **Given** a cancelled tool call, **When** it aborts, **Then** the
   outbound HTTP request aborts too — `ctx.mcpReq.signal` is forwarded to the client.
-- [ ] **AC-18** — The built server starts from `dist/index.js`, prints its readiness line
+- [x] **AC-18** — The built server starts from `dist/index.js`, prints its readiness line
   to **stderr** (never stdout, which carries JSON-RPC frames), and exits 1 with the
   `SENTI_API_KEY is required…` message when the key is absent.
-- [ ] **AC-19** — `npm test` passes with 25 further tests across `accounts.test.ts` (16)
+- [x] **AC-19** — `npm test` passes with 24 further tests across `accounts.test.ts` (15)
   and `server.test.ts` (9); `npm run typecheck` and `npm run build` exit 0.
-- [ ] **AC-20** — `src/server.ts` is the only file importing from
+- [x] **AC-20** — `src/server.ts` is the only file importing from
   `@modelcontextprotocol/server`.
 
 ## Tasks
@@ -98,18 +98,18 @@ while it is at it.
 - [x] **TASK-2.2.1** — `src/accounts.ts` + `src/accounts.test.ts` (AC: 1–9)
   - [x] `AccountSchema` (16 fields), `AccountsOutputSchema`, `parseAccounts`, `formatAccounts`
   - [x] Null numbers via a single `money()` helper so `—` cannot drift per call site
-- [ ] **TASK-2.2.2** — `src/server.ts` + `src/server.test.ts` (AC: 10–17, 20)
-  - [ ] `createServer(config, deps)` registering `list_accounts`
-  - [ ] Forward `ctx.mcpReq.signal`; pass `scope: 'accounts:read'`
-  - [ ] Return `{ isError: true, content: [text] }` on failure, never throw
-  - [ ] Cache hints on `tools/list` and `server/discover`
-- [ ] **TASK-2.2.3** — `src/index.ts` stdio bootstrap (AC: 18)
-  - [ ] `serveStdio(() => createServer(config))`; diagnostics to stderr; SIGINT/SIGTERM close
-  - [ ] Keep startup free of I/O — a 2026-era client probes with a second short-lived process
-- [ ] **TASK-2.2.4** — Verify (AC: 19, 20)
-  - [ ] `npm test && npm run typecheck && npm run build`
-  - [ ] Run `node dist/index.js` with and without a key
-  - [ ] `grep -rln '@modelcontextprotocol' src/` returns only `src/server.ts` and `src/index.ts`
+- [x] **TASK-2.2.2** — `src/server.ts` + `src/server.test.ts` (AC: 10–17, 20)
+  - [x] `createServer(config, deps)` registering `list_accounts`
+  - [x] Forward `ctx.mcpReq.signal`; pass `scope: 'accounts:read'`
+  - [x] Return `{ isError: true, content: [text] }` on failure, never throw
+  - [x] Cache hints on `tools/list` and `server/discover`
+- [x] **TASK-2.2.3** — `src/index.ts` stdio bootstrap (AC: 18)
+  - [x] `serveStdio(() => createServer(config))`; diagnostics to stderr; SIGINT/SIGTERM close
+  - [x] Keep startup free of I/O — a 2026-era client probes with a second short-lived process
+- [x] **TASK-2.2.4** — Verify (AC: 19, 20)
+  - [x] `npm test && npm run typecheck && npm run build`
+  - [x] Run `node dist/index.js` with and without a key
+  - [x] `grep -rln '@modelcontextprotocol' src/` returns only `src/server.ts` and `src/index.ts`
 
 ## Dev notes
 
@@ -162,7 +162,7 @@ while it is at it.
 
 | AC | Command |
 |---|---|
-| AC-1–AC-9 | `npm test -- src/accounts.test.ts` → 16 passing |
+| AC-1–AC-9 | `npm test -- src/accounts.test.ts` → 15 passing |
 | AC-10–AC-17 | `npm test -- src/server.test.ts` → 9 passing |
 | AC-18 | `node dist/index.js` → exits 1 naming `SENTI_API_KEY`; `SENTI_API_KEY=sq_live_placeholder node dist/index.js` → readiness line on **stderr**, stays running |
 | AC-18 (stdout clean) | `SENTI_API_KEY=sq_live_placeholder node dist/index.js 1>/tmp/out 2>/dev/null & sleep 1; kill %1; test ! -s /tmp/out` |

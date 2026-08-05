@@ -1090,7 +1090,7 @@ export function formatAccounts(accounts: Account[]): string {
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `npm test -- src/accounts.test.ts`
-Expected: PASS, 16 tests.
+Expected: PASS, 15 tests.
 
 - [ ] **Step 5: Commit**
 
