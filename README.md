@@ -34,6 +34,13 @@ the MT5 account number, not a key.
 > staging dashboard. A key created in one environment returns `401` against
 > another, however valid it is — so if a correct-looking key is rejected, check
 > `SENTI_API_BASE_URL` before regenerating the key.
+>
+> **Verified pairing:** a key issued from the staging dashboard
+> (`https://stage.sentitrade.xyz/account/api-keys`) works against
+> `https://be-dev.sentitrade.xyz` — that is the pairing `npm run test:smoke`
+> exercises, and it has passed against that pairing twice. Which base URL a
+> production-issued key needs is not established; treat that pairing as
+> unconfirmed until it is.
 
 See [docs/SETUP.md](docs/SETUP.md) for a full local setup walkthrough.
 

@@ -77,5 +77,11 @@ MCP stdio — proven with one live call against the development API.
   an unhandled rejection, which under Node's defaults turned a clean shutdown into a
   crash.
 - Out-of-band stdio transport errors are reported to stderr instead of being silent.
+- The environment-mismatch warning in `README.md`, `docs/SETUP.md` and `.env.example`
+  named three environments (production, staging, development) and resolved none of
+  them, so its own logic predicted a `401` for the documented happy path. It now states
+  the pairing that has actually been verified — a key issued from the staging dashboard
+  works against `https://be-dev.sentitrade.xyz`, the pairing `npm run test:smoke` has
+  exercised twice — and leaves the production pairing explicitly unconfirmed.
 
 ---

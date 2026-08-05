@@ -68,6 +68,13 @@ SENTI_SMOKE_KEY=sq_live_…
 > So when a key that looks correct is rejected, check `SENTI_API_BASE_URL`
 > before regenerating the key — the 401 is far more often a mismatched
 > environment than a bad key.
+>
+> **Verified pairing:** a key issued from the staging dashboard
+> (`https://stage.sentitrade.xyz/account/api-keys`) works against
+> `https://be-dev.sentitrade.xyz` — the pairing this walkthrough's `.env.local`
+> uses, and the one `npm run test:smoke` has exercised twice, passing both
+> times. Which base URL a production-issued key needs is not established;
+> that pairing is unconfirmed.
 
 `SENTI_API_BASE_URL` is validated at startup: it must be an absolute `https:` URL
 (`http:` is accepted for a local API, at the cost of sending the key in cleartext).
