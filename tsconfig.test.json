@@ -1,0 +1,9 @@
+{
+  "//": "Typecheck-only config covering the test files. The build config excludes them so they cannot land in dist/, which left every cast and type error in a *.test.ts invisible to `tsc`. Vitest transpiles without typechecking, so this is the only thing that reads them.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": []
+}
