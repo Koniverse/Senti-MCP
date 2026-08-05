@@ -91,7 +91,7 @@ Neither `client.ts` nor the modules above it import the MCP SDK. Only `server.ts
         `package.json` — do not recreate it, it already carries the koni-docs devDependency
   - [x] `tsconfig.json`: NodeNext, strict, `noUncheckedIndexedAccess`, `outDir: dist`
 - [x] **TASK-2.1.2** — `src/config.ts` + `src/config.test.ts` (AC: 1, 2)
-- [ ] **TASK-2.1.3** — `src/errors.ts` + `src/errors.test.ts` (AC: 3, 4)
+- [x] **TASK-2.1.3** — `src/errors.ts` + `src/errors.test.ts` (AC: 3, 4)
 - [ ] **TASK-2.1.4** — `src/client.ts` + `src/client.test.ts` (AC: 5–13)
   - [ ] `createClient(config, deps)` returning `{ get(path, options) }`
   - [ ] Read the body as text, then parse defensively — never `response.json()` first
