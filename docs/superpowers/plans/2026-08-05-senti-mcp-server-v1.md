@@ -93,7 +93,7 @@ TASK-2.1.1 and TASK-2.1.2, satisfying AC-1 and AC-2.
 - Consumes: nothing.
 - Produces: `SERVER_NAME: string`, `SERVER_VERSION: string`, `type Config = { baseUrl: string; apiKey: string }`, `loadConfig(env: NodeJS.ProcessEnv): Config`.
 
-- [ ] **Step 1: Extend the existing `package.json`**
+- [x] **Step 1: Extend the existing `package.json`**
 
 `package.json` already exists — US-1.1 created it with the project identity, the
 `@koniverse/koni-docs` devDependency, and the two `agile:*` scripts. **Do not overwrite
@@ -154,7 +154,7 @@ node -e "const p=require('./package.json');
 
 Both must print `true`.
 
-- [ ] **Step 2: Create `tsconfig.json`**
+- [x] **Step 2: Create `tsconfig.json`**
 
 ```json
 {
@@ -178,12 +178,12 @@ Both must print `true`.
 }
 ```
 
-- [ ] **Step 3: Install dependencies**
+- [x] **Step 3: Install dependencies**
 
 Run: `npm install`
 Expected: `node_modules/` created, no peer-dependency errors.
 
-- [ ] **Step 4: Write the failing test**
+- [x] **Step 4: Write the failing test**
 
 Create `src/config.test.ts`:
 
@@ -237,12 +237,12 @@ describe('loadConfig', () => {
 });
 ```
 
-- [ ] **Step 5: Run the test to verify it fails**
+- [x] **Step 5: Run the test to verify it fails**
 
 Run: `npm test -- src/config.test.ts`
 Expected: FAIL — cannot resolve `./config.js`.
 
-- [ ] **Step 6: Write `src/config.ts`**
+- [x] **Step 6: Write `src/config.ts`**
 
 ```ts
 /**
@@ -291,17 +291,17 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
 }
 ```
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 Run: `npm test -- src/config.test.ts`
 Expected: PASS, 7 tests.
 
-- [ ] **Step 8: Verify typechecking**
+- [x] **Step 8: Verify typechecking**
 
 Run: `npm run typecheck`
 Expected: exit 0, no output.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add package.json package-lock.json tsconfig.json src/config.ts src/config.test.ts \
@@ -329,7 +329,7 @@ TASK-2.1.3, satisfying AC-3 and AC-4.
 - Consumes: nothing.
 - Produces: `class ApiError extends Error` with `constructor(message: string, status: number, code?: string)` and readonly `status: number`, `code?: string`; `describeError(error: unknown): string`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/errors.test.ts`:
 
@@ -396,12 +396,12 @@ describe('describeError', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npm test -- src/errors.test.ts`
 Expected: FAIL — cannot resolve `./errors.js`.
 
-- [ ] **Step 3: Write `src/errors.ts`**
+- [x] **Step 3: Write `src/errors.ts`**
 
 ```ts
 /** Guard against a pathological self-referencing cause chain. */
@@ -458,12 +458,12 @@ export function describeError(error: unknown): string {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npm test -- src/errors.test.ts`
 Expected: PASS, 9 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/errors.ts src/errors.test.ts \
@@ -499,7 +499,7 @@ until Task 6 cuts 0.1.0. All three stories flip to `done` together there.
 
 `get` returns the parsed JSON body as `unknown` — validation belongs to the domain module, not here.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/client.test.ts`:
 
@@ -660,12 +660,12 @@ describe('createClient', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npm test -- src/client.test.ts`
 Expected: FAIL — cannot resolve `./client.js`.
 
-- [ ] **Step 3: Write `src/client.ts`**
+- [x] **Step 3: Write `src/client.ts`**
 
 ```ts
 import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
@@ -803,17 +803,17 @@ export function createClient(config: Config, deps: ClientDeps = {}): SentiClient
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npm test -- src/client.test.ts`
 Expected: PASS, 11 tests.
 
-- [ ] **Step 5: Verify typechecking**
+- [x] **Step 5: Verify typechecking**
 
 Run: `npm run typecheck`
 Expected: exit 0.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/client.ts src/client.test.ts \
@@ -848,7 +848,7 @@ satisfying AC-1 through AC-9.
   - `parseAccounts(payload: unknown): Account[]`
   - `formatAccounts(accounts: Account[]): string`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/accounts.test.ts`:
 
@@ -969,12 +969,12 @@ describe('formatAccounts', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npm test -- src/accounts.test.ts`
 Expected: FAIL — cannot resolve `./accounts.js`.
 
-- [ ] **Step 3: Write `src/accounts.ts`**
+- [x] **Step 3: Write `src/accounts.ts`**
 
 ```ts
 import * as z from 'zod/v4';
@@ -1087,12 +1087,12 @@ export function formatAccounts(accounts: Account[]): string {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npm test -- src/accounts.test.ts`
 Expected: PASS, 15 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/accounts.ts src/accounts.test.ts \
@@ -1124,7 +1124,7 @@ for the same reason as Task 3.
 - Consumes: `Config`/`SERVER_NAME`/`SERVER_VERSION` (Task 1), `describeError` (Task 2), `createClient` (Task 3), `AccountsOutputSchema`/`parseAccounts`/`formatAccounts` (Task 4).
 - Produces: `type ServerDeps = { fetch?: typeof fetch }`; `createServer(config: Config, deps?: ServerDeps): McpServer`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/server.test.ts`:
 
@@ -1284,12 +1284,12 @@ describe('MCP server', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npm test -- src/server.test.ts`
 Expected: FAIL — cannot resolve `./server.js`.
 
-- [ ] **Step 3: Write `src/server.ts`**
+- [x] **Step 3: Write `src/server.ts`**
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/server';
@@ -1366,12 +1366,12 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npm test -- src/server.test.ts`
 Expected: PASS, 9 tests.
 
-- [ ] **Step 5: Write `src/index.ts`**
+- [x] **Step 5: Write `src/index.ts`**
 
 ```ts
 #!/usr/bin/env node
@@ -1407,12 +1407,12 @@ try {
 }
 ```
 
-- [ ] **Step 6: Verify the whole suite and the build**
+- [x] **Step 6: Verify the whole suite and the build**
 
 Run: `npm test && npm run typecheck && npm run build`
 Expected: all tests pass; typecheck clean; `dist/index.js` produced and executable.
 
-- [ ] **Step 7: Verify the server starts and refuses to start without a key**
+- [x] **Step 7: Verify the server starts and refuses to start without a key**
 
 Run: `node dist/index.js`
 Expected: exits 1, printing the `SENTI_API_KEY is required…` message to stderr.
@@ -1420,7 +1420,7 @@ Expected: exits 1, printing the `SENTI_API_KEY is required…` message to stderr
 Run: `SENTI_API_KEY=sq_live_placeholder node dist/index.js`
 Expected: prints `senti-mcp-server 0.1.0 ready — serving https://api.sentitrade.xyz` to stderr and stays running. Stop it with Ctrl-C.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/server.ts src/index.ts src/server.test.ts \
@@ -1454,7 +1454,7 @@ tasks, satisfying AC-1 through AC-13. This task also **closes the sprint**: see 
 
 Every other test in the suite uses a stubbed `fetch`. Without this task, nothing demonstrates the code works against the actual service.
 
-- [ ] **Step 1: Confirm the credentials file exists**
+- [x] **Step 1: Confirm the credentials file exists**
 
 The key lives in `.env.local`, which `.gitignore` already covers. It is **not** committed and must never be pasted into a chat transcript.
 
@@ -1466,7 +1466,7 @@ SENTI_SMOKE_KEY=sq_live_...
 SENTI_API_BASE_URL=https://be-dev.sentitrade.xyz
 ```
 
-- [ ] **Step 2: Write the smoke test**
+- [x] **Step 2: Write the smoke test**
 
 Create `src/smoke.test.ts`:
 
@@ -1506,19 +1506,19 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
 });
 ```
 
-- [ ] **Step 3: Run the smoke test against the development API**
+- [x] **Step 3: Run the smoke test against the development API**
 
 Run: `npm run test:smoke`
 Expected: PASS, 1 test. If it fails with a 403, the key is missing the `accounts:read` scope — the error message says so and names it.
 
 Do not print the key: never run `cat .env.local` or `echo $SENTI_SMOKE_KEY`.
 
-- [ ] **Step 4: Confirm the default suite still skips it**
+- [x] **Step 4: Confirm the default suite still skips it**
 
 Run: `npm test`
 Expected: all unit tests pass; the smoke suite reports as skipped (no key in `process.env`).
 
-- [ ] **Step 5: Write `README.md`**
+- [x] **Step 5: Write `README.md`**
 
 ````markdown
 # senti-mcp-server
@@ -1604,17 +1604,17 @@ gitignored. Without that file the smoke test is skipped, not failed.
 MIT
 ````
 
-- [ ] **Step 6: Create the LICENSE file**
+- [x] **Step 6: Create the LICENSE file**
 
 Run: `curl -s https://raw.githubusercontent.com/bluezdot/read-mcp-server/main/LICENSE -o LICENSE`
 Expected: an MIT license file. If the fetch fails, copy `../read-mcp-server/LICENSE` and update the year and holder.
 
-- [ ] **Step 7: Full verification before commit**
+- [x] **Step 7: Full verification before commit**
 
 Run: `npm test && npm run typecheck && npm run build`
 Expected: all pass.
 
-- [ ] **Step 8: Commit the smoke test and the README**
+- [x] **Step 8: Commit the smoke test and the README**
 
 ```bash
 git add src/smoke.test.ts README.md LICENSE
@@ -1625,7 +1625,7 @@ works against the real service. This one does, gated on a key in .env.local so
 CI skips rather than fails."
 ```
 
-- [ ] **Step 9: Release v0.1.0 and close the sprint**
+- [x] **Step 9: Release v0.1.0 and close the sprint**
 
 This is the commit RULE-1 governs: `VERSION` and its CHANGELOG entry land together, and
 the stories flip in the same commit.
