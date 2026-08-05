@@ -8,7 +8,7 @@ priority: P1
 points: 3
 sprint: sprint-2026-W32
 assignee: bluezdot
-commit: 62e399f
+commit: d0d1287
 created: 2026-08-05
 updated: 2026-08-05
 ---
@@ -253,6 +253,30 @@ every commit that regenerates it, which is expected rather than churn to suppres
 dependency chain (astro, vite, sharp, esbuild). `npm audit --omit=dev` reports 0. Nothing
 reaches a shipped artifact, and the `preview` subcommand is not used here.
 
+### Fix wave, folded into v0.1.0 (post-review)
+
+Two of this story's deliverables had gone stale by the time v0.1.0 shipped, and a
+whole-branch review caught both.
+
+**`AGENTS.md` was never touched by the implementation branch.** Its repo-structure
+block still read `src/ ← not created yet; see the v1 plan for the six-file layout`,
+and its test and build commands were still gated behind `# once src/ exists`. Since
+`CLAUDE.md` declares `AGENTS.md` authoritative on repo structure (AC-12), a fresh
+agent session was being told the code does not exist. It now describes the six source
+files and what each owns, the test files, both tsconfigs, `.env.example` and
+`docs/SETUP.md`, with the commands ungated.
+
+**`commit:` was wrong on all four stories.** The backfill set every one to the release
+commit, but US-2.1, US-2.2 and US-2.3 were each code-complete earlier, and this story
+landed before the implementation branch existed. Each now carries the commit that
+actually completed its work — this story's being the one where its last outstanding
+acceptance criteria (AC-11, AC-13, AC-14, AC-15) were satisfied and it moved to
+`review`. All four are ancestors of the tag, so RULE-2 is not at risk.
+
+The v1 plan's 42 step checkboxes were also ticked. The plan states in its own opening
+that steps use `- [ ]` for tracking, and not one had been marked despite every step
+having been executed.
+
 ## Files modified
 
 **Created (repo root):**
@@ -277,6 +301,12 @@ reaches a shipped artifact, and the `preview` subcommand is not used here.
 - `.gitignore` — `.claude/settings.local.json`, `__pycache__/`, `*.pyc`
 - `docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md` — Task 1 extends
   `package.json`; tasks reference their stories
+
+**Modified (fix wave, folded into v0.1.0):**
+- `AGENTS.md` — describes the repo as built rather than as planned
+- `docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md` — all 42 step
+  checkboxes ticked (checkboxes only; no other edit)
+- All four story files — `commit:` corrected to the commit that completed each
 
 ## Cross-references
 

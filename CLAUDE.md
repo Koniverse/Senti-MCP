@@ -16,9 +16,10 @@ koni-docs:
 - Sprint: sprint-2026-W32 (2026-08-03 → 2026-08-09) — 4 stories / 15 points — closed
 - Active Stories: none — all four closed this sprint: ✅ US-1.1 koni-docs adoption, ✅ US-2.1 authenticated Senti client, ✅ US-2.2 `list_accounts` tool, ✅ US-2.3 live smoke test + README + release
 - Next Up: US-2.4 onward — the remaining 16 read operations, one tool per story, split by API tag (EPIC-2 stays `in-progress`)
-- Last Version: 0.1.0 — first release, tagged `v0.1.0`. Ships the authenticated Senti client and the `list_accounts` tool, proven against the live development API
-- Recent Decisions: D1 adopt koni-docs (reverses the design spec's closing paragraph) · D2 vendor via skills-lock.json, not a symlink · D3 wire `status` + `validate`, omit `sync` · D4 Active Context Pattern A
+- Last Version: 0.1.0 — first release, tagged `v0.1.0`. Ships the authenticated Senti client and the `list_accounts` tool, proven against the live development API. A post-review fix wave was folded into this same version and the (never-pushed) tag moved — no 0.1.1
+- Recent Decisions: D6 reject a base URL that is not a bare `https:`/`http:` origin · D5 Node floor raised to 20.6.0 (`AbortSignal.any`, `node --env-file`) · D4 Active Context Pattern A · D3 wire `status` + `validate`, omit `sync` · D2 vendor via skills-lock.json, not a symlink · D1 adopt koni-docs
 - Recent Lessons: none — `docs/LESSONS.md` is created with its first real entry
+- Watch: the version string lives in **three** places — `VERSION`, `package.json`, `SERVER_VERSION` in `src/config.ts`. koni-docs checks the first two; `config.test.ts` fails the suite if the third drifts. Adding an env var needs `docs/SETUP.md` + `.env.example` in the same commit (RULE-11)
 <!-- /koni-docs:auto-update -->
 
 Refresh this block at the koni-docs trigger points: story start or close, sprint open or

@@ -8,7 +8,7 @@ priority: P2
 points: 2
 sprint: sprint-2026-W32
 assignee: bluezdot
-commit: 62e399f
+commit: 11cd128
 created: 2026-08-05
 updated: 2026-08-05
 ---
@@ -181,6 +181,33 @@ US-2.2, and this story's own entries, and `[Unreleased]` was reset to the standa
 text, not on any version header, so the section above it could not be silently
 overwritten.
 
+### Fix wave, folded into v0.1.0 (post-review)
+
+A whole-branch review ran after the tag was cut. The human partner's ruling was to
+fold its findings into v0.1.0 and move the local tag, which had never been pushed,
+rather than cut a 0.1.1. `VERSION` stays `0.1.0`; the `[0.1.0]` CHANGELOG entry was
+rewritten to describe what the tag now actually contains.
+
+Two findings landed on this story's own deliverables. **RULE-11 was broken**: the
+branch introduced three environment variables and created neither `docs/SETUP.md` nor
+`.env.example`, which `docs/README.md` had predicted in those exact words — both now
+exist, and the absent-file table records only `DEPLOY.md` as still missing, with its
+trigger. **`README.md` under-specified the runtime**: `engines.node: ">=20"` is wrong
+for code that calls `AbortSignal.any()` (20.3.0) and a `test:smoke` script that uses
+`node --env-file` (20.6.0), so the floor is now 20.6.0 in `package.json`, `README.md`
+and `docs/SETUP.md` alike.
+
+The API Keys dashboard URL was reviewed and **deliberately left pointing at
+`stage.sentitrade.xyz`** — that is where keys are issued today. What was missing was
+the warning that the default base URL is production, so a key from one environment
+401s against another; `README.md`, `docs/SETUP.md` and the 401 message itself now all
+say so.
+
+The `### Changed` bullet in the `[0.1.0]` entry described an edit to the internal v1
+plan rather than anything about the shipped product, and was dropped — that change is
+already recorded in [CONTEXT D1](../../CONTEXT.md) and in
+[US-1.1](US-1.1-adopt-koni-docs-framework.md)'s own changelog section.
+
 One documentation-only correction rode along with this release commit: US-2.2's AC-20
 said "`src/server.ts` is the only file importing from `@modelcontextprotocol/*`", which
 undercounted by two files by design — `src/index.ts` imports the `/stdio` subpath
@@ -196,6 +223,16 @@ underlying invariant (no other file touches the SDK) unchanged.
 - `src/smoke.test.ts` (33 lines) — the opt-in live test
 - `README.md` (81 lines)
 - `LICENSE` (21 lines) — MIT, copyright (c) 2026 bluezdot
+
+**Modified (fix wave, folded into v0.1.0):**
+- `README.md` — Node floor raised to 20.6.0 with its reason; the key/environment
+  match warning; a pointer to `docs/SETUP.md`
+- `docs/SETUP.md` — created: setup walkthrough, env var reference, troubleshooting
+- `.env.example` — created: all three variables with placeholders (RULE-11)
+- `docs/README.md` — `SETUP.md` and `.env.example` no longer listed as absent
+- `docs/CONTEXT.md` — D5 (Node floor), D6 (base-URL validation)
+- `package.json` — `engines.node >= 20.6.0`; `typecheck` runs both tsconfigs
+- `tsconfig.test.json` — created
 
 **Modified (this release commit):**
 - `docs/CHANGELOG.md` — `[0.1.0]` entry added, anchored on `[Unreleased]`

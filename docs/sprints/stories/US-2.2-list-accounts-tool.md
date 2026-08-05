@@ -8,7 +8,7 @@ priority: P1
 points: 5
 sprint: sprint-2026-W32
 assignee: bluezdot
-commit: 62e399f
+commit: 63d7fe0
 created: 2026-08-05
 updated: 2026-08-05
 ---
@@ -90,8 +90,13 @@ while it is at it.
 - [x] **AC-18** — The built server starts from `dist/index.js`, prints its readiness line
   to **stderr** (never stdout, which carries JSON-RPC frames), and exits 1 with the
   `SENTI_API_KEY is required…` message when the key is absent.
-- [x] **AC-19** — `npm test` passes with 24 further tests across `accounts.test.ts` (15)
-  and `server.test.ts` (9); `npm run typecheck` and `npm run build` exit 0.
+- [x] **AC-19** — `npm test` passes with 34 further tests across `accounts.test.ts` (22),
+  `server.test.ts` (10) and `index.test.ts` (2); `npm run typecheck` and `npm run build`
+  exit 0.
+  > Was 24 (15/9) as originally shipped. The post-review fix wave added the
+  > soft-deleted and terminal rendering tests, the two annotation and
+  > `structuredContent` assertions AC-10 and AC-15 lacked, and `index.test.ts`,
+  > which is the first test to execute this story's `src/index.ts` at all.
 - [x] **AC-20** — `src/server.ts` is the only file importing the SDK's main
   `@modelcontextprotocol/server` entry; `src/index.ts` imports only the `/stdio`
   subpath; `src/server.test.ts` imports `@modelcontextprotocol/client` as a test
@@ -167,8 +172,9 @@ while it is at it.
 
 | AC | Command |
 |---|---|
-| AC-1–AC-9 | `npm test -- src/accounts.test.ts` → 15 passing |
-| AC-10–AC-17 | `npm test -- src/server.test.ts` → 9 passing |
+| AC-1–AC-9 | `npm test -- src/accounts.test.ts` → 22 passing |
+| AC-10–AC-17 | `npm test -- src/server.test.ts` → 10 passing |
+| AC-18 (automated) | `npm test -- src/index.test.ts` → 2 passing; builds `dist/` first and asserts both startup legs, stdout included |
 | AC-18 | `node dist/index.js` → exits 1 naming `SENTI_API_KEY`; `SENTI_API_KEY=sq_live_placeholder node dist/index.js` → readiness line on **stderr**, stays running |
 | AC-18 (stdout clean) | `SENTI_API_KEY=sq_live_placeholder node dist/index.js 1>/tmp/out 2>/dev/null & sleep 1; kill %1; test ! -s /tmp/out` |
 | AC-19 | `npm test && npm run typecheck && npm run build` |
@@ -212,6 +218,40 @@ the underlying invariant (no *other* file touches the SDK) unchanged and still e
 naming `SENTI_API_KEY` when it is absent and prints its readiness line to stderr only
 when a key is present.
 
+### Fix wave, folded into v0.1.0 (post-review)
+
+**AC-18 was verified by hand and by nothing else.** `src/index.ts` had zero automated
+coverage: `server.test.ts` reaches the server through `InMemoryTransport`, which
+bypasses `serveStdio`, the stdout framing and `loadConfig(process.env)` — that is,
+everything AC-18 claims. `src/index.test.ts` now spawns the real built `dist/index.js`
+and asserts both legs, including that stdout receives zero bytes in each. It builds in
+`beforeAll` rather than running the source through `tsx`, because AC-18 is a claim
+about the built artifact: running the TypeScript would leave a broken `outDir`,
+shebang or `chmod` undetected. Its environment is constructed from scratch rather than
+inherited, so a `SENTI_API_KEY` in the developer's shell cannot mask the missing-key
+case.
+
+**AC-10 and AC-15 each had a clause nothing asserted.** `readOnlyHint` and
+`openWorldHint` were never read off `tools[0].annotations`, and no test checked that an
+error result carries no `structuredContent`. Both are asserted now. A third assertion
+used `tools[0]?.inputSchema.properties ?? {}`, which passed whether `properties` was
+`{}` or absent entirely; the fallback is gone.
+
+**Two defects in `src/index.ts`.** `serveStdio` was called with no `onerror`, so
+post-startup transport failures were silent in the one process where a `console.log`
+cannot be added to investigate — the SDK's option is
+`ServeStdioOptions.onerror: (error: Error) => void`, reporting-only. And the
+SIGINT/SIGTERM handler floated `handle.close()`, whose rejection would, under Node's
+default `--unhandled-rejections=throw`, turn a clean SIGTERM into a crash.
+
+**`isSoftDeleted` and `terminal` were parsed and never rendered**, so a soft-deleted
+account read exactly like a live one in the text summary a model actually consumes.
+Soft-deleted accounts now carry a marker and a separate count in the header. For
+`terminal`, only `terminalStatus` is rendered — it says whether the MT5 terminal that
+would execute a trade is up, which `lastSyncAt` does not — while `assignedPort` and
+`nodeName` stay in `structuredContent` as Senti infrastructure detail that would be
+noise in a summary.
+
 ## Files modified
 
 **Created:**
@@ -221,6 +261,18 @@ when a key is present.
 - `src/server.ts` (72 lines) — `createServer(config, deps)`, the `list_accounts` tool
 - `src/server.test.ts` (153 lines)
 - `src/index.ts` (31 lines) — stdio bootstrap
+
+**Created (fix wave, folded into v0.1.0):**
+- `src/index.test.ts` — spawns the built `dist/index.js`; the first automated
+  coverage of AC-18
+
+**Modified (fix wave, folded into v0.1.0):**
+- `src/index.ts` — `onerror` wired; the shutdown promise no longer floats
+- `src/accounts.ts` — soft-deleted marker, header count, terminal status; a note on
+  what all-or-nothing parsing costs once the pattern reaches the other 16 endpoints
+- `src/accounts.test.ts` — 7 added
+- `src/server.test.ts` — annotations and `structuredContent` assertions; the
+  `?? {}` fallback dropped (1 added)
 
 ## Cross-references
 

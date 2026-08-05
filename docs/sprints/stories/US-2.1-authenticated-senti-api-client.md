@@ -8,7 +8,7 @@ priority: P1
 points: 5
 sprint: sprint-2026-W32
 assignee: bluezdot
-commit: 62e399f
+commit: f4409de
 created: 2026-08-05
 updated: 2026-08-05
 ---
@@ -81,8 +81,11 @@ Neither `client.ts` nor the modules above it import the MCP SDK. Only `server.ts
   wins.
 - [x] **AC-13** — **The API key appears in no error branch's output.** Asserted across
   401, 403, 429, 500 and 502.
-- [x] **AC-14** — `npm test` passes with 27 tests across `config.test.ts` (7),
-  `errors.test.ts` (9), and `client.test.ts` (11); `npm run typecheck` exits 0.
+- [x] **AC-14** — `npm test` passes with 36 tests across `config.test.ts` (12),
+  `errors.test.ts` (9), and `client.test.ts` (15); `npm run typecheck` exits 0.
+  > Was 27 (7/9/11) as originally shipped. The post-review fix wave added nine
+  > tests to this story's files, and `npm run typecheck` now covers the test
+  > files too — previously it read only the six source files.
 - [x] **AC-15** — No file in this story imports from `@modelcontextprotocol/*`.
 
 ## Tasks
@@ -151,9 +154,9 @@ Neither `client.ts` nor the modules above it import the MCP SDK. Only `server.ts
 
 | AC | Command |
 |---|---|
-| AC-1, AC-2 | `npm test -- src/config.test.ts` → 7 passing |
+| AC-1, AC-2 | `npm test -- src/config.test.ts` → 12 passing |
 | AC-3, AC-4 | `npm test -- src/errors.test.ts` → 9 passing |
-| AC-5–AC-13 | `npm test -- src/client.test.ts` → 11 passing |
+| AC-5–AC-13 | `npm test -- src/client.test.ts` → 15 passing |
 | AC-14 | `npm test && npm run typecheck` |
 | AC-15 | `grep -rn '@modelcontextprotocol' src/config.ts src/errors.ts src/client.ts` returns nothing |
 
@@ -187,6 +190,38 @@ checked.
 [US-2.3](US-2.3-live-smoke-test-and-readme.md) later exercises this client against the
 live development API and confirms the contract holds outside the stubbed-fetch suite.
 
+### Fix wave, folded into v0.1.0 (post-review)
+
+A whole-branch review found four defects in this story's files and two acceptance
+criteria asserted by no test. All were fixed before the `v0.1.0` tag was moved.
+
+**AC-2 was over-claimed.** `loadConfig` only required `new URL()` to succeed, so
+`file:///etc`, `foo:bar` and `https://host?x=1` all passed. The last is the damaging
+one: the client concatenates, so that base produced the unreachable
+`https://host/?x=1/api/v1/accounts`. `loadConfig` now rejects any scheme other than
+`https:`/`http:` and any base carrying a query or fragment, naming the offending value
+([CONTEXT D6](../../CONTEXT.md)). `http:` is deliberately still accepted for a local
+API. AC-2 also asserts the returned `Config` is frozen, which nothing tested — it does
+now.
+
+**AC-12's timeout leg was never exercised.** The existing test proved the caller's
+signal reaches `fetch`; changing `FETCH_TIMEOUT_MS` from `15_000` to `15` passed the
+entire suite. Fake timers cannot drive `AbortSignal.timeout` — Node schedules it on
+internal timers, not the patched global — so the test substitutes the signal instead,
+asserting the delay it is armed with and proving that firing it rejects the in-flight
+request. Verified to fail when the constant changes.
+
+**Every API error message doubled its sentence terminator**, rendering as
+`Senti API returned 403 — Insufficient scope.. The API key is missing…`. The
+envelope's terminator is now stripped when building the detail fragment.
+
+**The 401 message sent readers in a circle.** It said only "check `SENTI_API_KEY`",
+when the most common real cause is a key issued for a different environment than
+`SENTI_API_BASE_URL` points at. It now says so.
+
+`SERVER_VERSION` is a third copy of the version string that koni-docs does not check
+against `VERSION` or `package.json`; a test now fails the suite if the three drift.
+
 ## Files modified
 
 **Created:**
@@ -201,6 +236,13 @@ live development API and confirms the contract holds outside the stubbed-fetch s
 - `package.json` — `bin`, `files`, build/test/typecheck scripts, `keywords`, runtime
   deps (`@modelcontextprotocol/server`, `zod`), remaining devDeps
 - `tsconfig.json` — created: NodeNext, strict, `noUncheckedIndexedAccess`, `outDir: dist`
+
+**Modified (fix wave, folded into v0.1.0):**
+- `src/config.ts` — base-URL scheme and shape validation
+- `src/client.ts` — terminator stripped from the error detail; 401 names the environment
+- `src/config.test.ts` — frozen-`Config`, scheme and query/fragment tests, plus the
+  `SERVER_VERSION` drift guard (5 added)
+- `src/client.test.ts` — timeout-leg, terminator and 401-environment tests (4 added)
 
 ## Cross-references
 

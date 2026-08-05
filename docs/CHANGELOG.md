@@ -50,9 +50,32 @@ MCP stdio — proven with one live call against the development API.
 - `README.md` — tools, configuration, install, client config, and the read-only
   posture.
 - MIT `LICENSE`.
+- `docs/SETUP.md` and `.env.example` — local setup, troubleshooting, and all three
+  environment variables with placeholders (RULE-11).
+- `tsconfig.test.json` — typecheck-only config with no exclude, so `npm run typecheck`
+  covers the test files the build config deliberately keeps out of `dist/`.
+- `src/index.test.ts` — spawns the built `dist/index.js` and asserts both startup
+  legs, including that nothing reaches stdout.
 
 ### Changed
-- The v1 implementation plan's Task 1 now extends `package.json` instead of creating
-  it, and each task names the story it advances.
+- **Node floor raised to 20.6.0.** `AbortSignal.any()` needs 20.3.0 and
+  `test:smoke`'s `node --env-file` needs 20.6.0; on 20.0–20.2 the server started and
+  then failed on every tool call ([CONTEXT D5](CONTEXT.md)).
+- `SENTI_API_BASE_URL` must now be a bare `https:` or `http:` origin. A scheme this
+  client cannot fetch, or a base carrying a query string or fragment, is rejected at
+  startup with the offending value named ([CONTEXT D6](CONTEXT.md)).
+- A soft-deleted account is marked as such in the text summary and counted separately
+  in the header, instead of reading exactly like a live one; the terminal's status is
+  reported alongside it.
+- The 401 message now says the key must belong to the environment
+  `SENTI_API_BASE_URL` targets, rather than only pointing back at `SENTI_API_KEY`.
+
+### Fixed
+- API error messages no longer double their sentence terminator
+  (`…Insufficient scope.. The API key is missing…`).
+- A rejected `close()` on SIGINT/SIGTERM is reported to stderr instead of floating as
+  an unhandled rejection, which under Node's defaults turned a clean shutdown into a
+  crash.
+- Out-of-band stdio transport errors are reported to stderr instead of being silent.
 
 ---
