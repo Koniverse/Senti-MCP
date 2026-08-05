@@ -25,9 +25,6 @@ function main(): void {
   console.error(`${SERVER_NAME} ${SERVER_VERSION} ready — serving ${config.baseUrl}`);
 
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-    // `close()` returns a promise that can reject. Left floating, an unhandled
-    // rejection turns a clean SIGTERM into a non-zero exit under Node's default
-    // `--unhandled-rejections=throw`.
     process.once(signal, () => {
       handle.close().catch((error: unknown) => {
         console.error(

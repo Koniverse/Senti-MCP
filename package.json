@@ -1,23 +1,28 @@
 {
-  "name": "senti-mcp-server",
+  "name": "@koniverse/senti-mcp-server",
   "version": "0.1.0",
   "description": "MCP server exposing the Senti Quant Public API to an AI host",
   "type": "module",
-  "private": true,
   "engines": {
     "node": ">=20.6.0"
   },
   "bin": {
-    "senti-mcp-server": "./dist/index.js"
+    "senti-mcp-server": "dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "src",
+    "!src/**/*.test.ts"
   ],
   "scripts": {
     "agile:status": "koni-docs status --docs-path docs/",
     "agile:validate": "koni-docs validate --docs-path docs/",
     "build": "tsc && chmod +x dist/index.js",
     "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:smoke": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/smoke.test.ts",
@@ -34,6 +39,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Koniverse/Senti-MCP.git"
+  },
+  "homepage": "https://github.com/Koniverse/Senti-MCP#readme",
+  "bugs": {
+    "url": "https://github.com/Koniverse/Senti-MCP/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",

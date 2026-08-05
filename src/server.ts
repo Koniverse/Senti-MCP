@@ -45,8 +45,6 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
     },
     async (_args, ctx) => {
       try {
-        // Forwarding the request's signal means a cancelled tool call also
-        // aborts the outbound HTTP request instead of running it to completion.
         const payload = await client.get('/api/v1/accounts', {
           signal: ctx.mcpReq.signal,
           scope: ACCOUNTS_READ,
@@ -58,8 +56,6 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
           structuredContent: { accounts },
         };
       } catch (error) {
-        // An error result carries text only — there is no successful payload to
-        // describe, and `structuredContent` would have to satisfy outputSchema.
         return {
           content: [{ type: 'text' as const, text: describeError(error) }],
           isError: true,
