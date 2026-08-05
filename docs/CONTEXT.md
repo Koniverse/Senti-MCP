@@ -202,9 +202,10 @@ naming the risk addresses just as well without removing a legitimate workflow.
 - Silently strip a query and fragment — rejected: a base URL carrying one is a
   misunderstanding, and quietly repairing it teaches nothing.
 
-**Impact**: `SENTI_API_BASE_URL` is now documented as *a bare origin*. Anyone who was
-relying on a path-carrying base (there is no such caller in v0.1.0) would now fail at
-startup rather than at request time.
+**Impact**: `SENTI_API_BASE_URL` is now documented as *an absolute `https:`/`http:` URL
+carrying no query string or fragment*. A path-carrying base is still accepted — the
+value is joined to the endpoint path by concatenation, which a path prefix survives and
+a query does not — so this rejects only what could not have worked anyway.
 
 **Date**: 2026-08-05
 **Version**: 0.1.0

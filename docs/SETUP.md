@@ -70,9 +70,10 @@ SENTI_SMOKE_KEY=sq_live_…
 > environment than a bad key.
 
 `SENTI_API_BASE_URL` is validated at startup: it must be an absolute `https:` URL
-(`http:` is accepted for a local API, at the cost of sending the key in cleartext),
-and it must be a bare origin. A trailing slash is stripped; a query string or
-fragment is rejected, because it cannot survive being joined to an endpoint path.
+(`http:` is accepted for a local API, at the cost of sending the key in cleartext).
+A trailing slash is stripped. A query string or fragment is rejected, because it
+cannot survive being joined to an endpoint path — `https://host?x=1` would become
+`https://host/?x=1/api/v1/accounts`.
 
 **Adding a variable later?** RULE-11 puts it in `.env.example` *and* this file in the
 same commit.
@@ -134,7 +135,8 @@ Restart the client; `list_accounts` should appear in its tool list.
 | `Senti API returned 403 … missing the \`accounts:read\` scope` | The key is valid but was created without that scope. Create a new one; scopes are fixed at creation. |
 | `TypeError: AbortSignal.any is not a function` | Node older than 20.3.0. See §1. |
 | Client shows no tools / fails to connect | Something wrote to stdout and corrupted the JSON-RPC stream. Diagnostics must go to stderr only. |
-| `SENTI_API_BASE_URL must be a bare origin…` | The base URL carries a query string or fragment. |
+| `SENTI_API_BASE_URL must not carry a query string or fragment` | Exactly that — a query or fragment cannot survive being joined to an endpoint path. |
+| `SENTI_API_BASE_URL must use https: or http:` | A scheme this client cannot fetch (`file:`, `foo:bar`, …), almost always a typo. |
 
 ## Cross-references
 

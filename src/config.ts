@@ -63,8 +63,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   // `https://host/?x=1/api/v1/accounts`. Naming it here beats debugging a 404.
   if (base.search || base.hash) {
     throw new Error(
-      'SENTI_API_BASE_URL must be a bare origin with no query string or fragment, ' +
-        `got: ${rawBaseUrl}`,
+      `SENTI_API_BASE_URL must not carry a query string or fragment, got: ${rawBaseUrl}`,
     );
   }
 

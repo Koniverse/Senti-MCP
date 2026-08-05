@@ -174,7 +174,7 @@ built entry point, because that is the artifact US-2.2 AC-18 is a claim about.
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
 | `SENTI_API_KEY` | yes | — | First-party key, `sq_live_…`. The server exits at startup without it. |
-| `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. Must be a bare origin — `https:` or `http:`, no query or fragment. |
+| `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. Must be absolute `https:` or `http:`, with no query string or fragment. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only. Read from a gitignored `.env.local`; absent means the smoke test skips rather than fails. |
 
 **The key must belong to the same environment `SENTI_API_BASE_URL` points at.** Keys

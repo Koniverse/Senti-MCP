@@ -78,7 +78,7 @@ describe('loadConfig', () => {
     // `https://host/?x=1/api/v1/accounts`.
     for (const value of ['https://be-dev.sentitrade.xyz?x=1', 'https://be-dev.sentitrade.xyz#frag']) {
       expect(() => loadConfig({ SENTI_API_KEY: KEY, SENTI_API_BASE_URL: value })).toThrow(
-        /no query string or fragment/,
+        /must not carry a query string or fragment/,
       );
       expect(() => loadConfig({ SENTI_API_KEY: KEY, SENTI_API_BASE_URL: value })).toThrow(value);
     }

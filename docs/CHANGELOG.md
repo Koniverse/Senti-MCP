@@ -61,7 +61,7 @@ MCP stdio — proven with one live call against the development API.
 - **Node floor raised to 20.6.0.** `AbortSignal.any()` needs 20.3.0 and
   `test:smoke`'s `node --env-file` needs 20.6.0; on 20.0–20.2 the server started and
   then failed on every tool call ([CONTEXT D5](CONTEXT.md)).
-- `SENTI_API_BASE_URL` must now be a bare `https:` or `http:` origin. A scheme this
+- `SENTI_API_BASE_URL` must now be an absolute `https:` or `http:` URL. A scheme this
   client cannot fetch, or a base carrying a query string or fragment, is rejected at
   startup with the offending value named ([CONTEXT D6](CONTEXT.md)).
 - A soft-deleted account is marked as such in the text summary and counted separately
