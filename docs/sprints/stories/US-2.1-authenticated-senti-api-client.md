@@ -2,7 +2,7 @@
 id: US-2.1
 title: "Authenticated Senti API client substrate"
 epic: EPIC-2
-status: backlog
+status: in-progress
 priority: P1
 points: 5
 sprint: sprint-2026-W32
@@ -85,12 +85,12 @@ Neither `client.ts` nor the modules above it import the MCP SDK. Only `server.ts
 
 ## Tasks
 
-- [ ] **TASK-2.1.1** — Extend `package.json`, add `tsconfig.json`, install (AC: 14)
-  - [ ] Add `bin`, `files`, build/test/typecheck scripts, `keywords`, runtime deps
+- [x] **TASK-2.1.1** — Extend `package.json`, add `tsconfig.json`, install (AC: 14)
+  - [x] Add `bin`, `files`, build/test/typecheck scripts, `keywords`, runtime deps
         (`@modelcontextprotocol/server`, `zod`) and remaining devDeps to the **existing**
         `package.json` — do not recreate it, it already carries the koni-docs devDependency
-  - [ ] `tsconfig.json`: NodeNext, strict, `noUncheckedIndexedAccess`, `outDir: dist`
-- [ ] **TASK-2.1.2** — `src/config.ts` + `src/config.test.ts` (AC: 1, 2)
+  - [x] `tsconfig.json`: NodeNext, strict, `noUncheckedIndexedAccess`, `outDir: dist`
+- [x] **TASK-2.1.2** — `src/config.ts` + `src/config.test.ts` (AC: 1, 2)
 - [ ] **TASK-2.1.3** — `src/errors.ts` + `src/errors.test.ts` (AC: 3, 4)
 - [ ] **TASK-2.1.4** — `src/client.ts` + `src/client.test.ts` (AC: 5–13)
   - [ ] `createClient(config, deps)` returning `{ get(path, options) }`

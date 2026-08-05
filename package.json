@@ -7,9 +7,21 @@
   "engines": {
     "node": ">=20"
   },
+  "bin": {
+    "senti-mcp-server": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "agile:status": "koni-docs status --docs-path docs/",
-    "agile:validate": "koni-docs validate --docs-path docs/"
+    "agile:validate": "koni-docs validate --docs-path docs/",
+    "build": "tsc && chmod +x dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:smoke": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/smoke.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "mcp",
@@ -23,7 +35,16 @@
     "type": "git",
     "url": "git+https://github.com/Koniverse/Senti-MCP.git"
   },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "zod": "^4.2.0"
+  },
   "devDependencies": {
-    "@koniverse/koni-docs": "^0.12.0"
+    "@koniverse/koni-docs": "^0.12.0",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
   }
 }
