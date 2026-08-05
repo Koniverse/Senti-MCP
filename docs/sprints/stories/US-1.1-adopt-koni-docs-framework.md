@@ -74,7 +74,7 @@ are documented in [CONTEXT D2 and D3](../../CONTEXT.md).
   forbids.
 - [ ] **AC-11** — `npm run agile:status` generates `docs/sprints/STATUS.md`, and running
   it twice leaves no diff. The file is never hand-edited afterwards (RULE-5).
-- [ ] **AC-12** — `AGENTS.md` is the canonical project guide; `CLAUDE.md` holds a
+- [x] **AC-12** — `AGENTS.md` is the canonical project guide; `CLAUDE.md` holds a
   pointer to it, the `Koni-Docs Integration` block naming `sprint-2026-W32`, and an
   Active Context block between `<!-- koni-docs:auto-update -->` markers.
 - [ ] **AC-13** — **Given** `node_modules/`, `.agents/` and `.claude/skills` are all
@@ -105,9 +105,9 @@ are documented in [CONTEXT D2 and D3](../../CONTEXT.md).
   - [x] `docs/sprints/epics/EPIC-1.md`, `EPIC-2.md`
   - [x] `docs/sprints/sprint-2026-W32.md` with the 6-column scope table
   - [x] Four story files under `docs/sprints/stories/`
-- [ ] **TASK-1.1.4** — Wire the agent surface (AC: 12)
-  - [ ] `AGENTS.md` as canonical project guide
-  - [ ] `CLAUDE.md` as pointer + integration block + Active Context
+- [x] **TASK-1.1.4** — Wire the agent surface (AC: 12)
+  - [x] `AGENTS.md` as canonical project guide
+  - [x] `CLAUDE.md` as pointer + integration block + Active Context
 - [ ] **TASK-1.1.5** — Generate, validate, hand off (AC: 11, 13, 14)
   - [ ] `npm run agile:status`, then confirm a second run is a no-op
   - [ ] `npm run agile:validate` exits 0
