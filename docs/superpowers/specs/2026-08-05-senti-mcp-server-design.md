@@ -208,15 +208,20 @@ arguments.
 other endpoint (`/accounts/{accountId}/positions`, …). Without that sentence a
 model will reach for `login`, which is the MT5 account number and not a key.
 
-**Output:** MCP requires `structuredContent` to be an object, while the API returns
-a top-level array, so the result is wrapped:
+**Output:** the API returns a top-level array; the tool wraps it in a named object.
 
 ```
 outputSchema:      { accounts: Account[] }
 structuredContent: { accounts: [...] }
 ```
 
-Returning the bare array would be rejected by a spec-compliant client.
+The wrapping is not because the SDK rejects arrays — it does not. `projectCallToolResult`
+handles a non-object `structuredContent` by wrapping it as `{ result: <value> }` on the
+2025 era, and passing the natural value through unchanged on the 2026 era. That is
+precisely the problem: this server speaks both eras from one process via `serveStdio`,
+so a bare array would reach clients as `{ result: [...] }` or as `[...]` depending on
+which era the connection negotiated. Returning an explicit `{ accounts: [...] }` is
+identical on both, and names the field while it is at it.
 
 Alongside it, `content` carries a compact text rendering:
 
