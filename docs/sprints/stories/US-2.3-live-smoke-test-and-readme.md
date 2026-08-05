@@ -8,6 +8,7 @@ priority: P2
 points: 2
 sprint: sprint-2026-W32
 assignee: bluezdot
+commit: 62e399f
 created: 2026-08-05
 updated: 2026-08-05
 ---
