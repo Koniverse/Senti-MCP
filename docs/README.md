@@ -1,0 +1,118 @@
+# docs/ — senti-mcp-server Documentation Hub
+
+Canonical home for **senti-mcp-server** documentation, managed under the
+[`koni-docs`](../.agents/skills/koni-docs/SKILL.md) framework. Every code-shipping
+commit updates docs in the **same commit** (RULE-1 / RULE-11) — there is no "docs
+follow-up" branch.
+
+---
+
+## What lives where
+
+```
+docs/
+├── README.md            ← you are here (doc hub + pre-commit checklist)
+├── CHANGELOG.md         ← release history (every version)
+├── CONTEXT.md           ← decision log (append-only, never rewrite — RULE-7)
+├── superpowers/         ← preserved planning artifacts
+│   ├── specs/           ← design specs from the brainstorming phase
+│   └── plans/           ← implementation plans
+└── sprints/
+    ├── STATUS.md        ← AUTO-GENERATED kanban (never hand-edit — RULE-5)
+    ├── sprint-2026-W32.md   ← active sprint
+    ├── epics/           ← EPIC-N.md
+    └── stories/         ← US-X.Y-<slug>.md (canonical AC + Tasks source)
+
+Repo root:
+  VERSION                    ← current semver string, bare (no `v`)
+  AGENTS.md                  ← canonical project guide
+  CLAUDE.md                  ← pointer + Koni-Docs Integration + Active Context
+  skills-lock.json           ← skill provenance (source + content hash)
+  .agents/skills/koni-docs/  ← the vendored skill, real files
+  .claude/skills/koni-docs   → relative symlink into .agents/
+```
+
+`docs/superpowers/` and `docs/sprints/` coexist deliberately. Superpowers produces the
+spec and the plan; koni-docs is the final stage that standardizes the outcome into
+epics, stories, and a changelog. Neither replaces the other.
+
+### What is deliberately absent
+
+A missing file here is a decision, not an oversight.
+
+| Absent | Why, and what would bring it in |
+|---|---|
+| `PRD.md`, `ARCHITECTURE.md` | Authored today they would describe 16 tools that do not exist. They land when the read-tool roadmap firms up — at which point every story gains `prd_ref` / `arch_ref` in the same commit ([CONTEXT D1](CONTEXT.md)). |
+| `LESSONS.md` | Created with the first real entry. An empty traps file teaches nothing and invites filler. |
+| `BRIEF.md` | The [design spec](superpowers/specs/2026-08-05-senti-mcp-server-design.md) already carries the problem statement and scope. |
+| `SETUP.md`, `DEPLOY.md`, `.env.example` | No code, therefore no environment variables. The v1 build introduces `SENTI_API_KEY` and `SENTI_API_BASE_URL`, and RULE-11 then requires `SETUP.md` and `.env.example` in that same commit. |
+| `DESIGN.md` | No UI. This is a stdio MCP server; output formatting lives beside the code that emits it. |
+| `docs/tests/`, `docs/design/` | Owned by `koni-qc`, which is not wired. |
+| `docs/sprints/README.md` | The vendored skill's [`sprint-system.md`](../.agents/skills/koni-docs/references/sprint-system.md) is the live source for the sprint schema; a copy here would drift from it. |
+
+---
+
+## Pre-commit checklist
+
+Walk every applicable item before committing.
+
+```
+[ ] VERSION bumped per semver — only when the commit ships code
+[ ] CHANGELOG.md entry added, SAME commit (RULE-1). No SHA in it (RULE-2)
+[ ] CONTEXT.md has a new D<N> entry if a decision was made (RULE-7 append-only)
+[ ] Story file: tasks marked [x] as completed (RULE-10), not all at the end
+[ ] Story closing: status → done, version_shipped set as BARE semver (RULE-16)
+[ ] assignee is a GitHub login, never git user.name (RULE-15)
+[ ] Frontmatter ID fields are bare IDs, never prose (RULE-17)
+[ ] New env var → SETUP.md + .env.example in the SAME commit (RULE-11)
+[ ] `due` changed? → CONTEXT.md entry in the SAME commit, old → new → why (RULE-18)
+[ ] npm run agile:status    — regenerate STATUS.md (RULE-5)
+[ ] npm run agile:validate  — ID graph resolves; must exit 0
+[ ] Touched the skill? python3 .agents/skills/koni-docs/scripts/check-references.py .agents/skills/koni-docs
+[ ] CLAUDE.md Active Context block refreshed (integration.md T1–T7)
+[ ] English-only: code, comments, errors, commits, docs (RULE-13)
+[ ] Commit prefix: feat:/fix:/chore:/docs:/style:/refactor:/test: (RULE-14)
+```
+
+> **`npx koni-docs sync` is deliberately absent from this list.** It propagates story
+> status up into PRD and epic tables, and at CLI 0.10.0 it over-aggregated the "Ship"
+> column and corrupted curated `version_shipped` values. This repo also has no
+> `PRD.md` for it to write to. See [CONTEXT D3](CONTEXT.md).
+
+> **`check-references.py` reports dangling references but still exits 0**, so it
+> cannot gate by exit code — read its output. On a standalone koni-docs install it
+> reports **3 expected** cross-skill misses (`koni-nextjs/SKILL.md`,
+> `test-automation.md`, `test-organization.md`); those files belong to `koni-nextjs`
+> and `koni-qc`, neither of which is wired here. Anything beyond those three is real.
+
+---
+
+## Conventions
+
+- **English only** across code, comments, error messages, commits, and docs
+  (RULE-13). Vietnamese in chat and brainstorming is fine; the artifacts are English.
+- **Frontmatter `id` must match the filename** for stories, epics, and sprints
+  (RULE-6). Stories are `US-X.Y-<slug>.md`.
+- **Status emojis** are stable system-wide:
+  `📋 backlog · 🚧 in-progress · ✅ done · ⏪ reverted · 🗑️ deprecated`.
+- **Cross-references are markdown links**, not bare paths.
+- **`STATUS.md` is generated.** Regenerate it; never edit it (RULE-5).
+
+## Commands
+
+```bash
+npm run agile:status      # regenerate docs/sprints/STATUS.md
+npm run agile:validate    # ID-graph + due-date integrity; exits non-zero on error
+npx koni-docs --version   # confirm which CLI you actually have
+```
+
+## Cross-references
+
+- [CHANGELOG.md](CHANGELOG.md) — release history
+- [CONTEXT.md](CONTEXT.md) — decision log
+- [sprints/STATUS.md](sprints/STATUS.md) — current kanban (generated)
+- [sprints/sprint-2026-W32.md](sprints/sprint-2026-W32.md) — active sprint
+- [superpowers/specs/2026-08-05-senti-mcp-server-design.md](superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design spec
+- [superpowers/plans/2026-08-05-senti-mcp-server-v1.md](superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 implementation plan
+- [AGENTS.md](../AGENTS.md) · [CLAUDE.md](../CLAUDE.md) — agent guides
+- [koni-docs SKILL.md](../.agents/skills/koni-docs/SKILL.md) — the framework itself
