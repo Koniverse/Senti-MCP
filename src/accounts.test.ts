@@ -111,4 +111,42 @@ describe('formatAccounts', () => {
   test('marks an inactive account', () => {
     expect(formatAccounts([{ ...base, isActive: false }])).toContain('inactive');
   });
+
+  test('marks a soft-deleted account so it cannot read as a live one', () => {
+    const text = formatAccounts([{ ...base, isSoftDeleted: true }]);
+
+    expect(text).toContain('soft-deleted');
+  });
+
+  test('leaves a live account unmarked', () => {
+    expect(formatAccounts([base])).not.toContain('soft-deleted');
+  });
+
+  test('says how many of the counted accounts are soft-deleted', () => {
+    const text = formatAccounts([base, { ...base, isSoftDeleted: true }]);
+
+    expect(text).toMatch(/^2 linked accounts\. 1 of them soft-deleted\./m);
+  });
+
+  test('omits the soft-deleted caveat when none are', () => {
+    expect(formatAccounts([base, base])).toMatch(/^2 linked accounts\.$/m);
+  });
+
+  test('reports the terminal status, which lastSyncAt alone does not give', () => {
+    expect(formatAccounts([base])).toContain('terminal RUNNING');
+  });
+
+  test('omits the terminal segment when there is no terminal or no status', () => {
+    expect(formatAccounts([{ ...base, terminal: null }])).not.toContain('terminal ');
+    expect(
+      formatAccounts([{ ...base, terminal: { ...base.terminal!, terminalStatus: null } }]),
+    ).not.toContain('terminal ');
+  });
+
+  test('keeps Senti infrastructure detail out of the summary', () => {
+    const text = formatAccounts([base]);
+
+    expect(text).not.toContain('node-1');
+    expect(text).not.toContain('5001');
+  });
 });
