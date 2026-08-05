@@ -17,8 +17,9 @@ Trading. An MCP host cannot call it directly: something has to own the API key, 
 typed tools whose descriptions let a model choose correctly, and turn API errors into
 text a model can act on. This server is that something.
 
-**Current state: no runtime code.** v1 ships exactly one tool, `list_accounts`, and is
-tracked as [US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md). Read the
+**Current state: v0.1.0 shipped.** Exactly one tool, `list_accounts`, tracked as
+[US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md), proven against the live
+API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md). Read the
 [design spec](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) before
 touching anything under `src/`.
 
@@ -34,20 +35,44 @@ own design spec. Do not register a write tool, and do not add one "ready to enab
 ## Repo structure
 
 ```
-src/                    ← not created yet; see the v1 plan for the six-file layout
+src/                    ← the six source files below, flat: tools split by API tag
+                          when they multiply, not into a tools/ directory
+  config.ts             ← loadConfig(env) → frozen Config; SERVER_NAME/SERVER_VERSION
+  errors.ts             ← ApiError (status + envelope code); describeError flattens
+                          the cause chain, which is what makes fetch failures readable
+  client.ts             ← createClient(config, deps).get(); owns the Authorization
+                          header, the 15s timeout, and status→message mapping
+  accounts.ts           ← AccountSchema (16 fields), parseAccounts, formatAccounts.
+                          Imports no MCP SDK, so it is tested by direct calls
+  server.ts             ← createServer(config, deps); registers list_accounts. The
+                          only file importing the SDK's main entry
+  index.ts              ← #! stdio bootstrap; serveStdio, signal handling. Imports
+                          only the SDK's /stdio subpath
+  *.test.ts             ← one beside each source file, plus index.test.ts (spawns the
+                          built dist/index.js) and smoke.test.ts (opt-in, one live call)
 docs/                   ← all documentation (see docs/README.md)
+  SETUP.md              ← local dev setup + env var reference
   sprints/              ← epics, stories, active sprint, generated STATUS.md
   superpowers/           ← design specs and implementation plans
 .agents/skills/koni-docs/  ← vendored koni-docs skill (real files, do not edit)
 .claude/skills/koni-docs   → relative symlink into .agents/
+.env.example            ← env var template (committed); .env.local is the real one
 skills-lock.json        ← skill provenance: source + content hash
+tsconfig.json           ← build config; EXCLUDES *.test.ts so they stay out of dist/
+tsconfig.test.json      ← typecheck-only, no exclude; the only thing that typechecks
+                          the tests, since vitest transpiles without checking
 VERSION                 ← bare semver, no `v` prefix
 ```
+
+**Nothing in `index.ts` may write to stdout** — that stream carries the JSON-RPC
+frames. Diagnostics go to stderr. A single stray `console.log` corrupts the protocol,
+and the symptom is a client that fails to connect for no visible reason.
 
 ## Documentation
 
 - [docs/README.md](docs/README.md) — **start here.** Doc hub, pre-commit checklist, and
   a table of which files are deliberately absent and what would bring each one in
+- [docs/SETUP.md](docs/SETUP.md) — local dev setup, the env var reference, troubleshooting
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
@@ -57,9 +82,9 @@ VERSION                 ← bare semver, no `v` prefix
 - [docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md](docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 plan, task by task
 - [VERSION](VERSION) — current semver
 
-There is no `PRD.md`, `ARCHITECTURE.md`, `LESSONS.md`, `SETUP.md`, or `.env.example`
-yet. Each absence is a recorded decision, not an oversight —
-[docs/README.md](docs/README.md) explains which trigger brings each one in.
+There is no `PRD.md`, `ARCHITECTURE.md`, `LESSONS.md`, or `DEPLOY.md` yet. Each
+absence is a recorded decision, not an oversight — [docs/README.md](docs/README.md)
+explains which trigger brings each one in.
 
 ## Koni-Docs
 
@@ -124,12 +149,15 @@ npm run agile:status      # regenerate docs/sprints/STATUS.md (RULE-5)
 npm run agile:validate    # ID-graph + due-date integrity; must exit 0
 npx koni-docs --version   # confirm which CLI you have (expect 0.12.0)
 
-# once src/ exists (see the v1 plan):
-npm test                  # unit tests, stubbed fetch
-npm run typecheck
-npm run build
+npm test                  # unit tests, stubbed fetch; smoke suite skips
+npm run typecheck         # BOTH tsconfig.json and tsconfig.test.json
+npm run build             # tsc → dist/, then chmod +x dist/index.js
+npm run dev               # run from source, e.g. SENTI_API_KEY=… npm run dev
 npm run test:smoke        # one live call; needs SENTI_SMOKE_KEY in .env.local
 ```
+
+`npm test` builds `dist/` on the way through — `src/index.test.ts` spawns the real
+built entry point, because that is the artifact US-2.2 AC-18 is a claim about.
 
 | I want to… | Do this |
 |---|---|
@@ -137,7 +165,8 @@ npm run test:smoke        # one live call; needs SENTI_SMOKE_KEY in .env.local
 | Start a story | Flip `status: in-progress`, confirm it is in the sprint scope table |
 | Record a decision | Append the next `D<N>` to [docs/CONTEXT.md](docs/CONTEXT.md) |
 | Add a tool | Read [EPIC-2](docs/sprints/epics/EPIC-2.md) invariants first, then the design spec |
-| Ship a version | Bump [VERSION](VERSION) + add the CHANGELOG entry in the same commit (RULE-1) |
+| Ship a version | Bump [VERSION](VERSION) + add the CHANGELOG entry in the same commit (RULE-1). The version lives in **three** places — `VERSION`, `package.json`, and `SERVER_VERSION` in `src/config.ts`; a test fails if they drift |
+| Add an env var | [docs/SETUP.md](docs/SETUP.md) **and** `.env.example`, same commit (RULE-11) |
 | Commit | Walk the checklist in [docs/README.md](docs/README.md) |
 
 ## Environment
@@ -145,9 +174,13 @@ npm run test:smoke        # one live call; needs SENTI_SMOKE_KEY in .env.local
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
 | `SENTI_API_KEY` | yes | — | First-party key, `sq_live_…`. The server exits at startup without it. |
-| `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. |
+| `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. Must be a bare origin — `https:` or `http:`, no query or fragment. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only. Read from a gitignored `.env.local`; absent means the smoke test skips rather than fails. |
 
+**The key must belong to the same environment `SENTI_API_BASE_URL` points at.** Keys
+are environment-bound and the default base URL is production, so a key issued
+elsewhere returns 401 however valid it is. That is the first thing to check on a 401,
+ahead of regenerating the key.
+
 Neither key is ever printed, logged, or committed. When adding a variable, RULE-11
-requires `SETUP.md` and `.env.example` in the same commit — both of which this repo will
-create at that moment, since neither exists yet.
+requires [docs/SETUP.md](docs/SETUP.md) and `.env.example` updated in the same commit.
