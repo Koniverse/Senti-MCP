@@ -1,11 +1,8 @@
 /**
  * Server identity. `server.ts` and the default User-Agent both read these, so
- * they stay in one place.
- *
- * `SERVER_NAME` is the MCP protocol identity a host displays, and is
- * deliberately unscoped — it does not track the npm package name
- * (`@koniverse/senti-mcp-server`). `SERVER_VERSION` *is* the package version
- * and must be bumped with it; `config.test.ts` fails if they drift.
+ * they stay in one place; keep in sync with package.json on release.
+ * `config.test.ts` fails if `SERVER_VERSION` drifts from `VERSION` or
+ * package.json.
  */
 export const SERVER_NAME = 'senti-mcp-server';
 export const SERVER_VERSION = '0.1.0';

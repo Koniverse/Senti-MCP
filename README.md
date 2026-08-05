@@ -1,4 +1,4 @@
-# @koniverse/senti-mcp-server
+# senti-mcp-server
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server that lets an AI
 assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
@@ -53,7 +53,7 @@ No install step — `npx` fetches the published package on first run:
   "mcpServers": {
     "senti": {
       "command": "npx",
-      "args": ["-y", "@koniverse/senti-mcp-server"],
+      "args": ["-y", "senti-mcp-server"],
       "env": {
         "SENTI_API_KEY": "sq_live_..."
       }
@@ -64,15 +64,14 @@ No install step — `npx` fetches the published package on first run:
 
 Restart the client; the `list_accounts` tool should appear.
 
-To pin a version, use `@koniverse/senti-mcp-server@0.1.0`. To install it as a
-command on your `PATH` instead:
+To pin a version, use `senti-mcp-server@0.1.0`. To put it on your `PATH`
+instead:
 
 ```bash
-npm install -g @koniverse/senti-mcp-server
+npm install -g senti-mcp-server
 ```
 
-That provides a `senti-mcp-server` binary usable as `"command":
-"senti-mcp-server"` with no `args`.
+Then the client block becomes `"command": "senti-mcp-server"` with no `args`.
 
 ### From a git checkout
 
