@@ -78,7 +78,18 @@ describe('MCP server', () => {
 
     const { tools } = await client.listTools();
 
-    expect(tools[0]?.inputSchema.properties ?? {}).toEqual({});
+    // No `?? {}` — that would pass whether `properties` is `{}` or absent, and
+    // the wire genuinely carries `"inputSchema":{"type":"object","properties":{}}`.
+    expect(tools[0]?.inputSchema.properties).toEqual({});
+  });
+
+  test('advertises itself as read-only against an open world', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+
+    expect(tools[0]?.annotations?.readOnlyHint).toBe(true);
+    expect(tools[0]?.annotations?.openWorldHint).toBe(true);
   });
 
   test('returns a readable summary and matching structured content', async () => {
@@ -112,6 +123,9 @@ describe('MCP server', () => {
 
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain('accounts:read');
+    // AC-15's second clause: an error result carries text only, because
+    // `structuredContent` would have to satisfy `outputSchema`.
+    expect(result.structuredContent).toBeUndefined();
   });
 
   test('surfaces the underlying network cause', async () => {

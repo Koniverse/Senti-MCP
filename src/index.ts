@@ -15,11 +15,26 @@ import { createServer } from './server.js';
 function main(): void {
   const config = loadConfig(process.env);
 
-  const handle = serveStdio(() => createServer(config));
+  const handle = serveStdio(() => createServer(config), {
+    // Out-of-band transport failures are otherwise silent, and this is the one
+    // process where a `console.log` cannot be used to investigate.
+    onerror: (error: Error) => {
+      console.error(`${SERVER_NAME}: transport error — ${error.message}`);
+    },
+  });
   console.error(`${SERVER_NAME} ${SERVER_VERSION} ready — serving ${config.baseUrl}`);
 
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-    process.once(signal, () => void handle.close());
+    // `close()` returns a promise that can reject. Left floating, an unhandled
+    // rejection turns a clean SIGTERM into a non-zero exit under Node's default
+    // `--unhandled-rejections=throw`.
+    process.once(signal, () => {
+      handle.close().catch((error: unknown) => {
+        console.error(
+          `${SERVER_NAME}: shutdown failed — ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+    });
   }
 }
 
