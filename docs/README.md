@@ -79,6 +79,10 @@ Walk every applicable item before committing.
 > column and corrupted curated `version_shipped` values. This repo also has no
 > `PRD.md` for it to write to. See [CONTEXT D3](CONTEXT.md).
 
+> **`STATUS.md` embeds a `Last generated:` timestamp**, so regenerating it always
+> produces a one-line diff even when no story changed. That is expected — the file
+> belongs in the commit that ran the checklist, not something to revert.
+
 > **`check-references.py` reports dangling references but still exits 0**, so it
 > cannot gate by exit code — read its output. On a standalone koni-docs install it
 > reports **3 expected** cross-skill misses (`koni-nextjs/SKILL.md`,

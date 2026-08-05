@@ -10,6 +10,31 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md`
 
+**Stories:** this plan executes three koni-docs stories under
+[EPIC-2](../../sprints/epics/EPIC-2.md), in
+[sprint-2026-W32](../../sprints/sprint-2026-W32.md). The story files hold the
+acceptance criteria; this plan holds the code.
+
+| Plan tasks | Story |
+|---|---|
+| 1–3 | [US-2.1 — Authenticated Senti API client substrate](../../sprints/stories/US-2.1-authenticated-senti-api-client.md) |
+| 4–5 | [US-2.2 — `list_accounts` tool over MCP stdio](../../sprints/stories/US-2.2-list-accounts-tool.md) |
+| 6 | [US-2.3 — Live smoke test, README, and the v0.1.0 release](../../sprints/stories/US-2.3-live-smoke-test-and-readme.md) |
+
+> **Read this before Task 1.** The repo adopted koni-docs in
+> [US-1.1](../../sprints/stories/US-1.1-adopt-koni-docs-framework.md), which landed
+> after this plan was written. Two consequences:
+>
+> 1. **`package.json`, `VERSION`, `AGENTS.md` and `CLAUDE.md` already exist.** Task 1
+>    Step 1 has been rewritten to *extend* `package.json` rather than create it —
+>    recreating it drops the `@koniverse/koni-docs` devDependency and the `agile:*`
+>    scripts.
+> 2. **Every commit here updates docs in the same commit** (RULE-1). Flip the story's
+>    `status:` to `in-progress` before starting it, mark its tasks `[x]` as you finish
+>    them rather than all at the end (RULE-10), and walk the checklist in
+>    [docs/README.md](../../README.md) before each commit. The `[0.1.0]` CHANGELOG entry
+>    and the `VERSION` it describes land together in Task 6.
+
 ## Global Constraints
 
 - Package name `senti-mcp-server`; binary name `senti-mcp-server`; `"type": "module"`; `engines.node >= 20`.
@@ -22,6 +47,20 @@
 - Nothing may write to `stdout` — that stream carries JSON-RPC frames. Diagnostics go to `stderr`.
 - Every file uses `.js` extensions in relative imports (NodeNext resolution).
 - Zod is imported as `import * as z from 'zod/v4'`.
+
+### Commit discipline (added by the koni-docs adoption)
+
+- **Every commit message carries a conventional prefix** (RULE-14): `feat:` `fix:`
+  `chore:` `docs:` `style:` `refactor:` `test:`. The messages in this plan were written
+  before the adoption and have been updated accordingly.
+- **`VERSION` and `CHANGELOG.md` move once, in Task 6 Step 9** — not on every commit.
+  RULE-1 binds a *shipping* commit: `VERSION` and its changelog entry travel together.
+  Tasks 1–5 are intra-story commits, so each one marks its story's task boxes `[x]`
+  (RULE-10) and leaves `VERSION` and `CHANGELOG.md` alone. Each story's
+  `## Changelog entry` section is the draft that Task 6 merges into the `[0.1.0]` entry.
+- **A commit never contains its own SHA** (RULE-2). Story `commit:` fields are backfilled
+  by a follow-up commit, never `--amend`-ed in.
+- **English only** for code, comments, errors, commits, and docs (RULE-13).
 
 ## File Structure
 
@@ -41,8 +80,11 @@ Task order follows the dependency chain: 1 → 2 → 3 → 4 → 5 → 6. Task 4
 
 ### Task 1: Scaffolding and configuration
 
+**Story:** [US-2.1](../../sprints/stories/US-2.1-authenticated-senti-api-client.md) —
+TASK-2.1.1 and TASK-2.1.2, satisfying AC-1 and AC-2.
+
 **Files:**
-- Create: `package.json`
+- **Modify**: `package.json` (it already exists — see Step 1)
 - Create: `tsconfig.json`
 - Create: `src/config.ts`
 - Test: `src/config.test.ts`
@@ -51,23 +93,26 @@ Task order follows the dependency chain: 1 → 2 → 3 → 4 → 5 → 6. Task 4
 - Consumes: nothing.
 - Produces: `SERVER_NAME: string`, `SERVER_VERSION: string`, `type Config = { baseUrl: string; apiKey: string }`, `loadConfig(env: NodeJS.ProcessEnv): Config`.
 
-- [ ] **Step 1: Create `package.json`**
+- [ ] **Step 1: Extend the existing `package.json`**
 
-```json
+`package.json` already exists — US-1.1 created it with the project identity, the
+`@koniverse/koni-docs` devDependency, and the two `agile:*` scripts. **Do not overwrite
+it.** Add the runtime keys with `Edit`, leaving everything already present intact:
+
+```jsonc
 {
-  "name": "senti-mcp-server",
-  "version": "0.1.0",
-  "description": "MCP server exposing the Senti Quant Public API to an AI host",
-  "type": "module",
+  // ── keep as-is: name, version, description, type, private, engines,
+  //    keywords, license, author, repository ──
+
+  // ── add ──
   "bin": {
     "senti-mcp-server": "./dist/index.js"
   },
   "files": [
     "dist"
   ],
-  "engines": {
-    "node": ">=20"
-  },
+
+  // ── add to the EXISTING scripts block, keeping agile:status + agile:validate ──
   "scripts": {
     "build": "tsc && chmod +x dist/index.js",
     "dev": "tsx src/index.ts",
@@ -76,22 +121,14 @@ Task order follows the dependency chain: 1 → 2 → 3 → 4 → 5 → 6. Task 4
     "test:smoke": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/smoke.test.ts",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "senti",
-    "trading"
-  ],
-  "license": "MIT",
-  "author": "bluezdot <thanhtruong27701@gmail.com>",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Koniverse/Senti-MCP.git"
-  },
+
+  // ── add ──
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",
     "zod": "^4.2.0"
   },
+
+  // ── add to the EXISTING devDependencies, keeping @koniverse/koni-docs ──
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.0.0",
     "@types/node": "^22.10.0",
@@ -101,6 +138,21 @@ Task order follows the dependency chain: 1 → 2 → 3 → 4 → 5 → 6. Task 4
   }
 }
 ```
+
+`"private": true` stays. v1 is not published to npm (design spec §Packaging), and the
+flag is what prevents an accidental `npm publish` of a package whose `files` field is
+already correct. Remove it in the commit that actually publishes.
+
+Verify nothing was lost:
+
+```bash
+node -e "const p=require('./package.json');
+  const s=Object.keys(p.scripts);
+  console.log('agile scripts kept:', s.includes('agile:status') && s.includes('agile:validate'));
+  console.log('koni-docs devDep kept:', '@koniverse/koni-docs' in p.devDependencies);"
+```
+
+Both must print `true`.
 
 - [ ] **Step 2: Create `tsconfig.json`**
 
@@ -252,8 +304,9 @@ Expected: exit 0, no output.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add package.json package-lock.json tsconfig.json src/config.ts src/config.test.ts
-git commit -m "Add project scaffolding and configuration loading
+git add package.json package-lock.json tsconfig.json src/config.ts src/config.test.ts \
+        docs/sprints/stories/US-2.1-authenticated-senti-api-client.md
+git commit -m "chore: add project scaffolding and configuration loading
 
 The API key is an environment variable rather than a tool parameter: tool
 parameters live in the model's context and from there reach transcripts and
@@ -264,6 +317,9 @@ first; a wrong host fails fast with 401 rather than serving wrong data."
 ---
 
 ### Task 2: Error vocabulary
+
+**Story:** [US-2.1](../../sprints/stories/US-2.1-authenticated-senti-api-client.md) —
+TASK-2.1.3, satisfying AC-3 and AC-4.
 
 **Files:**
 - Create: `src/errors.ts`
@@ -410,8 +466,9 @@ Expected: PASS, 9 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/errors.ts src/errors.test.ts
-git commit -m "Add ApiError and cause-chain error rendering
+git add src/errors.ts src/errors.test.ts \
+        docs/sprints/stories/US-2.1-authenticated-senti-api-client.md
+git commit -m "feat: add ApiError and cause-chain error rendering
 
 fetch rejects with a bare 'fetch failed' and buries the real reason in cause,
 so a tool error that does not flatten the chain tells the reader nothing."
@@ -420,6 +477,13 @@ so a tool error that does not flatten the chain tells the reader nothing."
 ---
 
 ### Task 3: HTTP client with auth and error mapping
+
+**Story:** [US-2.1](../../sprints/stories/US-2.1-authenticated-senti-api-client.md) —
+TASK-2.1.4 and TASK-2.1.5, satisfying AC-5 through AC-15.
+
+**Completes US-2.1's code.** Flip its `status:` to `review`, not `done` — RULE-16 makes
+`version_shipped` mandatory the moment a story reads `done`, and nothing has shipped
+until Task 6 cuts 0.1.0. All three stories flip to `done` together there.
 
 **Files:**
 - Create: `src/client.ts`
@@ -752,8 +816,9 @@ Expected: exit 0.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/client.ts src/client.test.ts
-git commit -m "Add Senti API client with auth and status mapping
+git add src/client.ts src/client.test.ts \
+        docs/sprints/stories/US-2.1-authenticated-senti-api-client.md
+git commit -m "feat: add Senti API client with auth and status mapping
 
 403 on this API always means the key lacks a scope, never that the account is
 off limits, so the message says so and names the scope the caller asked for.
@@ -766,6 +831,9 @@ Tests assert the key appears in no error branch's output."
 ---
 
 ### Task 4: Account schema and formatting
+
+**Story:** [US-2.2](../../sprints/stories/US-2.2-list-accounts-tool.md) — TASK-2.2.1,
+satisfying AC-1 through AC-9.
 
 **Files:**
 - Create: `src/accounts.ts`
@@ -1027,8 +1095,9 @@ Expected: PASS, 16 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/accounts.ts src/accounts.test.ts
-git commit -m "Add account schema, validation, and text rendering
+git add src/accounts.ts src/accounts.test.ts \
+        docs/sprints/stories/US-2.2-list-accounts-tool.md
+git commit -m "feat: add account schema, validation, and text rendering
 
 Null balances render as an em dash rather than 0. For a trading API the
 difference between 'never synced' and 'balance is zero' is real, and
@@ -1041,6 +1110,10 @@ to the model."
 ---
 
 ### Task 5: MCP server and stdio entry point
+
+**Story:** [US-2.2](../../sprints/stories/US-2.2-list-accounts-tool.md) — TASK-2.2.2
+through TASK-2.2.4, satisfying AC-10 through AC-20. Flip US-2.2 to `review` when done,
+for the same reason as Task 3.
 
 **Files:**
 - Create: `src/server.ts`
@@ -1350,8 +1423,9 @@ Expected: prints `senti-mcp-server 0.1.0 ready — serving https://api.sentitrad
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/server.ts src/index.ts src/server.test.ts
-git commit -m "Register the list_accounts tool and the stdio entry point
+git add src/server.ts src/index.ts src/server.test.ts \
+        docs/sprints/stories/US-2.2-list-accounts-tool.md
+git commit -m "feat: register the list_accounts tool and the stdio entry point
 
 structuredContent wraps the array under an 'accounts' key. The SDK does not
 reject a bare array — it wraps non-object values as {result: …} on the 2025
@@ -1364,11 +1438,15 @@ take; without it a model reaches for the MT5 account number."
 
 ---
 
-### Task 6: Smoke test against the real API, and the README
+### Task 6: Smoke test against the real API, the README, and the v0.1.0 release
+
+**Story:** [US-2.3](../../sprints/stories/US-2.3-live-smoke-test-and-readme.md) — all
+tasks, satisfying AC-1 through AC-13. This task also **closes the sprint**: see Step 9.
 
 **Files:**
 - Create: `src/smoke.test.ts`
 - Create: `README.md`
+- Modify: `docs/CHANGELOG.md`, `docs/sprints/**` (Step 9)
 
 **Interfaces:**
 - Consumes: `loadConfig` (Task 1), `createClient` (Task 3), `parseAccounts`/`formatAccounts` (Task 4).
@@ -1536,17 +1614,63 @@ Expected: an MIT license file. If the fetch fails, copy `../read-mcp-server/LICE
 Run: `npm test && npm run typecheck && npm run build`
 Expected: all pass.
 
-- [ ] **Step 8: Commit and push**
+- [ ] **Step 8: Commit the smoke test and the README**
 
 ```bash
 git add src/smoke.test.ts README.md LICENSE
-git commit -m "Add live smoke test and README
+git commit -m "test: add live smoke test and README
 
 Every other test stubs fetch, so nothing in the suite demonstrated the code
 works against the real service. This one does, gated on a key in .env.local so
 CI skips rather than fails."
-git push
 ```
+
+- [ ] **Step 9: Release v0.1.0 and close the sprint**
+
+This is the commit RULE-1 governs: `VERSION` and its CHANGELOG entry land together, and
+the stories flip in the same commit.
+
+1. **`docs/CHANGELOG.md`** — add the `[0.1.0]` entry, built by merging the
+   `## Changelog entry` sections of US-2.1, US-2.2 and US-2.3. Header format:
+   `## [0.1.0] — <today> — First release: authenticated Senti client and list_accounts — v0.1.0`.
+   **Anchor the edit on the `## [Unreleased]` header**, not on any version header — see
+   [changelog.md §3](../../../.agents/skills/koni-docs/references/templates/changelog.md).
+   No SHA in the entry (RULE-2).
+2. **`VERSION`** already reads `0.1.0`; confirm rather than bump. US-1.1 set it as the
+   unreleased target, and this is the commit that makes it true.
+3. **Stories** — flip US-1.1, US-2.1, US-2.2, US-2.3 to `status: done` with
+   `version_shipped: 0.1.0` (bare, no `v` — RULE-16). Every task box `[x]` (RULE-10).
+   Fill each story's `## Implementation notes` and `## Files modified` sections.
+4. **`docs/sprints/sprint-2026-W32.md`** — `status: closed`, scope-table statuses to
+   ✅, and a real retrospective replacing the placeholder.
+5. **`docs/sprints/epics/EPIC-1.md` and `EPIC-2.md`** — `status: done` for EPIC-1;
+   EPIC-2 stays `in-progress` (16 read operations remain). Update both story tables.
+6. **`CLAUDE.md`** Active Context — sprint closed, stories ✅, `Last Version: 0.1.0`.
+7. **Regenerate and validate**: `npm run agile:status && npm run agile:validate`.
+   `validate` must exit 0.
+8. **Full suite**: `npm test && npm run typecheck && npm run build`.
+9. **Commit**, then tag:
+
+```bash
+git add -A
+git commit -m "feat: release v0.1.0 — list_accounts over MCP stdio
+
+Ships the first tool: list_accounts reads the MT5 accounts linked to the
+configured Senti Quant API key and returns them as both a text summary and
+structured content under an 'accounts' key.
+
+VERSION and the CHANGELOG entry land together (RULE-1). All four W32 stories
+flip to done with version_shipped 0.1.0; EPIC-1 closes, EPIC-2 stays open for
+the remaining 16 read operations."
+git tag v0.1.0
+```
+
+10. **Backfill the story `commit:` fields in a follow-up commit.** A commit cannot
+    contain its own SHA, and `--amend`-ing one in rewrites the commit and orphans the
+    SHA you just wrote (RULE-2). Read the SHA with `git rev-parse HEAD`, write it into
+    each story's `commit:` field, and commit that as
+    `docs: backfill v0.1.0 story commit SHAs`.
+11. **Push** — `git push && git push --tags`.
 
 ---
 
@@ -1557,5 +1681,23 @@ git push
 Two spec items are deliberately *not* implemented and are correct as such: the path-parameter encoding rule is a constraint on future work with no v1 code path (v1's path is a constant), and npm publishing is out of scope.
 
 **Placeholder scan.** No TBD, TODO, "similar to Task N", or "add error handling" steps. Every code step carries the actual code.
+
+**Amendment, 2026-08-05 — koni-docs alignment.** This plan was written before
+[US-1.1](../../sprints/stories/US-1.1-adopt-koni-docs-framework.md) adopted koni-docs,
+and five things in it were stale rather than wrong:
+
+1. Task 1 Step 1 created `package.json`. It now extends the existing one, which would
+   otherwise have silently lost the `@koniverse/koni-docs` devDependency and the
+   `agile:*` scripts. This was the only change that would have caused real damage.
+2. Every task now names the story it advances, and `git add` lines include that story
+   file so a task's completion and its record land in the same commit.
+3. All seven commit messages gained conventional prefixes (RULE-14).
+4. Task 6 gained Step 9, the release: `VERSION` plus the `[0.1.0]` CHANGELOG entry in
+   one commit (RULE-1), story flips with `version_shipped`, sprint close, and the SHA
+   backfill as a *follow-up* commit rather than an `--amend` (RULE-2).
+5. Tasks 3 and 5 flip their stories to `review`, not `done` — RULE-16 makes
+   `version_shipped` mandatory at `done`, and nothing has shipped until Step 9.
+
+Nothing about the design, the file layout, the schemas, or the test expectations changed.
 
 **Type consistency.** `Config` is `{ baseUrl, apiKey }` in Task 1 and used with those names in Tasks 3, 5, 6. `SentiClient.get(path, options)` is defined in Task 3 and called with `{ signal, scope }` in Task 5 and `{ scope }` in Task 6. `parseAccounts`/`formatAccounts`/`AccountsOutputSchema` are defined in Task 4 and imported under those names in Tasks 5 and 6. `ApiError(message, status, code?)` is defined in Task 2 and constructed with that arity in Task 3. `describeError` is defined in Task 2 and called in Task 5. `ServerDeps`/`ClientDeps` both use the `{ fetch?: typeof fetch }` shape, and Task 5 passes `deps.fetch` straight through to `createClient`.

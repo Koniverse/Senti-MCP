@@ -70,7 +70,7 @@ Constraints every story in this epic upholds, and that later epics inherit:
 
 | US | Title | Pri | Points | Status |
 |---|---|---|---|---|
-| [US-1.1](../stories/US-1.1-adopt-koni-docs-framework.md) | Adopt koni-docs as this repo's documentation framework | P1 | 3 | 🚧 in-progress |
+| [US-1.1](../stories/US-1.1-adopt-koni-docs-framework.md) | Adopt koni-docs as this repo's documentation framework | P1 | 3 | 👀 review |
 
 ## Cross-references
 

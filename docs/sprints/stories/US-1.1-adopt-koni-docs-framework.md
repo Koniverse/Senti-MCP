@@ -2,7 +2,7 @@
 id: US-1.1
 title: "Adopt koni-docs as this repo's documentation framework"
 epic: EPIC-1
-status: in-progress
+status: review
 priority: P1
 points: 3
 sprint: sprint-2026-W32
@@ -72,19 +72,26 @@ are documented in [CONTEXT D2 and D3](../../CONTEXT.md).
   `npm run agile:validate` runs, **Then** it exits 0 — achieved by omitting `prd_ref`
   and `arch_ref` entirely rather than filling them with placeholders, which RULE-17
   forbids.
-- [ ] **AC-11** — `npm run agile:status` generates `docs/sprints/STATUS.md`, and running
-  it twice leaves no diff. The file is never hand-edited afterwards (RULE-5).
+- [x] **AC-11** — `npm run agile:status` generates `docs/sprints/STATUS.md` listing all
+  four stories under their epics and sprint, and its content is deterministic **apart
+  from the `Last generated:` timestamp line** it embeds. The file is never hand-edited
+  afterwards (RULE-5).
 - [x] **AC-12** — `AGENTS.md` is the canonical project guide; `CLAUDE.md` holds a
   pointer to it, the `Koni-Docs Integration` block naming `sprint-2026-W32`, and an
   Active Context block between `<!-- koni-docs:auto-update -->` markers.
-- [ ] **AC-13** — **Given** `node_modules/`, `.agents/` and `.claude/skills` are all
-  deleted, **When** `npx skills experimental_install && npm install` runs, **Then** both
-  the skill and the CLI are restored from committed state. This is the portability claim
-  that justified vendoring over a symlink, actually exercised.
-- [ ] **AC-14** — The v1 implementation plan's Task 1 Step 1 extends `package.json`
+- [x] **AC-13** — **Given** a fresh clone of this repo on a machine with no `Koni-Skills`
+  checkout, **When** `npm install` runs, **Then** `.claude/skills/koni-docs` resolves to
+  48 skill files **inside that clone**, **And** `npx koni-docs validate` exits 0 — with no
+  other setup step. This is the portability claim that justified vendoring over a symlink,
+  actually exercised.
+  > `npx skills experimental_install` restores the `.agents/skills/koni-docs` copy from
+  > the lockfile but does **not** recreate the `.claude/skills` symlink, so it is a
+  > lockfile-driven refresh rather than a full restore. Git is the restore path: both the
+  > vendored files and the symlink are tracked.
+- [x] **AC-14** — The v1 implementation plan's Task 1 Step 1 extends `package.json`
   rather than creating it, and each of its six tasks names the story it advances.
-- [ ] **AC-15** — All documentation is English (RULE-13) and every commit carries a
-  conventional prefix (RULE-14).
+- [x] **AC-15** — All documentation is English (RULE-13) and every commit carries a
+  conventional prefix (RULE-14), including the seven commit messages inside the v1 plan.
 
 ## Tasks
 
@@ -108,11 +115,11 @@ are documented in [CONTEXT D2 and D3](../../CONTEXT.md).
 - [x] **TASK-1.1.4** — Wire the agent surface (AC: 12)
   - [x] `AGENTS.md` as canonical project guide
   - [x] `CLAUDE.md` as pointer + integration block + Active Context
-- [ ] **TASK-1.1.5** — Generate, validate, hand off (AC: 11, 13, 14)
-  - [ ] `npm run agile:status`, then confirm a second run is a no-op
-  - [ ] `npm run agile:validate` exits 0
-  - [ ] Exercise the restore-from-committed-state path
-  - [ ] Amend the v1 implementation plan
+- [x] **TASK-1.1.5** — Generate, validate, hand off (AC: 11, 13, 14)
+  - [x] `npm run agile:status`, then confirm a second run differs only in its timestamp
+  - [x] `npm run agile:validate` exits 0
+  - [x] Exercise the restore-from-committed-state path via a fresh clone
+  - [x] Amend the v1 implementation plan
 
 ## Dev notes
 
@@ -171,9 +178,9 @@ are documented in [CONTEXT D2 and D3](../../CONTEXT.md).
 | AC-8 | `grep -c '^### D[0-9]' docs/CONTEXT.md` → `4` |
 | AC-9 | `for f in docs/sprints/**/*.md; do …` — every `id:` equals its basename stem (see AC-9 check below) |
 | AC-10 | `grep -rn 'prd_ref\|arch_ref' docs/sprints/` → no hits; `npm run agile:validate` exits 0 |
-| AC-11 | `npm run agile:status && npm run agile:status && git diff --exit-code docs/sprints/STATUS.md` |
+| AC-11 | `npm run agile:status && cp docs/sprints/STATUS.md /tmp/a && npm run agile:status && diff <(grep -v 'Last generated' /tmp/a) <(grep -v 'Last generated' docs/sprints/STATUS.md)` → no output |
 | AC-12 | `grep -c 'koni-docs:auto-update' CLAUDE.md` → `2`; `grep -n 'sprint-2026-W32' CLAUDE.md` |
-| AC-13 | `rm -rf node_modules .agents .claude/skills && npx skills experimental_install && npm install && test -f .agents/skills/koni-docs/SKILL.md` |
+| AC-13 | `git clone . /tmp/c && cd /tmp/c && npm install && test -f .claude/skills/koni-docs/SKILL.md && npx koni-docs validate --docs-path docs/`; then confirm the symlink target is inside the clone: `root=$(pwd -P); t=$(cd .claude/skills && cd -P koni-docs && pwd -P); case "$t" in "$root"/*) echo INSIDE;; esac` |
 | AC-14 | `grep -n 'Extend' docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md` names `package.json` |
 | AC-15 | `git log --format=%s | grep -cvE '^(feat|fix|chore|docs|style|refactor|test)(\(.+\))?: '` → `0` |
 
@@ -226,6 +233,19 @@ and `test-organization.md`, which belong to `koni-qc`. An isolated copy of prist
 upstream reports the same three, which is how they were confirmed to be inherent to
 installing koni-docs alone rather than evidence of a bad copy. Anything beyond those
 three is real.
+
+**`npx skills experimental_install` is not a full restore.** It rebuilds
+`.agents/skills/koni-docs` from the lockfile but leaves the `.claude/skills` symlink
+missing, so an agent looking in `.claude/skills` finds nothing. Git is the actual restore
+path — both the 48 vendored files and the symlink are tracked, so `git clone` plus
+`npm install` is sufficient and nothing else is needed. AC-13 was rewritten around the
+clone path after the `experimental_install` path was tried and came back incomplete.
+
+**`STATUS.md` is not byte-idempotent.** It embeds a `Last generated:` timestamp, so two
+runs a second apart differ on that line. AC-11 originally required "running it twice
+leaves no diff", which the generator cannot satisfy; it now requires determinism apart
+from that line. The practical consequence is that `STATUS.md` appears in the diff of
+every commit that regenerates it, which is expected rather than churn to suppress.
 
 **All 6 `npm audit` findings are dev-only**, arriving through koni-docs' Astro `preview`
 dependency chain (astro, vite, sharp, esbuild). `npm audit --omit=dev` reports 0. Nothing

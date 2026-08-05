@@ -10,7 +10,7 @@ goal: "Adopt koni-docs, then ship v0.1.0 — a list_accounts tool reading linked
 
 | US | Title | Epic | Pri | Points | Status | Story file |
 |---|---|---|---|---|---|---|
-| US-1.1 | Adopt koni-docs as this repo's documentation framework | EPIC-1 | P1 | 3 | 🚧 in-progress | [link](stories/US-1.1-adopt-koni-docs-framework.md) |
+| US-1.1 | Adopt koni-docs as this repo's documentation framework | EPIC-1 | P1 | 3 | 👀 review | [link](stories/US-1.1-adopt-koni-docs-framework.md) |
 | US-2.1 | Authenticated Senti API client substrate | EPIC-2 | P1 | 5 | 📋 backlog | [link](stories/US-2.1-authenticated-senti-api-client.md) |
 | US-2.2 | `list_accounts` tool over MCP stdio | EPIC-2 | P1 | 5 | 📋 backlog | [link](stories/US-2.2-list-accounts-tool.md) |
 | US-2.3 | Live smoke test and README | EPIC-2 | P2 | 2 | 📋 backlog | [link](stories/US-2.3-live-smoke-test-and-readme.md) |

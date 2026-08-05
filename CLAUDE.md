@@ -14,7 +14,7 @@ koni-docs:
 
 ## Active Context <!-- koni-docs:auto-update -->
 - Sprint: sprint-2026-W32 (2026-08-03 → 2026-08-09) — 4 stories / 15 points
-- Active Stories: 🟡 US-1.1 Adopt koni-docs as this repo's documentation framework
+- Active Stories: 👀 US-1.1 Adopt koni-docs as this repo's documentation framework — all AC met, awaiting the v0.1.0 release to flip to done (RULE-16 needs `version_shipped`)
 - Next Up: 📋 US-2.1 Authenticated Senti API client substrate → US-2.2 `list_accounts` tool → US-2.3 smoke test + README + v0.1.0
 - Last Version: none released. VERSION reads 0.1.0 as the unreleased target; the `[0.1.0]` CHANGELOG entry lands with the first `src/` commit (RULE-1)
 - Recent Decisions: D1 adopt koni-docs (reverses the design spec's closing paragraph) · D2 vendor via skills-lock.json, not a symlink · D3 wire `status` + `validate`, omit `sync` · D4 Active Context Pattern A
