@@ -2,7 +2,7 @@
 id: US-2.2
 title: "list_accounts tool over MCP stdio"
 epic: EPIC-2
-status: backlog
+status: in-progress
 priority: P1
 points: 5
 sprint: sprint-2026-W32
@@ -43,28 +43,28 @@ while it is at it.
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — `AccountSchema` accepts a well-formed account, accepts every nullable
+- [x] **AC-1** — `AccountSchema` accepts a well-formed account, accepts every nullable
   field being null, and strips fields it does not declare.
-- [ ] **AC-2** — **Given** a response missing a required field, **When** `parseAccounts`
+- [x] **AC-2** — **Given** a response missing a required field, **When** `parseAccounts`
   runs, **Then** it throws naming that field and stating the API may have changed — rather
   than passing malformed data to the model.
-- [ ] **AC-3** — **Given** a payload that is not an array, **When** `parseAccounts` runs,
+- [x] **AC-3** — **Given** a payload that is not an array, **When** `parseAccounts` runs,
   **Then** it throws reporting an unexpected shape.
-- [ ] **AC-4** — **Given** a null `lastKnownBalance` or `lastKnownEquity`, **When** the list
+- [x] **AC-4** — **Given** a null `lastKnownBalance` or `lastKnownEquity`, **When** the list
   is formatted, **Then** it renders as `—`, **And** the output contains neither `null` nor
   `0.00`.
-- [ ] **AC-5** — Non-null balances render with thousands separators and exactly two decimal
+- [x] **AC-5** — Non-null balances render with thousands separators and exactly two decimal
   places (`balance 10,432.11`, `equity 10,502.00`).
-- [ ] **AC-6** — A `lastSyncAt` timestamp renders as `synced <timestamp>`; a null one
+- [x] **AC-6** — A `lastSyncAt` timestamp renders as `synced <timestamp>`; a null one
   renders as `never synced`. The two are never conflated.
-- [ ] **AC-7** — Each entry shows `accountId: <id>` on its own line; an account with no
+- [x] **AC-7** — Each entry shows `accountId: <id>` on its own line; an account with no
   `label` falls back to `Account <login>`; running strategies render as
   `EAs: Name (status)` and the line is omitted when none are running; an inactive account
   is marked `inactive`.
-- [ ] **AC-8** — **Given** an empty account list, **When** it is formatted, **Then** the
+- [x] **AC-8** — **Given** an empty account list, **When** it is formatted, **Then** the
   output explains the likely reasons — nothing linked yet, or a key belonging to a
   different user — rather than returning nothing.
-- [ ] **AC-9** — The leading count agrees in number: `1 linked account.` / `2 linked
+- [x] **AC-9** — The leading count agrees in number: `1 linked account.` / `2 linked
   accounts.`
 - [ ] **AC-10** — `tools/list` reports exactly one tool, `list_accounts`, with
   `readOnlyHint: true` and `openWorldHint: true`, and an empty `inputSchema.properties`.
@@ -95,9 +95,9 @@ while it is at it.
 
 ## Tasks
 
-- [ ] **TASK-2.2.1** — `src/accounts.ts` + `src/accounts.test.ts` (AC: 1–9)
-  - [ ] `AccountSchema` (16 fields), `AccountsOutputSchema`, `parseAccounts`, `formatAccounts`
-  - [ ] Null numbers via a single `money()` helper so `—` cannot drift per call site
+- [x] **TASK-2.2.1** — `src/accounts.ts` + `src/accounts.test.ts` (AC: 1–9)
+  - [x] `AccountSchema` (16 fields), `AccountsOutputSchema`, `parseAccounts`, `formatAccounts`
+  - [x] Null numbers via a single `money()` helper so `—` cannot drift per call site
 - [ ] **TASK-2.2.2** — `src/server.ts` + `src/server.test.ts` (AC: 10–17, 20)
   - [ ] `createServer(config, deps)` registering `list_accounts`
   - [ ] Forward `ctx.mcpReq.signal`; pass `scope: 'accounts:read'`
