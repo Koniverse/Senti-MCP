@@ -177,12 +177,12 @@ are documented in [CONTEXT D2 and D3](../../CONTEXT.md).
 | AC-7 | `grep -c '^## \[0.1.0\]' docs/CHANGELOG.md` → `0`; `grep -in 'commit.*[0-9a-f]\{7,\}' docs/CHANGELOG.md` → no hits |
 | AC-8 | `grep -c '^### D[0-9]' docs/CONTEXT.md` → `4` |
 | AC-9 | `for f in docs/sprints/**/*.md; do …` — every `id:` equals its basename stem (see AC-9 check below) |
-| AC-10 | `grep -rn 'prd_ref\|arch_ref' docs/sprints/` → no hits; `npm run agile:validate` exits 0 |
+| AC-10 | Frontmatter only — a repo-wide grep also matches this story's prose explaining the omission: `for f in $(find docs/sprints -name '*.md' -not -name STATUS.md); do awk '/^---$/{n++;next} n==1{print} n>=2{exit}' "$f" \| grep -HE '^(prd_ref\|arch_ref):' && echo "$f"; done` → no output. Then `npm run agile:validate` exits 0 |
 | AC-11 | `npm run agile:status && cp docs/sprints/STATUS.md /tmp/a && npm run agile:status && diff <(grep -v 'Last generated' /tmp/a) <(grep -v 'Last generated' docs/sprints/STATUS.md)` → no output |
 | AC-12 | `grep -c 'koni-docs:auto-update' CLAUDE.md` → `2`; `grep -n 'sprint-2026-W32' CLAUDE.md` |
 | AC-13 | `git clone . /tmp/c && cd /tmp/c && npm install && test -f .claude/skills/koni-docs/SKILL.md && npx koni-docs validate --docs-path docs/`; then confirm the symlink target is inside the clone: `root=$(pwd -P); t=$(cd .claude/skills && cd -P koni-docs && pwd -P); case "$t" in "$root"/*) echo INSIDE;; esac` |
 | AC-14 | `grep -n 'Extend' docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md` names `package.json` |
-| AC-15 | `git log --format=%s | grep -cvE '^(feat|fix|chore|docs|style|refactor|test)(\(.+\))?: '` → `0` |
+| AC-15 | Commits from the adoption forward: `git log --format=%s 00f005f..HEAD \| grep -cvE '^(feat\|fix\|chore\|docs\|style\|refactor\|test)(\(.+\))?: '` → `0`. The two commits at and before `00f005f` predate RULE-14 and are already pushed; rewriting published history to satisfy a rule adopted afterwards would cost more than it buys |
 
 The AC-9 id/filename check (RULE-6):
 
