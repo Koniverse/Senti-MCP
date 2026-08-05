@@ -4,3 +4,10 @@ dist/
 .env.local
 *.log
 .DS_Store
+
+# Per-machine Claude Code permissions, not project config.
+.claude/settings.local.json
+
+# Byproduct of running the skills' Python helpers.
+__pycache__/
+*.pyc

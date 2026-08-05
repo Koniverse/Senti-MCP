@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "koni-docs": {
+      "source": "Koniverse/Koni-Skills",
+      "sourceType": "github",
+      "skillPath": "skills/koni-docs/SKILL.md",
+      "computedHash": "1a23d008fa6552a7b51ccf818881f1c5eb1e412b055929d2fb3d029483140eb2"
+    }
+  }
+}

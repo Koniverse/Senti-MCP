@@ -1,0 +1,29 @@
+{
+  "name": "senti-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server exposing the Senti Quant Public API to an AI host",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "agile:status": "koni-docs status --docs-path docs/",
+    "agile:validate": "koni-docs validate --docs-path docs/"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "senti",
+    "trading"
+  ],
+  "license": "MIT",
+  "author": "bluezdot <thanhtruong27701@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Koniverse/Senti-MCP.git"
+  },
+  "devDependencies": {
+    "@koniverse/koni-docs": "^0.12.0"
+  }
+}
