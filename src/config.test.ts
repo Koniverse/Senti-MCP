@@ -1,7 +1,11 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
-import { loadConfig } from './config.js';
+import { SERVER_VERSION, loadConfig } from './config.js';
 
 const KEY = 'sq_live_testkey';
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 describe('loadConfig', () => {
   test('rejects a missing API key with instructions for creating one', () => {
@@ -43,5 +47,57 @@ describe('loadConfig', () => {
 
   test('keeps the API key verbatim', () => {
     expect(loadConfig({ SENTI_API_KEY: KEY }).apiKey).toBe(KEY);
+  });
+
+  test('returns a frozen Config', () => {
+    const config = loadConfig({ SENTI_API_KEY: KEY });
+
+    expect(Object.isFrozen(config)).toBe(true);
+  });
+
+  test('rejects a scheme this client cannot fetch, naming the value', () => {
+    for (const value of ['file:///etc/passwd', 'foo:bar', 'data:text/plain,x']) {
+      expect(() => loadConfig({ SENTI_API_KEY: KEY, SENTI_API_BASE_URL: value })).toThrow(
+        /must use https: or http:/,
+      );
+      expect(() => loadConfig({ SENTI_API_KEY: KEY, SENTI_API_BASE_URL: value })).toThrow(value);
+    }
+  });
+
+  test('allows http: for a local API, and says why that is the weaker choice', () => {
+    const config = loadConfig({
+      SENTI_API_KEY: KEY,
+      SENTI_API_BASE_URL: 'http://localhost:3000',
+    });
+
+    expect(config.baseUrl).toBe('http://localhost:3000');
+  });
+
+  test('rejects a base URL carrying a query string or fragment', () => {
+    // `https://host?x=1` would otherwise be joined into the unreachable
+    // `https://host/?x=1/api/v1/accounts`.
+    for (const value of ['https://be-dev.sentitrade.xyz?x=1', 'https://be-dev.sentitrade.xyz#frag']) {
+      expect(() => loadConfig({ SENTI_API_KEY: KEY, SENTI_API_BASE_URL: value })).toThrow(
+        /no query string or fragment/,
+      );
+      expect(() => loadConfig({ SENTI_API_KEY: KEY, SENTI_API_BASE_URL: value })).toThrow(value);
+    }
+  });
+});
+
+/**
+ * `SERVER_VERSION` is a third copy of the version string, and koni-docs only
+ * checks `VERSION` against `package.json`. Without this the three drift apart
+ * silently and the server reports a version it is not.
+ */
+describe('SERVER_VERSION', () => {
+  test('matches package.json and VERSION', () => {
+    const packageVersion = (
+      JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')) as { version: string }
+    ).version;
+    const versionFile = readFileSync(path.join(repoRoot, 'VERSION'), 'utf8').trim();
+
+    expect(SERVER_VERSION).toBe(packageVersion);
+    expect(SERVER_VERSION).toBe(versionFile);
   });
 });

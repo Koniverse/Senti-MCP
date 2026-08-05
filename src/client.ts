@@ -50,13 +50,19 @@ function failureOf(
   scope: string | undefined,
 ): ApiError {
   const { code, message } = envelopeOf(body);
-  const detail = message ? ` — ${message}` : '';
+  // Each template below ends its own sentence, so an envelope message that
+  // already carries a terminator would render as "…Insufficient scope.. The API
+  // key is missing…". Drop the envelope's, keep the template's.
+  const trimmed = message?.trim().replace(/\.$/, '') ?? '';
+  const detail = trimmed ? ` — ${trimmed}` : '';
 
   switch (status) {
     case 401:
       return new ApiError(
         `Senti API rejected the credentials (401)${detail}. Check SENTI_API_KEY; ` +
-          'first-party keys look like "sq_live_…".',
+          'first-party keys look like "sq_live_…". The key must also belong to the ' +
+          'environment SENTI_API_BASE_URL points at — a key issued in one environment ' +
+          'returns 401 against another.',
         status,
         code,
       );

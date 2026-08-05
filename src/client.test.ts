@@ -151,4 +151,68 @@ describe('createClient', () => {
 
     await expect(promise).rejects.toThrow(/fetch failed/);
   });
+
+  test('names the environment as a 401 cause, not only the key', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('UNAUTHENTICATED', 'Invalid API key.'), 401));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts');
+
+    await expect(promise).rejects.toThrow(/SENTI_API_BASE_URL/);
+  });
+
+  test('does not double the sentence terminator after an envelope message', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('FORBIDDEN', 'Insufficient scope.'), 403));
+
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/accounts', { scope: 'accounts:read' })
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
+
+    expect(message).toContain('Insufficient scope. The API key is missing');
+    expect(message).not.toContain('..');
+  });
+
+  test('leaves an envelope message that carries no terminator alone', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('INTERNAL', 'Upstream broker down'), 500));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts');
+
+    await expect(promise).rejects.toThrow(/— Upstream broker down\./);
+  });
+
+  /**
+   * The caller-signal test above proves a signal reaches `fetch`; it passes just
+   * as happily with a 15 ms timeout as a 15 s one. This pins the timeout leg:
+   * the delay it is created with, and that firing it rejects the in-flight
+   * request. Fake timers cannot drive `AbortSignal.timeout` — Node schedules it
+   * on internal timers rather than the patched global — so the signal itself is
+   * substituted instead.
+   */
+  test('arms the 15s fetch timeout and aborts a hung request when it fires', async () => {
+    const controller = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+
+    try {
+      // Rejecting on abort is what a real `fetch` does; a stub that only hangs
+      // would leave the assertion below waiting forever.
+      const hanging = ((_url: string | URL, init: RequestInit = {}) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => {
+            reject((init.signal as AbortSignal).reason as Error);
+          });
+        })) as unknown as typeof fetch;
+
+      const promise = createClient(config, { fetch: hanging }).get('/api/v1/accounts');
+
+      expect(timeout).toHaveBeenCalledWith(15_000);
+
+      controller.abort(new DOMException('The operation timed out.', 'TimeoutError'));
+
+      await expect(promise).rejects.toThrow(/timed out/i);
+    } finally {
+      timeout.mockRestore();
+    }
+  });
 });
