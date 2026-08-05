@@ -2,7 +2,7 @@
 id: US-2.1
 title: "Authenticated Senti API client substrate"
 epic: EPIC-2
-status: in-progress
+status: review
 priority: P1
 points: 5
 sprint: sprint-2026-W32
@@ -44,44 +44,44 @@ Neither `client.ts` nor the modules above it import the MCP SDK. Only `server.ts
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** `SENTI_API_KEY` is absent or blank, **When** `loadConfig` runs,
+- [x] **AC-1** — **Given** `SENTI_API_KEY` is absent or blank, **When** `loadConfig` runs,
   **Then** it throws a message naming the variable **And** pointing at the API Keys
   dashboard, so the reader knows how to fix it rather than only what broke.
-- [ ] **AC-2** — `loadConfig` defaults `baseUrl` to `https://api.sentitrade.xyz`, honours
+- [x] **AC-2** — `loadConfig` defaults `baseUrl` to `https://api.sentitrade.xyz`, honours
   `SENTI_API_BASE_URL`, strips trailing slashes, and rejects a non-absolute value with a
   message quoting the offending input. The returned `Config` is frozen.
-- [ ] **AC-3** — `ApiError` carries `status` and the envelope's `code`, is an `instanceof
+- [x] **AC-3** — `ApiError` carries `status` and the envelope's `code`, is an `instanceof
   Error`, and reports `name === 'ApiError'`, so callers can branch on status without
   re-parsing a message string.
-- [ ] **AC-4** — **Given** an error whose real reason sits in `cause`, **When**
+- [x] **AC-4** — **Given** an error whose real reason sits in `cause`, **When**
   `describeError` renders it, **Then** the output joins the chain (`fetch failed: Connect
   Timeout Error …`), reads a `code` off a non-`Error` cause, does not repeat an identical
   message twice, and terminates on a self-referencing chain.
-- [ ] **AC-5** — **Given** any request, **When** it is sent, **Then** the headers include
+- [x] **AC-5** — **Given** any request, **When** it is sent, **Then** the headers include
   `Authorization: Bearer <key>`, `Accept: application/json`, and a `User-Agent` of
   `senti-mcp-server/<version>`, **And** the URL is the configured base joined to the path.
-- [ ] **AC-6** — A 200 response returns its parsed JSON body as `unknown`. Validation is
+- [x] **AC-6** — A 200 response returns its parsed JSON body as `unknown`. Validation is
   not the client's job.
-- [ ] **AC-7** — **Given** a 401, **When** the client maps it, **Then** the message names
+- [x] **AC-7** — **Given** a 401, **When** the client maps it, **Then** the message names
   `SENTI_API_KEY` and the `sq_live_…` key shape.
-- [ ] **AC-8** — **Given** a 403 and a caller-supplied `scope`, **When** the client maps
+- [x] **AC-8** — **Given** a 403 and a caller-supplied `scope`, **When** the client maps
   it, **Then** the message names that scope **And** states that the account is not off
   limits — the misreading this mapping exists to prevent.
-- [ ] **AC-9** — **Given** a 429 carrying `X-RateLimit-Limit` / `X-RateLimit-Remaining`,
+- [x] **AC-9** — **Given** a 429 carrying `X-RateLimit-Limit` / `X-RateLimit-Remaining`,
   **When** the client maps it, **Then** the message quotes both values.
-- [ ] **AC-10** — Other statuses pass the envelope's `message` through alongside the HTTP
+- [x] **AC-10** — Other statuses pass the envelope's `message` through alongside the HTTP
   status.
-- [ ] **AC-11** — **Given** a response body that is not JSON — a proxy error page on a
+- [x] **AC-11** — **Given** a response body that is not JSON — a proxy error page on a
   502, or a 200 with a malformed body — **When** the client reads it, **Then** the real
   status survives in the error rather than being masked by a JSON parse failure.
-- [ ] **AC-12** — **Given** a caller `AbortSignal`, **When** a request is made, **Then**
+- [x] **AC-12** — **Given** a caller `AbortSignal`, **When** a request is made, **Then**
   `fetch` receives a signal combining it with the 15s timeout, so whichever fires first
   wins.
-- [ ] **AC-13** — **The API key appears in no error branch's output.** Asserted across
+- [x] **AC-13** — **The API key appears in no error branch's output.** Asserted across
   401, 403, 429, 500 and 502.
-- [ ] **AC-14** — `npm test` passes with 27 tests across `config.test.ts` (7),
+- [x] **AC-14** — `npm test` passes with 27 tests across `config.test.ts` (7),
   `errors.test.ts` (9), and `client.test.ts` (11); `npm run typecheck` exits 0.
-- [ ] **AC-15** — No file in this story imports from `@modelcontextprotocol/*`.
+- [x] **AC-15** — No file in this story imports from `@modelcontextprotocol/*`.
 
 ## Tasks
 
@@ -92,13 +92,13 @@ Neither `client.ts` nor the modules above it import the MCP SDK. Only `server.ts
   - [x] `tsconfig.json`: NodeNext, strict, `noUncheckedIndexedAccess`, `outDir: dist`
 - [x] **TASK-2.1.2** — `src/config.ts` + `src/config.test.ts` (AC: 1, 2)
 - [x] **TASK-2.1.3** — `src/errors.ts` + `src/errors.test.ts` (AC: 3, 4)
-- [ ] **TASK-2.1.4** — `src/client.ts` + `src/client.test.ts` (AC: 5–13)
-  - [ ] `createClient(config, deps)` returning `{ get(path, options) }`
-  - [ ] Read the body as text, then parse defensively — never `response.json()` first
-  - [ ] `AbortSignal.any([callerSignal, timeout])`
-- [ ] **TASK-2.1.5** — Verify (AC: 14, 15)
-  - [ ] `npm test`, `npm run typecheck`
-  - [ ] Confirm no MCP import: `grep -rn '@modelcontextprotocol' src/config.ts src/errors.ts src/client.ts`
+- [x] **TASK-2.1.4** — `src/client.ts` + `src/client.test.ts` (AC: 5–13)
+  - [x] `createClient(config, deps)` returning `{ get(path, options) }`
+  - [x] Read the body as text, then parse defensively — never `response.json()` first
+  - [x] `AbortSignal.any([callerSignal, timeout])`
+- [x] **TASK-2.1.5** — Verify (AC: 14, 15)
+  - [x] `npm test`, `npm run typecheck`
+  - [x] Confirm no MCP import: `grep -rn '@modelcontextprotocol' src/config.ts src/errors.ts src/client.ts`
 
 ## Dev notes
 
