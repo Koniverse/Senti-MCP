@@ -2,7 +2,8 @@
 id: US-2.1
 title: "Authenticated Senti API client substrate"
 epic: EPIC-2
-status: review
+status: done
+version_shipped: 0.1.0
 priority: P1
 points: 5
 sprint: sprint-2026-W32
@@ -167,11 +168,38 @@ Neither `client.ts` nor the modules above it import the MCP SDK. Only `server.ts
 
 ## Implementation notes
 
-_Filled during implementation._
+Built exactly to the v1 plan's Tasks 1–3, with no deviation worth recording as a
+decision. `loadConfig` rejects a blank or absent `SENTI_API_KEY` before anything else
+runs, so a misconfigured host never gets far enough to make a network call. `client.ts`
+reads the response body as text before attempting `JSON.parse`, which is what keeps a
+502 from a proxy — HTML, not JSON — from being reported as a parse failure instead of
+the real status.
+
+The 403 mapping (AC-8) and the `cause`-chain flattening in `describeError` (AC-4) are
+the two pieces of this story with genuine judgment calls, and both are exercised by
+`client.test.ts` and `errors.test.ts` rather than left to manual inspection. AC-13 (the
+key appears in no error branch) is asserted across 401/403/429/500/502, not just spot
+checked.
+
+`npm test` passes 27 tests across the three new files (`config.test.ts` 7,
+`errors.test.ts` 9, `client.test.ts` 11); `npm run typecheck` is clean.
+[US-2.3](US-2.3-live-smoke-test-and-readme.md) later exercises this client against the
+live development API and confirms the contract holds outside the stubbed-fetch suite.
 
 ## Files modified
 
-_Filled during implementation._
+**Created:**
+- `src/config.ts` (44 lines) — `loadConfig(env)`
+- `src/config.test.ts` (47 lines)
+- `src/errors.ts` (52 lines) — `ApiError`, `describeError`
+- `src/errors.test.ts` (60 lines)
+- `src/client.ts` (133 lines) — `createClient(config, deps)`
+- `src/client.test.ts` (154 lines)
+
+**Modified:**
+- `package.json` — `bin`, `files`, build/test/typecheck scripts, `keywords`, runtime
+  deps (`@modelcontextprotocol/server`, `zod`), remaining devDeps
+- `tsconfig.json` — created: NodeNext, strict, `noUncheckedIndexedAccess`, `outDir: dist`
 
 ## Cross-references
 

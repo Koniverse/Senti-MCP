@@ -1,6 +1,6 @@
 ---
 id: sprint-2026-W32
-status: in-progress
+status: closed
 start: 2026-08-03
 end: 2026-08-09
 goal: "Adopt koni-docs, then ship v0.1.0 — a list_accounts tool reading linked MT5 accounts from the Senti Quant Public API"
@@ -10,10 +10,10 @@ goal: "Adopt koni-docs, then ship v0.1.0 — a list_accounts tool reading linked
 
 | US | Title | Epic | Pri | Points | Status | Story file |
 |---|---|---|---|---|---|---|
-| US-1.1 | Adopt koni-docs as this repo's documentation framework | EPIC-1 | P1 | 3 | 👀 review | [link](stories/US-1.1-adopt-koni-docs-framework.md) |
-| US-2.1 | Authenticated Senti API client substrate | EPIC-2 | P1 | 5 | 📋 backlog | [link](stories/US-2.1-authenticated-senti-api-client.md) |
-| US-2.2 | `list_accounts` tool over MCP stdio | EPIC-2 | P1 | 5 | 📋 backlog | [link](stories/US-2.2-list-accounts-tool.md) |
-| US-2.3 | Live smoke test and README | EPIC-2 | P2 | 2 | 📋 backlog | [link](stories/US-2.3-live-smoke-test-and-readme.md) |
+| US-1.1 | Adopt koni-docs as this repo's documentation framework | EPIC-1 | P1 | 3 | ✅ done | [link](stories/US-1.1-adopt-koni-docs-framework.md) |
+| US-2.1 | Authenticated Senti API client substrate | EPIC-2 | P1 | 5 | ✅ done | [link](stories/US-2.1-authenticated-senti-api-client.md) |
+| US-2.2 | `list_accounts` tool over MCP stdio | EPIC-2 | P1 | 5 | ✅ done | [link](stories/US-2.2-list-accounts-tool.md) |
+| US-2.3 | Live smoke test and README | EPIC-2 | P2 | 2 | ✅ done | [link](stories/US-2.3-live-smoke-test-and-readme.md) |
 
 **Total: 4 stories / 15 points.**
 
@@ -76,7 +76,41 @@ without breaking the reason Phase 1 exists.
 
 ## Retrospective
 
-_To be filled when the sprint closes._
+All four stories closed inside the single week, at the full 15 points, with v0.1.0
+tagged locally. The phased plan held in order — koni-docs, then substrate, then the
+tool, then proof and release — and nothing had to reorder.
+
+**What went well.** Sequencing US-1.1 before any `src/` code paid off exactly as
+predicted: every subsequent commit had somewhere to put its doc update, instead of the
+alternative of writing four stories backwards from finished code. The v1 implementation
+plan carrying schemas, tests, and error-mapping tables verbatim made US-2.1 and US-2.2
+closer to transcription-with-verification than open design, which is most of why the
+15-point week fit. The live smoke test (US-2.3) did what it exists to do: it is the one
+test in the suite that could have failed for a reason no stub would catch — a base-URL
+typo, a renamed field, a missing scope — and it passed clean against
+`https://be-dev.sentitrade.xyz` on the first run, returning one real account.
+
+**What was harder than expected.** Nothing structural. The one genuine finding was
+editorial, not technical: US-2.2's AC-20 said "`src/server.ts` is the only file
+importing from `@modelcontextprotocol/*`", which was wrong the moment `src/index.ts`
+(the `/stdio` subpath, by design) and `src/server.test.ts` (a test client, by the plan's
+own code) both legitimately import from the SDK. It shipped that way through US-2.2's
+own close because nothing exercised the AC's exact wording against the exact `grep`
+until this release commit re-verified every AC across all four stories. The fix was
+narrow — reword the AC to name all three files and correct its verification row — and
+the underlying invariant (`server.ts` owns the SDK's main entry; nothing else does)
+was never actually violated.
+
+**Carried forward.** `docs/LESSONS.md` still has no real entry, which is correct rather
+than a gap — nothing in this sprint reached the bar of "trap a future session would
+otherwise walk into" on its own; the AC-20 wording issue is recorded in
+[US-2.2](stories/US-2.2-list-accounts-tool.md)'s Implementation notes instead, since it
+is a one-story correction rather than a repo-wide trap. EPIC-2 stays open: 16 read
+operations remain, and the design spec estimates the second one at roughly thirty lines
+now that the client, error mapping, and formatting conventions are proven.
+
+**Next sprint.** US-2.4 onward, one read tool at a time, splitting `src/` by API tag
+(`trading.ts`, `performance.ts`, …) as the design spec anticipates.
 
 ## Cross-references
 

@@ -2,7 +2,8 @@
 id: US-2.2
 title: "list_accounts tool over MCP stdio"
 epic: EPIC-2
-status: review
+status: done
+version_shipped: 0.1.0
 priority: P1
 points: 5
 sprint: sprint-2026-W32
@@ -90,8 +91,10 @@ while it is at it.
   `SENTI_API_KEY is required…` message when the key is absent.
 - [x] **AC-19** — `npm test` passes with 24 further tests across `accounts.test.ts` (15)
   and `server.test.ts` (9); `npm run typecheck` and `npm run build` exit 0.
-- [x] **AC-20** — `src/server.ts` is the only file importing from
-  `@modelcontextprotocol/server`.
+- [x] **AC-20** — `src/server.ts` is the only file importing the SDK's main
+  `@modelcontextprotocol/server` entry; `src/index.ts` imports only the `/stdio`
+  subpath; `src/server.test.ts` imports `@modelcontextprotocol/client` as a test
+  client; no other file in `src/` imports from `@modelcontextprotocol/*`.
 
 ## Tasks
 
@@ -109,7 +112,8 @@ while it is at it.
 - [x] **TASK-2.2.4** — Verify (AC: 19, 20)
   - [x] `npm test && npm run typecheck && npm run build`
   - [x] Run `node dist/index.js` with and without a key
-  - [x] `grep -rln '@modelcontextprotocol' src/` returns only `src/server.ts` and `src/index.ts`
+  - [x] `grep -rln '@modelcontextprotocol' src/` returns only `src/index.ts`,
+        `src/server.ts`, and `src/server.test.ts`
 
 ## Dev notes
 
@@ -167,7 +171,7 @@ while it is at it.
 | AC-18 | `node dist/index.js` → exits 1 naming `SENTI_API_KEY`; `SENTI_API_KEY=sq_live_placeholder node dist/index.js` → readiness line on **stderr**, stays running |
 | AC-18 (stdout clean) | `SENTI_API_KEY=sq_live_placeholder node dist/index.js 1>/tmp/out 2>/dev/null & sleep 1; kill %1; test ! -s /tmp/out` |
 | AC-19 | `npm test && npm run typecheck && npm run build` |
-| AC-20 | `grep -rln '@modelcontextprotocol' src/` → only `src/server.ts` and `src/index.ts` |
+| AC-20 | `grep -rln '@modelcontextprotocol' src/` → only `src/index.ts`, `src/server.ts`, `src/server.test.ts` |
 
 The AC-18 stdout check matters more than it looks: a single stray `console.log` corrupts
 the JSON-RPC stream, and the symptom is a client that fails to connect for no visible
@@ -185,11 +189,37 @@ reason.
 
 ## Implementation notes
 
-_Filled during implementation._
+Built to the v1 plan's Tasks 4–5. `accounts.ts` stays free of any MCP import, so
+`AccountSchema`, `parseAccounts`, and `formatAccounts` are all tested by calling them
+directly — `server.ts` and `index.ts` are the only two files that know the protocol
+exists. The one design point worth restating: `structuredContent` is wrapped as
+`{ accounts: [...] }` rather than returned as a bare array, because
+`projectCallToolResult` treats a non-object `structuredContent` differently across the
+2025 and 2026 protocol eras, and this server speaks both from one `serveStdio` process.
+
+While documenting AC-20 in this release commit ([US-2.3](US-2.3-live-smoke-test-and-readme.md)
+Task 6), the original wording — "`src/server.ts` is the only file importing from
+`@modelcontextprotocol/*`" — turned out to be imprecise: `src/index.ts` imports the
+`/stdio` subpath by design (TASK-2.2.3), and `src/server.test.ts` imports
+`@modelcontextprotocol/client` as its test client (both correct and intended). The AC
+text and its verification row are corrected here to describe what the codebase actually
+does — `grep -rln '@modelcontextprotocol' src/` returns exactly those three files — with
+the underlying invariant (no *other* file touches the SDK) unchanged and still enforced.
+
+`npm test` passes 24 new tests (`accounts.test.ts` 15, `server.test.ts` 9);
+`npm run typecheck` and `npm run build` are both clean, and `node dist/index.js` exits 1
+naming `SENTI_API_KEY` when it is absent and prints its readiness line to stderr only
+when a key is present.
 
 ## Files modified
 
-_Filled during implementation._
+**Created:**
+- `src/accounts.ts` (108 lines) — `AccountSchema`, `AccountsOutputSchema`,
+  `parseAccounts`, `formatAccounts`
+- `src/accounts.test.ts` (114 lines)
+- `src/server.ts` (72 lines) — `createServer(config, deps)`, the `list_accounts` tool
+- `src/server.test.ts` (153 lines)
+- `src/index.ts` (31 lines) — stdio bootstrap
 
 ## Cross-references
 

@@ -1,7 +1,7 @@
 ---
 id: EPIC-1
 title: "Project foundation: documentation framework and repo standard"
-status: in-progress
+status: done
 created: 2026-08-05
 updated: 2026-08-05
 ---
@@ -70,7 +70,7 @@ Constraints every story in this epic upholds, and that later epics inherit:
 
 | US | Title | Pri | Points | Status |
 |---|---|---|---|---|
-| [US-1.1](../stories/US-1.1-adopt-koni-docs-framework.md) | Adopt koni-docs as this repo's documentation framework | P1 | 3 | 👀 review |
+| [US-1.1](../stories/US-1.1-adopt-koni-docs-framework.md) | Adopt koni-docs as this repo's documentation framework | P1 | 3 | ✅ done (v0.1.0) |
 
 ## Cross-references
 

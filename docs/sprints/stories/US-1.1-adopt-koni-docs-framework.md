@@ -2,7 +2,8 @@
 id: US-1.1
 title: "Adopt koni-docs as this repo's documentation framework"
 epic: EPIC-1
-status: review
+status: done
+version_shipped: 0.1.0
 priority: P1
 points: 3
 sprint: sprint-2026-W32

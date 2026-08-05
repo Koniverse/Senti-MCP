@@ -2,7 +2,8 @@
 id: US-2.3
 title: "Live smoke test, README, and the v0.1.0 release"
 epic: EPIC-2
-status: backlog
+status: done
+version_shipped: 0.1.0
 priority: P2
 points: 2
 sprint: sprint-2026-W32
@@ -34,62 +35,62 @@ to `done` with `version_shipped` set.
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** `SENTI_SMOKE_KEY` is present in `.env.local`, **When**
+- [x] **AC-1** — **Given** `SENTI_SMOKE_KEY` is present in `.env.local`, **When**
   `npm run test:smoke` runs, **Then** it performs one real `GET /api/v1/accounts` against
   the development API, **And** `parseAccounts` accepts the response, **And**
   `formatAccounts` renders every returned account's `id`.
-- [ ] **AC-2** — **Given** no `SENTI_SMOKE_KEY` in the environment, **When** `npm test`
+- [x] **AC-2** — **Given** no `SENTI_SMOKE_KEY` in the environment, **When** `npm test`
   runs, **Then** the smoke suite reports as **skipped**, not failed, and the rest of the
   suite passes.
-- [ ] **AC-3** — The smoke test asserts the *contract*, never the *data*: no assertion
+- [x] **AC-3** — The smoke test asserts the *contract*, never the *data*: no assertion
   references a balance, an equity, or an account count, all of which change between runs.
-- [ ] **AC-4** — The key never reaches the terminal or the repo. `.env.local` is gitignored
+- [x] **AC-4** — The key never reaches the terminal or the repo. `.env.local` is gitignored
   (it already is), and no step in this story prints it — no `cat .env.local`, no
   `echo $SENTI_SMOKE_KEY`.
-- [ ] **AC-5** — `README.md` documents the tool table, the two environment variables with
+- [x] **AC-5** — `README.md` documents the tool table, the two environment variables with
   their defaults, install and build steps, a copy-pasteable `mcpServers` client config, and
   the development commands.
-- [ ] **AC-6** — `README.md` states that `id` is the `accountId` other endpoints take and
+- [x] **AC-6** — `README.md` states that `id` is the `accountId` other endpoints take and
   `login` is not — the same correction the tool description carries, for the human reader.
-- [ ] **AC-7** — `README.md` states that the server registers read-only tools only, and that
+- [x] **AC-7** — `README.md` states that the server registers read-only tools only, and that
   the write operations are deliberately unexposed pending their own design.
-- [ ] **AC-8** — `README.md` explains that the API key is read from the environment and
+- [x] **AC-8** — `README.md` explains that the API key is read from the environment and
   never appears in a tool's input schema, with the reason: a tool parameter would live in
   the model's context and from there in transcripts and logs.
-- [ ] **AC-9** — An MIT `LICENSE` exists naming the correct holder and year.
-- [ ] **AC-10** — **Given** the release commit, **When** it lands, **Then** `VERSION` reads
+- [x] **AC-9** — An MIT `LICENSE` exists naming the correct holder and year.
+- [x] **AC-10** — **Given** the release commit, **When** it lands, **Then** `VERSION` reads
   `0.1.0` **And** `docs/CHANGELOG.md` carries a `## [0.1.0] — 2026-08-XX … — v0.1.0` entry
   built from the three stories' `Changelog entry` sections — in the **same commit**
   (RULE-1), with no SHA in it (RULE-2).
-- [ ] **AC-11** — All four sprint stories read `status: done` with `version_shipped: 0.1.0`
+- [x] **AC-11** — All four sprint stories read `status: done` with `version_shipped: 0.1.0`
   as bare semver (RULE-16), and every task box is `[x]`.
-- [ ] **AC-12** — `npm run agile:status` regenerates `STATUS.md` and
+- [x] **AC-12** — `npm run agile:status` regenerates `STATUS.md` and
   `npm run agile:validate` exits 0 after the flips.
-- [ ] **AC-13** — `npm test && npm run typecheck && npm run build` all pass on the release
+- [x] **AC-13** — `npm test && npm run typecheck && npm run build` all pass on the release
   commit.
 
 ## Tasks
 
-- [ ] **TASK-2.3.1** — Credentials (AC: 4)
-  - [ ] Confirm `.env.local` exists with `SENTI_SMOKE_KEY` and
+- [x] **TASK-2.3.1** — Credentials (AC: 4)
+  - [x] Confirm `.env.local` exists with `SENTI_SMOKE_KEY` and
         `SENTI_API_BASE_URL=https://be-dev.sentitrade.xyz`; create it if absent
-  - [ ] Confirm `.gitignore` already covers it — do not print its contents
-- [ ] **TASK-2.3.2** — `src/smoke.test.ts` (AC: 1, 2, 3)
-  - [ ] `describe.skipIf(!process.env.SENTI_SMOKE_KEY)`, 30s timeout
-  - [ ] Add the `test:smoke` script loading `.env.local` via `node --env-file`
-- [ ] **TASK-2.3.3** — Run it (AC: 1)
-  - [ ] `npm run test:smoke` → 1 passing. A 403 here means the key lacks `accounts:read`;
+  - [x] Confirm `.gitignore` already covers it — do not print its contents
+- [x] **TASK-2.3.2** — `src/smoke.test.ts` (AC: 1, 2, 3)
+  - [x] `describe.skipIf(!process.env.SENTI_SMOKE_KEY)`, 30s timeout
+  - [x] Add the `test:smoke` script loading `.env.local` via `node --env-file`
+- [x] **TASK-2.3.3** — Run it (AC: 1)
+  - [x] `npm run test:smoke` → 1 passing. A 403 here means the key lacks `accounts:read`;
         the error message from US-2.1 says so and names the scope
-  - [ ] `npm test` → smoke suite skipped, everything else green
-- [ ] **TASK-2.3.4** — `README.md` and `LICENSE` (AC: 5–9)
-- [ ] **TASK-2.3.5** — Release (AC: 10, 11, 12, 13)
-  - [ ] `docs/CHANGELOG.md`: replace the `[Unreleased]` body with a `[0.1.0]` entry,
+  - [x] `npm test` → smoke suite skipped, everything else green
+- [x] **TASK-2.3.4** — `README.md` and `LICENSE` (AC: 5–9)
+- [x] **TASK-2.3.5** — Release (AC: 10, 11, 12, 13)
+  - [x] `docs/CHANGELOG.md`: replace the `[Unreleased]` body with a `[0.1.0]` entry,
         anchoring the edit on the `[Unreleased]` header so the section above is not eaten
-  - [ ] Flip US-1.1, US-2.1, US-2.2, US-2.3 to `done` with `version_shipped: 0.1.0`
-  - [ ] Close `sprint-2026-W32`: `status: closed` plus a retrospective
-  - [ ] `npm run agile:status && npm run agile:validate`
-  - [ ] Full suite, then commit; `git tag v0.1.0`
-  - [ ] Backfill the story `commit:` fields in a **follow-up** commit — never `--amend`
+  - [x] Flip US-1.1, US-2.1, US-2.2, US-2.3 to `done` with `version_shipped: 0.1.0`
+  - [x] Close `sprint-2026-W32`: `status: closed` plus a retrospective
+  - [x] `npm run agile:status && npm run agile:validate`
+  - [x] Full suite, then commit; `git tag v0.1.0`
+  - [x] Backfill the story `commit:` fields in a **follow-up** commit — never `--amend`
         (RULE-2)
 
 ## Dev notes
@@ -158,11 +159,51 @@ an API that does not exist.
 
 ## Implementation notes
 
-_Filled during implementation._
+`npm run test:smoke` ran against `https://be-dev.sentitrade.xyz` with the key already
+present in the gitignored `.env.local` (TASK-2.3.1 needed no changes, only
+confirmation). It passed on the first run: one real `GET /api/v1/accounts`, one account
+returned, `parseAccounts` accepted the payload, and `formatAccounts` rendered its `id`.
+No 403 — the key already carries `accounts:read`, so the scope-naming branch in
+`client.ts`'s 403 mapping (US-2.1 AC-8) went unexercised by this run, as expected for a
+correctly scoped key. `npm test` afterward reported the smoke suite as 1 skipped and the
+other 51 tests green, confirming AC-2 without a key in `process.env`.
+
+`LICENSE` was copied from the sibling `read-mcp-server` repo rather than fetched over
+the network, since it was already MIT with the correct holder (`bluezdot`) and year
+(`2026`) — no edit needed, just verification before copying.
+
+The CHANGELOG edit merged four stories' `Changelog entry` sections into one `[0.1.0]`
+entry, per the note in this story's own task list that nothing has shipped yet: the
+`[Unreleased]` section's koni-docs description moved into `[0.1.0]` alongside US-2.1,
+US-2.2, and this story's own entries, and `[Unreleased]` was reset to the standard
+"not yet shipped" placeholder. The edit was anchored on the `## [Unreleased]` header
+text, not on any version header, so the section above it could not be silently
+overwritten.
+
+One documentation-only correction rode along with this release commit: US-2.2's AC-20
+said "`src/server.ts` is the only file importing from `@modelcontextprotocol/*`", which
+undercounted by two files by design — `src/index.ts` imports the `/stdio` subpath
+(TASK-2.2.3) and `src/server.test.ts` imports `@modelcontextprotocol/client` as its test
+client (the plan's own test code). `grep -rln '@modelcontextprotocol' src/` returns
+exactly those three files (`src/index.ts`, `src/server.ts`, `src/server.test.ts`) and no
+others; AC-20's text and verification row in US-2.2 now describe that, with the
+underlying invariant (no other file touches the SDK) unchanged.
 
 ## Files modified
 
-_Filled during implementation._
+**Created:**
+- `src/smoke.test.ts` (33 lines) — the opt-in live test
+- `README.md` (81 lines)
+- `LICENSE` (21 lines) — MIT, copyright (c) 2026 bluezdot
+
+**Modified (this release commit):**
+- `docs/CHANGELOG.md` — `[0.1.0]` entry added, anchored on `[Unreleased]`
+- `docs/sprints/stories/US-1.1-…`, `US-2.1-…`, `US-2.2-…`, `US-2.3-…` — flipped to
+  `status: done`, `version_shipped: 0.1.0`
+- `docs/sprints/sprint-2026-W32.md` — `status: closed`, scope table, retrospective
+- `docs/sprints/epics/EPIC-1.md`, `EPIC-2.md` — status and story tables
+- `docs/sprints/STATUS.md` — regenerated
+- `CLAUDE.md` — Active Context block refreshed
 
 ## Cross-references
 

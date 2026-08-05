@@ -1,7 +1,7 @@
 ---
 id: EPIC-2
 title: "Read-only Senti Quant access over MCP"
-status: backlog
+status: in-progress
 created: 2026-08-05
 updated: 2026-08-05
 ---
@@ -82,9 +82,9 @@ most likely to break by copying an earlier one:
 
 | US | Title | Pri | Points | Status | Plan tasks |
 |---|---|---|---|---|---|
-| [US-2.1](../stories/US-2.1-authenticated-senti-api-client.md) | Authenticated Senti API client substrate | P1 | 5 | 📋 backlog | 1–3 |
-| [US-2.2](../stories/US-2.2-list-accounts-tool.md) | `list_accounts` tool over MCP stdio | P1 | 5 | 📋 backlog | 4–5 |
-| [US-2.3](../stories/US-2.3-live-smoke-test-and-readme.md) | Live smoke test and README | P2 | 2 | 📋 backlog | 6 |
+| [US-2.1](../stories/US-2.1-authenticated-senti-api-client.md) | Authenticated Senti API client substrate | P1 | 5 | ✅ done (v0.1.0) | 1–3 |
+| [US-2.2](../stories/US-2.2-list-accounts-tool.md) | `list_accounts` tool over MCP stdio | P1 | 5 | ✅ done (v0.1.0) | 4–5 |
+| [US-2.3](../stories/US-2.3-live-smoke-test-and-readme.md) | Live smoke test and README | P2 | 2 | ✅ done (v0.1.0) | 6 |
 
 Growth path: US-2.4 onward add the remaining read operations, one per tool, splitting
 by API tag as they multiply (`trading.ts`, `performance.ts`, …).
