@@ -15,7 +15,9 @@ the MT5 account number, not a key.
 
 ## Requirements
 
-- Node.js ≥ 20
+- Node.js ≥ 20.6.0 — `AbortSignal.any()`, which every tool call goes through,
+  landed in 20.3.0, and `npm run test:smoke` uses `node --env-file`, added in
+  20.6.0
 - A Senti Quant API key (`sq_live_…`) with the `accounts:read` scope, from the
   [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys)
 
@@ -25,6 +27,15 @@ the MT5 account number, not a key.
 |----------|----------|---------|---------|
 | `SENTI_API_KEY` | ✅ | — | First-party key. The server exits at startup without it. |
 | `SENTI_API_BASE_URL` | | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. |
+
+> **The key and the base URL must belong to the same environment.** Keys are
+> environment-bound, and the default base URL is **production**
+> (`https://api.sentitrade.xyz`) while keys are currently issued from the
+> staging dashboard. A key created in one environment returns `401` against
+> another, however valid it is — so if a correct-looking key is rejected, check
+> `SENTI_API_BASE_URL` before regenerating the key.
+
+See [docs/SETUP.md](docs/SETUP.md) for a full local setup walkthrough.
 
 ## Install & build
 

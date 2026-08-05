@@ -141,3 +141,70 @@ snapshot.
 
 **Date**: 2026-08-05
 **Version**: pre-v0.1.0
+
+---
+
+## Phase 1 — v0.1.0 review follow-up (2026-08-05)
+
+### D5. Raise the supported Node floor to 20.6.0
+
+**Context**: `package.json` declared `engines.node: ">=20"`, chosen before the code
+existed. Two things shipped in v0.1.0 need more than that. `src/client.ts` calls
+`AbortSignal.any()`, added in Node **20.3.0**, and `src/server.ts` always passes a
+request signal, so the ternary that guards it always takes the `AbortSignal.any`
+branch. The `test:smoke` script uses `node --env-file`, added in **20.6.0**.
+
+**Decision**: `engines.node` is `>=20.6.0`. `README.md` §Requirements and
+[SETUP.md](SETUP.md) §1 state the same floor with the same two reasons.
+
+**Rationale**: because the old floor failed in the worst available way. On Node
+20.0–20.2 the server starts, `tools/list` succeeds, and the failure appears only when
+a tool is actually called — `TypeError: AbortSignal.any is not a function` — which
+reads as a broken server rather than an unsupported runtime.
+
+**Alternatives considered**:
+- Polyfill `AbortSignal.any` for 20.0–20.2 — rejected: carrying a shim to widen
+  support by three patch releases of an already-superseded line buys nothing.
+- Floor at 20.3.0 and drop `--env-file` from `test:smoke` — rejected: that script is
+  how the one live test gets its credential, and hand-rolled dotenv parsing is a
+  dependency or a bug.
+
+**Impact**: the two planning artifacts under `docs/superpowers/` still read `Node ≥ 20`.
+They are deliberately **not** edited — both are snapshots of intent, on the same
+principle D1 applied to the design spec. This entry is where the current floor lives;
+`package.json` is where it is enforced.
+
+**Date**: 2026-08-05
+**Version**: 0.1.0
+
+---
+
+### D6. Validate the base URL's scheme and shape, allowing `http:`
+
+**Context**: `loadConfig` accepted any value `new URL()` could parse. `file:///etc`,
+`foo:bar` and `https://host?x=1` all passed. The last is the damaging one: the client
+concatenates, so a base carrying a query became
+`https://host/?x=1/api/v1/accounts` — a 404 whose cause is invisible at the call site.
+
+**Decision**: reject any scheme that is not `https:` or `http:`, naming the offending
+value, and reject a base URL carrying a query string or fragment. **`http:` stays
+allowed**, so the server can be pointed at an API running locally over plain HTTP; the
+error text and `.env.example` both say it sends the key in cleartext.
+
+**Rationale**: because a scheme this client cannot fetch is always a typo, and failing
+at load time names it while the reader is still looking at the variable. Forbidding
+`http:` outright would block local development against a non-TLS API for a threat —
+a typo'd base URL sending `Authorization: Bearer sq_live_…` over the wire — that
+naming the risk addresses just as well without removing a legitimate workflow.
+
+**Alternatives considered**:
+- `https:` only — rejected: breaks `http://localhost:…` development.
+- Silently strip a query and fragment — rejected: a base URL carrying one is a
+  misunderstanding, and quietly repairing it teaches nothing.
+
+**Impact**: `SENTI_API_BASE_URL` is now documented as *a bare origin*. Anyone who was
+relying on a path-carrying base (there is no such caller in v0.1.0) would now fail at
+startup rather than at request time.
+
+**Date**: 2026-08-05
+**Version**: 0.1.0

@@ -12,6 +12,7 @@ follow-up" branch.
 ```
 docs/
 ├── README.md            ← you are here (doc hub + pre-commit checklist)
+├── SETUP.md             ← local dev setup + the env var reference (RULE-11)
 ├── CHANGELOG.md         ← release history (every version)
 ├── CONTEXT.md           ← decision log (append-only, never rewrite — RULE-7)
 ├── superpowers/         ← preserved planning artifacts
@@ -24,6 +25,7 @@ docs/
     └── stories/         ← US-X.Y-<slug>.md (canonical AC + Tasks source)
 
 Repo root:
+  .env.example               ← env var template; copy to gitignored .env.local
   VERSION                    ← current semver string, bare (no `v`)
   AGENTS.md                  ← canonical project guide
   CLAUDE.md                  ← pointer + Koni-Docs Integration + Active Context
@@ -45,7 +47,7 @@ A missing file here is a decision, not an oversight.
 | `PRD.md`, `ARCHITECTURE.md` | Authored today they would describe 16 tools that do not exist. They land when the read-tool roadmap firms up — at which point every story gains `prd_ref` / `arch_ref` in the same commit ([CONTEXT D1](CONTEXT.md)). |
 | `LESSONS.md` | Created with the first real entry. An empty traps file teaches nothing and invites filler. |
 | `BRIEF.md` | The [design spec](superpowers/specs/2026-08-05-senti-mcp-server-design.md) already carries the problem statement and scope. |
-| `SETUP.md`, `DEPLOY.md`, `.env.example` | No code, therefore no environment variables. The v1 build introduces `SENTI_API_KEY` and `SENTI_API_BASE_URL`, and RULE-11 then requires `SETUP.md` and `.env.example` in that same commit. |
+| `DEPLOY.md` | Nothing is deployed. v0.1.0 is not published to npm — it runs from a local build wired into an MCP client by absolute path, which [SETUP.md](SETUP.md) §6 covers. It lands when there is a hosted or published artifact to describe. |
 | `DESIGN.md` | No UI. This is a stdio MCP server; output formatting lives beside the code that emits it. |
 | `docs/tests/`, `docs/design/` | Owned by `koni-qc`, which is not wired. |
 | `docs/sprints/README.md` | The vendored skill's [`sprint-system.md`](../.agents/skills/koni-docs/references/sprint-system.md) is the live source for the sprint schema; a copy here would drift from it. |
@@ -112,6 +114,7 @@ npx koni-docs --version   # confirm which CLI you actually have
 
 ## Cross-references
 
+- [SETUP.md](SETUP.md) — local development setup and the environment variable reference
 - [CHANGELOG.md](CHANGELOG.md) — release history
 - [CONTEXT.md](CONTEXT.md) — decision log
 - [sprints/STATUS.md](sprints/STATUS.md) — current kanban (generated)
