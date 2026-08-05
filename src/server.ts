@@ -36,7 +36,7 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
       title: 'List linked MT5 accounts',
       description:
         'List the MT5 trading accounts linked to the configured Senti Quant API key. ' +
-        'Returns each account\'s id, login, broker, last known balance and equity, sync ' +
+        "Returns each account's id, login, broker, last known balance and equity, sync " +
         'state, and running strategies. The `id` field is the accountId every other Senti ' +
         'endpoint takes — pass `id`, not `login`, when a tool asks for an account.',
       inputSchema: z.object({}),

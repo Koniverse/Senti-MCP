@@ -53,8 +53,12 @@ function start(env: Record<string, string>): Capture {
     err += chunk;
   });
 
+  // `close`, not `exit`: Node can fire `exit` before the piped stdio streams
+  // have drained, so a child that wrote a stray byte to stdout immediately
+  // before exiting could still race past the `stdout() === ''` assertions
+  // below. `close` fires only once stdout/stderr are fully drained.
   const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => {
-    child.on('exit', (code, signal) => resolve({ code, signal }));
+    child.on('close', (code, signal) => resolve({ code, signal }));
   });
 
   return { child, stdout: () => out, stderr: () => err, exited };
