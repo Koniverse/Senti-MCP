@@ -124,7 +124,9 @@ function failureOf(
       );
 
     case 409: {
-      const meaning = conflictMeans ? ` ${conflictMeans}` : '';
+      const meaning = conflictMeans
+        ? ` ${conflictMeans}`
+        : ' The request conflicts with the resource\'s current state.';
 
       return new ApiError(`Senti API returned 409${detail}.${meaning}`, status, code);
     }

@@ -124,19 +124,43 @@ describe('createClient', () => {
   test('gives 409 the meaning the call site supplied', async () => {
     const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', 'Terminal offline.'), 409));
 
-    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts/x/positions', {
-      conflictMeans: 'The MT5 terminal for this account is offline.',
-    });
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/accounts/x/positions', {
+        conflictMeans: 'The MT5 terminal for this account is offline.',
+      })
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
 
-    await expect(promise).rejects.toThrow(/The MT5 terminal for this account is offline\./);
+    expect(message).toContain('The MT5 terminal for this account is offline.');
+    expect(message).not.toContain('conflicts with the resource');
   });
 
   test('falls back to a bare 409 when the call site supplied no meaning', async () => {
     const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', 'Conflict.'), 409));
 
-    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts');
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/accounts')
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
 
-    await expect(promise).rejects.toThrow(/409/);
+    expect(message).toContain('conflicts with the resource\'s current state');
+  });
+
+  test('gives generic guidance on 409 when no meaning was supplied and no envelope message', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', ''), 409));
+
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/accounts')
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
+
+    expect(message).toContain('The request conflicts with the resource\'s current state');
   });
 
   test('never leaks the API key into an error message', async () => {
