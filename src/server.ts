@@ -1,9 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
 import { AccountsOutputSchema, formatAccounts, parseAccounts } from './accounts.js';
-import { createClient } from './client.js';
+import { createClient } from './core/client.js';
 import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
-import { describeError } from './errors.js';
+import { describeError } from './core/errors.js';
 
 export type ServerDeps = { fetch?: typeof fetch };
 

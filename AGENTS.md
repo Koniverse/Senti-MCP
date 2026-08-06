@@ -41,21 +41,40 @@ write tool, and do not add one "ready to enable".
 ## Repo structure
 
 ```
-src/                    ← the six source files below, flat: tools split by API tag
-                          when they multiply, not into a tools/ directory
+src/
+  index.ts              ← #! stdio bootstrap; serveStdio, signal handling. Imports
+                          only the SDK's /stdio subpath. MUST stay at root of src/.
+  index.test.ts         ← spawns the built dist/index.js
   config.ts             ← loadConfig(env) → frozen Config; SERVER_NAME/SERVER_VERSION
-  errors.ts             ← ApiError (status + envelope code); describeError flattens
-                          the cause chain, which is what makes fetch failures readable
-  client.ts             ← createClient(config, deps).get(); owns the Authorization
-                          header, the 15s timeout, and status→message mapping
+  config.test.ts
+  server.ts             ← createServer(config, deps); registers every read tool. The
+                          only file importing the SDK's main entry
+  server.test.ts
   accounts.ts           ← AccountSchema (16 fields), parseAccounts, formatAccounts.
                           Imports no MCP SDK, so it is tested by direct calls
-  server.ts             ← createServer(config, deps); registers list_accounts. The
-                          only file importing the SDK's main entry
-  index.ts              ← #! stdio bootstrap; serveStdio, signal handling. Imports
-                          only the SDK's /stdio subpath
-  *.test.ts             ← one beside each source file, plus index.test.ts (spawns the
-                          built dist/index.js) and smoke.test.ts (opt-in, one live call)
+  accounts.test.ts
+  smoke.test.ts         ← opt-in, one live call; hardcoded path in package.json
+
+  core/                 ← infrastructure; imports nothing from tools/
+    client.ts           ← createClient(config, deps).get(); owns the Authorization
+                          header, the 15s timeout, status→message mapping, query
+                          parameters, accountPath path builder, and 404/409 branches
+    client.test.ts
+    errors.ts           ← ApiError (status + envelope code); describeError flattens
+                          the cause chain, which is what makes fetch failures readable
+    errors.test.ts
+    tool.ts             ← registerReadTool helper (coming Task 6 — not yet present)
+    tool.test.ts
+    parse.ts            ← parseOrThrow helper (coming Task 6 — not yet present)
+    parse.test.ts
+
+  tools/                ← one folder per API tag, one file per endpoint
+    accounts/           ← list-accounts.ts (shipped v0.1.0, migrated to registerReadTool this sprint)
+    brokers/            ← list-brokers.ts (coming US-2.5)
+    strategies/         ← list-strategies.ts, list-account-strategies.ts (coming US-2.6, US-2.7)
+    performance/        ← summary.ts, breakdowns.ts, timeseries.ts (coming US-2.10, US-2.12, US-2.13)
+    trading/            ← positions.ts, orders.ts, deals.ts (coming US-2.8, US-2.9, US-2.11)
+
 docs/                   ← all documentation (see docs/README.md)
   SETUP.md              ← local dev setup + env var reference
   sprints/              ← epics, stories, active sprint, generated STATUS.md
@@ -69,6 +88,18 @@ tsconfig.test.json      ← typecheck-only, no exclude; the only thing that type
                           the tests, since vitest transpiles without checking
 VERSION                 ← bare semver, no `v` prefix
 ```
+
+**Architecture constraints:**
+
+- **`src/index.ts` cannot move.** `bin` points at `dist/index.js` and `rootDir` is
+  `src`, so relocating `index.ts` changes the `dist/` layout, breaks `bin`, and breaks
+  `index.test.ts`, which spawns the built entry point on purpose.
+- **`test:smoke` hardcodes `src/smoke.test.ts`.** Moving that file means editing
+  `package.json` in the same commit.
+- **`tsconfig.json` globs recursively (`src/**/*.ts`, excluding `src/**/*.test.ts`).**
+  Subdirectories need no build change; the glob already reaches them.
+- **The dependency edge is one-way: `core/` never imports from `tools/`.** That is
+  what keeps `core/` testable without constructing a tool.
 
 **Nothing in `index.ts` may write to stdout** — that stream carries the JSON-RPC
 frames. Diagnostics go to stderr. A single stray `console.log` corrupts the protocol,

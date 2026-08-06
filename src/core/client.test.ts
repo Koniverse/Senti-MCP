@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import { createClient } from './client.js';
 import { ApiError } from './errors.js';
-import { loadConfig } from './config.js';
+import { loadConfig } from '../config.js';
 
 const KEY = 'sq_live_supersecret';
 const config = loadConfig({

@@ -1,4 +1,4 @@
-import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
+import { SERVER_NAME, SERVER_VERSION, type Config } from '../config.js';
 import { ApiError } from './errors.js';
 
 /** Single home for the server's outbound fetch policy. */

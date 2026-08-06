@@ -109,7 +109,7 @@ untouched, per the amend-via-CONTEXT precedent [D1](../../CONTEXT.md) and
   (plan Task 1) (AC: 11, 14)
   - [ ] Open `sprint-2026-W33.md`, this story and its five siblings, `EPIC-3.md`
   - [ ] Correct the operation count in `AGENTS.md` and `EPIC-2.md`
-- [ ] **TASK-2.4.2** — Move `client` and `errors` into `src/core/` (plan Task 2)
+- [x] **TASK-2.4.2** — Move `client` and `errors` into `src/core/` (plan Task 2)
   (AC: 1, 2, 8)
 - [ ] **TASK-2.4.3** — Query-parameter support in `core/client.ts` (plan Task 3)
   (AC: 3)
