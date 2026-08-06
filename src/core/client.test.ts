@@ -249,4 +249,16 @@ describe('createClient', () => {
       'https://be-dev.sentitrade.xyz/api/v1/accounts?reporting=US+D%26x%3D1',
     );
   });
+
+  test('does not drop zero or empty-string values when filtering undefined', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse([]));
+
+    await createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts', {
+      query: { limit: 0, reporting: '' },
+    });
+
+    expect(calls[0]?.url).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts?limit=0&reporting=',
+    );
+  });
 });
