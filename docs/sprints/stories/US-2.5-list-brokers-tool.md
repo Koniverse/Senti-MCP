@@ -51,9 +51,9 @@ a model can answer about a broker it is looking at.
 
 ## Tasks
 
-- [ ] **TASK-2.5.1** — `tools/brokers/list-brokers.ts` domain module (plan Task 10)
+- [x] **TASK-2.5.1** — `tools/brokers/list-brokers.ts` domain module (plan Task 10)
   (AC: 1, 3, 4)
-  - [ ] `BrokerSchema`, `parseBrokers` (via `core/parse.ts`'s `parseOrThrow`),
+  - [x] `BrokerSchema`, `parseBrokers` (via `core/parse.ts`'s `parseOrThrow`),
         `formatBrokers`
 - [ ] **TASK-2.5.2** — Registration and the 0.3.0 release (plan Task 11) (AC: 2, 5)
   - [ ] Register through `registerReadTool` in `server.ts`; `outputSchema`;
