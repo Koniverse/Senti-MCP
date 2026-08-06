@@ -54,9 +54,9 @@ zero-rated strategy.
 
 ## Tasks
 
-- [ ] **TASK-2.6.1** — `tools/strategies/list-strategies.ts` domain module
+- [x] **TASK-2.6.1** — `tools/strategies/list-strategies.ts` domain module
   (plan Task 12) (AC: 1, 2, 3)
-  - [ ] `StrategySchema` (optional `description`/`supportedSymbols`/
+  - [x] `StrategySchema` (optional `description`/`supportedSymbols`/
         `supportedTimeframes`, nullable `avgRating`), `parseStrategies`,
         `formatStrategies`
 - [ ] **TASK-2.6.2** — Registration and the 0.4.0 release (plan Task 13) (AC: 4, 5)
