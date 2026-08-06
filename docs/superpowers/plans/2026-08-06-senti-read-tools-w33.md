@@ -73,7 +73,7 @@ Follow its templates for sprint and story files. This plan supplies the frontmat
 ```yaml
 ---
 id: sprint-2026-W33
-status: active
+status: in-progress
 start: 2026-08-10
 end: 2026-08-16
 goal: "Restructure src/ into core/ + tools/<tag>/, add the read-tool substrate, and ship the first five of the nine unshipped read tools"
@@ -136,7 +136,12 @@ Acceptance criteria, verbatim seeds — expand each into the skill's Given/When/
 
 - [ ] **Step 4: Create EPIC-3**
 
-`docs/sprints/epics/EPIC-3.md`, `status: planned`, **no stories**. It must list the seven write operations, and record these guardrails as the epic's cross-cutting invariants:
+`docs/sprints/epics/EPIC-3.md`, `status: backlog`, **no stories**. It must list the seven write operations, and record these guardrails as the epic's cross-cutting invariants:
+
+> **Use the enum members the vendored templates document**, not the word that reads
+> best: `epicSchema` allows `backlog | in-progress | done` and `sprintSchema` allows
+> `planned | in-progress | closed`. An epic that has not started is `backlog`, and a
+> sprint being worked is `in-progress`.
 
 - Opt-in by environment variable; write tools are not registered by default.
 - `Idempotency-Key` on `POST /accounts` and `POST …/strategies`, the two operations that accept it.
