@@ -1104,7 +1104,7 @@ behaviour and is wrong.
 - [ ] **Step 7: Confirm the SDK-import invariant**
 
 ```bash
-grep -rn "@modelcontextprotocol" src/ --include='*.ts' | grep -v '\.test\.ts' | grep -v 'import type'
+grep -rn "^import .*from '@modelcontextprotocol" src/ --include='*.ts' | grep -v '\.test\.ts' | grep -v '^.*:import type'
 ```
 
 Expected: exactly two lines — `src/index.ts` (the `/stdio` subpath) and `src/server.ts` (`McpServer`). `core/tool.ts` and every tool module must appear only under `import type`.
