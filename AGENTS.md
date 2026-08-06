@@ -69,7 +69,7 @@ src/
     parse.test.ts
 
   tools/                ← one folder per API tag, one file per endpoint
-    accounts/           ← list-accounts.ts (shipped v0.1.0, migrated to registerReadTool this sprint)
+    accounts/           ← list-accounts.ts (coming TASK-2.4.7 — existing tool relocated and migrated)
     brokers/            ← list-brokers.ts (coming US-2.5)
     strategies/         ← list-strategies.ts, list-account-strategies.ts (coming US-2.6, US-2.7)
     performance/        ← summary.ts, breakdowns.ts, timeseries.ts (coming US-2.10, US-2.12, US-2.13)
