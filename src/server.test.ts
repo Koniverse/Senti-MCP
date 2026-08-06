@@ -165,3 +165,80 @@ describe('MCP server', () => {
     expect(tools).toHaveLength(1);
   });
 });
+
+/**
+ * One entry per registered tool. Later tool stories add a row here rather than
+ * writing their own leak test — that is the point of the table.
+ */
+const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
+  { name: 'list_accounts' },
+];
+
+const errorStatuses = [401, 403, 404, 409, 429, 500];
+
+/**
+ * A key-shaped string, not a bare prefix. The 401 branch in `core/client.ts`
+ * legitimately contains the literal text `sq_live_…` as operator guidance
+ * ("first-party keys look like ..."), so `.not.toContain('sq_live_')` would
+ * fire on that help text rather than on an actual leaked key. `…` (U+2026)
+ * is not in `[A-Za-z0-9]`, so this pattern does not match the guidance text
+ * but does match any real key, including one this test never configured.
+ */
+const KEY_SHAPED = /sq_live_[A-Za-z0-9]{4,}/;
+
+describe('invariants across every registered tool', () => {
+  test('the table lists every registered tool', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+
+    expect(tools.map((tool) => tool.name).sort()).toEqual(
+      TOOL_CALLS.map((call) => call.name).sort(),
+    );
+  });
+
+  test('every tool advertises itself read-only against an open world', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+
+    for (const tool of tools) {
+      expect(tool.annotations?.readOnlyHint, `${tool.name} readOnlyHint`).toBe(true);
+      expect(tool.annotations?.openWorldHint, `${tool.name} openWorldHint`).toBe(true);
+    }
+  });
+
+  test('no tool leaks the API key on any error status', async () => {
+    for (const status of errorStatuses) {
+      const failing = (async () =>
+        new Response(JSON.stringify({ error: { code: 'INTERNAL', message: 'boom' } }), {
+          status,
+          headers: { 'content-type': 'application/json' },
+        })) as unknown as typeof fetch;
+      const client = await connect(failing);
+
+      for (const call of TOOL_CALLS) {
+        const result = (await client.callTool(call)) as ToolResult;
+
+        expect(result.isError, `${call.name} @ ${status}`).toBe(true);
+        expect(textOf(result), `${call.name} @ ${status}`).not.toContain('supersecret');
+        expect(textOf(result), `${call.name} @ ${status}`).not.toMatch(KEY_SHAPED);
+        expect(result.structuredContent, `${call.name} @ ${status}`).toBeUndefined();
+      }
+    }
+  }, 30_000);
+
+  test('no tool leaks the API key when the network fails', async () => {
+    const throwing = (async () => {
+      throw new Error('fetch failed', { cause: { code: 'ENOTFOUND' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(throwing);
+
+    for (const call of TOOL_CALLS) {
+      const result = (await client.callTool(call)) as ToolResult;
+
+      expect(textOf(result), call.name).not.toContain('supersecret');
+      expect(textOf(result), call.name).not.toMatch(KEY_SHAPED);
+    }
+  });
+});

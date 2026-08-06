@@ -119,7 +119,7 @@ untouched, per the amend-via-CONTEXT precedent [D1](../../CONTEXT.md) and
   validation helpers (plan Task 6) (AC: 7, 10)
 - [x] **TASK-2.4.7** — Move accounts into `tools/accounts/` and migrate onto the
   helper (plan Task 7) (AC: 1, 8, 10)
-- [ ] **TASK-2.4.8** — Table-driven invariant tests (plan Task 8) (AC: 9)
+- [x] **TASK-2.4.8** — Table-driven invariant tests (plan Task 8) (AC: 9)
 - [ ] **TASK-2.4.9** — Scope documentation, CONTEXT decisions, and the 0.2.0 release
   (plan Task 9) (AC: 11, 12, 13)
 
