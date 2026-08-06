@@ -19,18 +19,24 @@ text a model can act on. This server is that something.
 
 **Current state: v0.1.0 shipped.** Exactly one tool, `list_accounts`, tracked as
 [US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md), proven against the live
-API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md). Read the
+API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md). The API is
+10 `GET` + 7 `POST`, so with `list_accounts` shipped, **nine** read operations remain.
+Five of them ship in [sprint-2026-W33](docs/sprints/sprint-2026-W33.md), tracked as
+[US-2.4](docs/sprints/stories/US-2.4-tool-substrate-and-layout.md) through
+[US-2.9](docs/sprints/stories/US-2.9-list-pending-orders-tool.md); the remaining four
+carry to W34. Read the
 [design spec](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) before
 touching anything under `src/`.
 
 ### The read/write split
 
 This is the project's load-bearing architectural boundary. **Only read operations are
-exposed.** Eight of the 17 operations are `POST`, two of them `positions/close-all` and
+exposed.** Seven of the 17 operations are `POST`, two of them `positions/close-all` and
 `orders/cancel-all`. A tool an LLM can call that closes every open position is not a
 bigger version of a tool that lists accounts — it needs an opt-in switch, an
-`Idempotency-Key`, and user confirmation before execution. It gets its own epic and its
-own design spec. Do not register a write tool, and do not add one "ready to enable".
+`Idempotency-Key`, and user confirmation before execution. It gets its own epic
+([EPIC-3](docs/sprints/epics/EPIC-3.md)) and its own design spec. Do not register a
+write tool, and do not add one "ready to enable".
 
 ## Repo structure
 
