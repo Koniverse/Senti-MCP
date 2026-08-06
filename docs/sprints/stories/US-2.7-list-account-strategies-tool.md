@@ -57,14 +57,14 @@ every tool that takes the parameter.
 
 ## Tasks
 
-- [ ] **TASK-2.7.1** — `tools/strategies/list-account-strategies.ts` domain module
+- [x] **TASK-2.7.1** — `tools/strategies/list-account-strategies.ts` domain module
   (plan Task 14) (AC: 1, 3, 5)
-  - [ ] `AccountStrategySchema`, `parseAccountStrategies`, `formatAccountStrategies`;
-        `inputSchema` carrying `accountId`
+  - [x] `AccountStrategySchema`, `parseAccountStrategies`, `formatAccountStrategies`
 - [ ] **TASK-2.7.2** — Registration, the first path parameter, and the 0.5.0 release
   (plan Task 15) (AC: 1, 2, 4, 6)
-  - [ ] Register through `registerReadTool`; build the path via `accountPath`;
-        `scope: 'strategies:read'`; a traversal-payload test; a `404` hint assertion
+  - [ ] Register through `registerReadTool`; `inputSchema` carrying `accountId`; build
+        the path via `accountPath`; `scope: 'strategies:read'`; a traversal-payload
+        test; a `404` hint assertion
 
 ## Dev notes
 
