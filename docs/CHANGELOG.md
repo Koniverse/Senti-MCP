@@ -17,6 +17,71 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ---
 
+## [0.2.0] — 2026-08-06 — Read-tool substrate: core/ + tools/, registerReadTool, five scopes
+
+Substrate release — ships no new tool. Restructures `src/` into `core/`
+(infrastructure) and `tools/<tag>/` (one folder per API tag), adds the
+`registerReadTool`/`parseOrThrow` helpers and the client's `query`/`accountPath`/
+`404`/`409` support, and migrates `list_accounts` onto all of it with no behaviour
+change. This is the shape the remaining nine read tools land in over the rest of this
+sprint and the next.
+
+### Added
+- `src/core/` — `client.ts`, `errors.ts`, `tool.ts`, `parse.ts`, each with a
+  co-located test file. Infrastructure that never imports from `tools/` (enforced by
+  grep, not review).
+- `client.get`'s `query` option — drops `undefined` entries, encodes the rest via
+  `URLSearchParams`.
+- `accountPath` — the only function permitted to build a path carrying `accountId`.
+  Validates each segment against `/^[A-Za-z0-9_-]{1,64}$/` before
+  `encodeURIComponent`, rejecting `../`, percent-encoded traversal, the empty string,
+  and oversized segments.
+- Dedicated `404` and `409` branches in `client.get`. `404` names the three likely
+  causes (account doesn't exist, isn't owned by this key, or a `login` was passed
+  instead of `id`) and points at `list_accounts`. `409` takes a call-site-supplied
+  `conflictMeans` string, since what a conflict means is a property of the endpoint,
+  not something the client can infer.
+- `registerReadTool` (`core/tool.ts`) — registers a tool with `readOnlyHint: true` and
+  `openWorldHint: true` set as constants with no parameter path to override them,
+  wraps `run` in the `try`/`catch` every tool needs, and returns
+  `{ content, structuredContent }` on success or `{ content, isError: true }` on
+  failure.
+- `parseOrThrow` (`core/parse.ts`) — the `safeParse`-or-throw-naming-the-field pattern
+  generalized out of `accounts.ts` so every tool shares one implementation.
+- `src/tools/accounts/list-accounts.ts` — `list_accounts`, migrated from
+  `src/accounts.ts` onto `registerReadTool` and `parseOrThrow` with no behaviour
+  change.
+- Table-driven invariant tests in `src/server.test.ts`, written once to cover every
+  tool added afterwards: `readOnlyHint`/`openWorldHint` on every registered tool, no
+  API key leakage on any of six error statuses or a network failure, and
+  `structuredContent` validating against each tool's own `outputSchema` on a
+  successful call. Later tool stories add one `TOOL_CALLS` row instead of writing new
+  tests.
+- `docs/sprints/epics/EPIC-3.md` — placeholder for the write path (`status: backlog`,
+  no stories yet): the seven write operations and their guardrails (opt-in
+  environment variable, `Idempotency-Key` on the two operations that accept it,
+  elicitation before execution, the partial-close-is-not-retry-safe warning, and the
+  best-effort-batch contract for the two `*-all` operations).
+
+### Changed
+- Repo layout: `src/` splits into `core/` and `tools/<tag>/` — `accounts/` today,
+  `brokers/`, `strategies/`, `performance/`, and `trading/` as their tools land
+  ([CONTEXT D7](CONTEXT.md)). Reverses the flat-layout rule v0.1.0 shipped with.
+- `list_accounts` now registers through `registerReadTool` ([CONTEXT D8](CONTEXT.md)).
+- The API key now needs five read scopes, not one: `accounts:read`, `brokers:read`,
+  `strategies:read`, `performance:read`, `trading:read` — documented in
+  `docs/SETUP.md`, `.env.example`, and `README.md`. There is no key-introspection
+  endpoint, so a missing scope is not caught at startup; it surfaces as a `403`
+  naming the scope the first time the affected tool is called, and every other tool
+  keeps working. Only `accounts:read` is exercised by a shipped tool today.
+
+### Fixed
+- `AGENTS.md` and `docs/sprints/epics/EPIC-2.md` corrected: the Senti Quant Public
+  API is 10 `GET` + 7 `POST` (17 operations), not "eight of 17 are POST." With
+  `list_accounts` shipped, **nine** read operations remain, not sixteen.
+
+---
+
 ## [0.1.0] — 2026-08-05 — First release: authenticated Senti client and list_accounts — v0.1.0
 
 First release. Adopted the `koni-docs` documentation framework, then built an

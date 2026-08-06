@@ -11,7 +11,7 @@ into an MCP client by absolute path.
 | Requirement | Why |
 |---|---|
 | **Node.js ≥ 20.6.0** | `AbortSignal.any()`, on the path of every tool call, landed in 20.3.0; `npm run test:smoke` uses `node --env-file`, added in 20.6.0. On 20.0–20.2 the server starts and `tools/list` succeeds, then every `list_accounts` call fails with `TypeError: AbortSignal.any is not a function`. |
-| **A Senti Quant API key** | `sq_live_…`, carrying the `accounts:read` scope. Created in the [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). |
+| **A Senti Quant API key** | `sq_live_…`. As of v0.2.0 the tool surface needs five read scopes — see §3. Created in the [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). |
 
 ```bash
 node --version    # must be >= 20.6.0
@@ -39,8 +39,9 @@ cp .env.example .env.local
 ```bash
 # Senti Quant API key (added in v0.1.0) — REQUIRED.
 # The first-party key is itself the bearer token; the server exits at startup
-# without it. Create one with the `accounts:read` scope at
-# https://stage.sentitrade.xyz/account/api-keys
+# without it. As of v0.2.0 the tool surface needs five read scopes:
+# accounts:read, brokers:read, strategies:read, performance:read, trading:read.
+# Create one with all five at https://stage.sentitrade.xyz/account/api-keys
 SENTI_API_KEY=sq_live_…
 
 # Senti API root (added in v0.1.0) — optional.
@@ -57,6 +58,22 @@ SENTI_SMOKE_KEY=sq_live_…
 | `SENTI_API_KEY` | yes | — | First-party key, `sq_live_…`. The server exits 1 at startup without it. |
 | `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | API root. Set to `https://be-dev.sentitrade.xyz` for development. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only, read from `.env.local` by `npm run test:smoke`. |
+
+> ### Five scopes, not one
+>
+> As of v0.2.0 the tool surface needs `accounts:read`, `brokers:read`,
+> `strategies:read`, `performance:read`, and `trading:read`. Create the key with all
+> five at once — scopes are fixed at creation, so a key created with fewer means going
+> back to the dashboard later.
+>
+> **There is no key-introspection endpoint**, so a missing scope cannot be detected at
+> startup. It surfaces as a `403` naming the missing scope the first time a tool that
+> needs it is called; every other tool keeps working normally.
+>
+> Only `accounts:read` is exercised by a shipped tool today (`list_accounts`). The
+> other four become necessary as [US-2.5](sprints/stories/US-2.5-list-brokers-tool.md)
+> through [US-2.9](sprints/stories/US-2.9-list-pending-orders-tool.md) land the
+> remaining read tools this sprint.
 
 > ### The key and the base URL must match environments
 >
@@ -139,7 +156,7 @@ Restart the client; `list_accounts` should appear in its tool list.
 |---|---|
 | `SENTI_API_KEY is required…`, exit 1 | No key in the environment. The MCP client's `env` block is separate from your shell. |
 | `Senti API rejected the credentials (401)` | Key does not match the environment `SENTI_API_BASE_URL` targets (see §3), or it was revoked. |
-| `Senti API returned 403 … missing the \`accounts:read\` scope` | The key is valid but was created without that scope. Create a new one; scopes are fixed at creation. |
+| `Senti API returned 403 … missing the \`<scope>\` scope` | The key is valid but lacks that scope — `accounts:read`, `brokers:read`, `strategies:read`, `performance:read`, or `trading:read`, depending on which tool was called. There is no key-introspection endpoint, so this is caught only when the tool runs, not at startup. Create a new key with all five scopes; scopes are fixed at creation. |
 | `TypeError: AbortSignal.any is not a function` | Node older than 20.3.0. See §1. |
 | Client shows no tools / fails to connect | Something wrote to stdout and corrupted the JSON-RPC stream. Diagnostics must go to stderr only. |
 | `SENTI_API_BASE_URL must not carry a query string or fragment` | Exactly that — a query or fragment cannot survive being joined to an endpoint path. |
@@ -149,5 +166,5 @@ Restart the client; `list_accounts` should appear in its tool list.
 
 - [README.md](../README.md) — tool table, configuration, security posture
 - [docs/README.md](README.md) — doc hub and pre-commit checklist
-- [CONTEXT.md](CONTEXT.md) — decision log (D5 Node floor, D6 base-URL validation)
+- [CONTEXT.md](CONTEXT.md) — decision log (D5 Node floor, D6 base-URL validation, D7–D9 the read-tool substrate)
 - [v1 design spec](superpowers/specs/2026-08-05-senti-mcp-server-design.md)

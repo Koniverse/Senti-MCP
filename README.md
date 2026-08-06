@@ -18,8 +18,14 @@ the MT5 account number, not a key.
 - Node.js ≥ 20.6.0 — `AbortSignal.any()`, which every tool call goes through,
   landed in 20.3.0, and `npm run test:smoke` uses `node --env-file`, added in
   20.6.0
-- A Senti Quant API key (`sq_live_…`) with the `accounts:read` scope, from the
-  [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys)
+- A Senti Quant API key (`sq_live_…`). As of v0.2.0 the tool surface needs five
+  read scopes: `accounts:read`, `brokers:read`, `strategies:read`,
+  `performance:read`, `trading:read` — create one with all five at the
+  [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). There is
+  no key-introspection endpoint, so a missing scope isn't caught at startup: it
+  surfaces as a `403` naming the scope the first time the affected tool is
+  called, and every other tool keeps working. Only `accounts:read` is
+  exercised by a shipped tool today (`list_accounts`).
 
 ## Configuration
 

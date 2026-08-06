@@ -2,7 +2,8 @@
 id: US-2.4
 title: "Tool substrate and directory layout"
 epic: EPIC-2
-status: backlog
+status: done
+version_shipped: 0.2.0
 priority: P1
 points: 5
 sprint: sprint-2026-W33
@@ -53,62 +54,65 @@ untouched, per the amend-via-CONTEXT precedent [D1](../../CONTEXT.md) and
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** the migration is complete, **Then** `src/core/` holds
+- [x] **AC-1** — **Given** the migration is complete, **Then** `src/core/` holds
   `client.ts`, `errors.ts`, `tool.ts`, and `parse.ts`, each with a co-located test file,
   **And** `src/tools/accounts/list-accounts.ts` holds the accounts domain module,
   **And** `npm test`, `npm run typecheck`, and `npm run build` all exit 0 with no
   behavioural change to `list_accounts`.
-- [ ] **AC-2** — `core/` imports nothing from `tools/` — verified by grep, not by
+- [x] **AC-2** — `core/` imports nothing from `tools/` — verified by grep, not by
   inspection.
-- [ ] **AC-3** — **Given** a call to `client.get(path, { query })` where `query` mixes
+- [x] **AC-3** — **Given** a call to `client.get(path, { query })` where `query` mixes
   defined and `undefined` values, **When** the request is built, **Then** every
   `undefined` entry is dropped and the remaining entries are encoded via
   `URLSearchParams`.
-- [ ] **AC-4** — **Given** `accountPath` is called with `../`, `..%2F..%2Fadmin`, the
+- [x] **AC-4** — **Given** `accountPath` is called with `../`, `..%2F..%2Fadmin`, the
   empty string, or a 65-character segment, **When** it validates the id, **Then** it
   throws rather than building a path. **Given** a normal id, **When** `accountPath`
   runs, **Then** it returns a path with the id passed through `encodeURIComponent`.
-- [ ] **AC-5** — **Given** the API returns `404` for a request carrying an `accountId`,
+- [x] **AC-5** — **Given** the API returns `404` for a request carrying an `accountId`,
   **When** `client.get` handles the response, **Then** the error message names the
   account not existing, the account not belonging to this key, and a `login` having
   been passed instead of `id` as the three possible causes, **And** it directs the
   caller to `list_accounts`'s `id` field.
-- [ ] **AC-6** — **Given** the API returns `409` and the call site supplied a
+- [x] **AC-6** — **Given** the API returns `409` and the call site supplied a
   `conflictMeans` string, **When** `client.get` handles the response, **Then** the
   error message carries that endpoint-supplied text rather than a generic conflict
   message.
-- [ ] **AC-7** — **Given** a tool registered through `registerReadTool`, **Then** it
+- [x] **AC-7** — **Given** a tool registered through `registerReadTool`, **Then** it
   sets `readOnlyHint: true` and `openWorldHint: true` as constants (not a per-call
   parameter), **And** on success it returns `{ content, structuredContent }`, **And**
   on failure it returns `{ content, isError: true }` with no `structuredContent`,
   **And** the session is still alive after a failed call.
-- [ ] **AC-8** — **Given** `list_accounts` migrated onto `registerReadTool`, **Then**
+- [x] **AC-8** — **Given** `list_accounts` migrated onto `registerReadTool`, **Then**
   it behaves identically to its 0.1.0 shape — every existing `server.test.ts` assertion
   still passes unmodified.
-- [ ] **AC-9** — Table-driven tests cover every registered tool for: no API key
+- [x] **AC-9** — Table-driven tests cover every registered tool for: no API key
   leakage on any error branch, `structuredContent` validating against the tool's own
   `outputSchema`, and `readOnlyHint: true`.
-- [ ] **AC-10** — No file outside `src/server.ts` and `src/index.ts` imports a
+- [x] **AC-10** — No file outside `src/server.ts` and `src/index.ts` imports a
   **runtime value** from `@modelcontextprotocol/*`; `core/tool.ts` and every tool
   module use `import type` only.
-- [ ] **AC-11** — `AGENTS.md` and `EPIC-2` state 10 `GET` + 7 `POST` and nine read
+- [x] **AC-11** — `AGENTS.md` and `EPIC-2` state 10 `GET` + 7 `POST` and nine read
   operations remaining; `AGENTS.md`'s repo-structure section describes the new
   `core/` + `tools/<tag>/` layout.
-- [ ] **AC-12** — `CONTEXT.md` gains three entries: **D7** the directory structure
+- [x] **AC-12** — `CONTEXT.md` gains three entries: **D7** the directory structure
   (reversing the flat-layout rule), **D8** `registerReadTool`, **D9** the
   payload-shaping policy.
-- [ ] **AC-13** — `SETUP.md`, `.env.example`, and `README.md` list all five read
+- [x] **AC-13** — `SETUP.md`, `.env.example`, and `README.md` list all five read
   scopes (`accounts:read`, `brokers:read`, `strategies:read`, `performance:read`,
   `trading:read`), not just `accounts:read`.
-- [ ] **AC-14** — `EPIC-3.md` exists with `status: planned`, listing the seven write
-  operations and the guardrails, and no stories.
+- [x] **AC-14** — `EPIC-3.md` exists with `status: backlog`, listing the seven write
+  operations and the guardrails, and no stories. (Amended from this AC's original
+  `status: planned` — see Implementation notes: `planned` is not a member of this
+  repo's `epicSchema`, which allows only `backlog | in-progress | done`; `backlog` is
+  the schema-valid equivalent for an epic with no stories opened yet.)
 
 ## Tasks
 
-- [ ] **TASK-2.4.1** — Sprint W33 scaffolding and the operation-count correction
+- [x] **TASK-2.4.1** — Sprint W33 scaffolding and the operation-count correction
   (plan Task 1) (AC: 11, 14)
-  - [ ] Open `sprint-2026-W33.md`, this story and its five siblings, `EPIC-3.md`
-  - [ ] Correct the operation count in `AGENTS.md` and `EPIC-2.md`
+  - [x] Open `sprint-2026-W33.md`, this story and its five siblings, `EPIC-3.md`
+  - [x] Correct the operation count in `AGENTS.md` and `EPIC-2.md`
 - [x] **TASK-2.4.2** — Move `client` and `errors` into `src/core/` (plan Task 2)
   (AC: 1, 2, 8)
 - [x] **TASK-2.4.3** — Query-parameter support in `core/client.ts` (plan Task 3)
@@ -120,7 +124,7 @@ untouched, per the amend-via-CONTEXT precedent [D1](../../CONTEXT.md) and
 - [x] **TASK-2.4.7** — Move accounts into `tools/accounts/` and migrate onto the
   helper (plan Task 7) (AC: 1, 8, 10)
 - [x] **TASK-2.4.8** — Table-driven invariant tests (plan Task 8) (AC: 9)
-- [ ] **TASK-2.4.9** — Scope documentation, CONTEXT decisions, and the 0.2.0 release
+- [x] **TASK-2.4.9** — Scope documentation, CONTEXT decisions, and the 0.2.0 release
   (plan Task 9) (AC: 11, 12, 13)
 
 ## Dev notes
@@ -195,12 +199,12 @@ untouched, per the amend-via-CONTEXT precedent [D1](../../CONTEXT.md) and
 | AC-6 | `npm test -- src/core/client.test.ts -t 409` |
 | AC-7 | `npm test -- src/core/tool.test.ts` |
 | AC-8 | `npm test -- src/server.test.ts` |
-| AC-9 | `npm test -- src/server.test.ts -t "table-driven"` |
+| AC-9 | `npm test -- src/server.test.ts -t "invariants"` (the describe block's actual name; covers all three clauses, including the generalized `outputSchema` test added by TASK-2.4.9 — see Implementation notes) |
 | AC-10 | `grep -rln '@modelcontextprotocol' src/` returns only `src/server.ts`, `src/index.ts`, and test clients; `grep -L "^import type" src/core/tool.ts src/tools/**/*.ts` returns nothing |
 | AC-11 | `grep -n "10 GET\|7 POST\|nine read" AGENTS.md docs/sprints/epics/EPIC-2.md` |
 | AC-12 | `grep -c "^### D" docs/CONTEXT.md` → 9 |
 | AC-13 | `grep -c "brokers:read\|strategies:read\|performance:read\|trading:read" docs/SETUP.md .env.example README.md` — each ≥ 1 |
-| AC-14 | `test -f docs/sprints/epics/EPIC-3.md && grep "status: planned" docs/sprints/epics/EPIC-3.md` |
+| AC-14 | `test -f docs/sprints/epics/EPIC-3.md && grep "status: backlog" docs/sprints/epics/EPIC-3.md` (amended from `status: planned` — see AC-14 and Implementation notes) |
 
 ## Changelog entry
 
@@ -223,11 +227,133 @@ untouched, per the amend-via-CONTEXT precedent [D1](../../CONTEXT.md) and
 
 ## Implementation notes
 
-Not yet started — filled in when this story moves to `in-progress`.
+This story executed as nine tasks across nine separate work sessions (Tasks 1–9 of the
+[implementation plan](../../superpowers/plans/2026-08-06-senti-read-tools-w33.md)); this
+final task closed the story. Two bookkeeping corrections surfaced during closure, both
+resolved here rather than left as known-false ticked boxes.
+
+### AC-9 resolution: generalized clause 2 into the table (option a)
+
+AC-9 has three clauses: (1) no API key leakage on any error branch, (2)
+`structuredContent` validating against the tool's own `outputSchema`, and (3)
+`readOnlyHint: true`. TASK-2.4.8 shipped (1) and (3) as table-driven tests covering
+every registered tool via `TOOL_CALLS`, but (2) existed only as a per-tool assertion in
+the `describe('MCP server', …)` block —
+`AccountsOutputSchema.safeParse(result.structuredContent).success` for `list_accounts`
+alone. Ticking AC-9 as originally written would have been false for a third of it.
+
+Two ways to close that gap were on the table: (a) generalize clause 2 into `TOOL_CALLS`
+by giving each row an `outputSchema` and a `successBody`, and add one more table test;
+or (b) amend AC-9 to state that clause 2 is per-tool by design, confirming the
+`list_accounts` assertion still exists.
+
+**Chosen: (a).** `TOOL_CALLS` in `src/server.test.ts` now carries `outputSchema` and
+`successBody` per row (`successBody` is the raw HTTP JSON a stubbed `fetch` returns —
+the shape the real API sends — which necessarily differs per tool, hence two new
+fields rather than one shared fixture). A new test,
+`"every tool's structuredContent validates against its own outputSchema"`, stubs
+`fetch` to return each row's `successBody`, calls the tool, and asserts
+`result.structuredContent` parses against that row's `outputSchema`. This makes clause
+2 automatic for the nine tools still to land this sprint and next, the same way
+TASK-2.4.8 already made clauses 1 and 3 automatic — a future tool story that forgets
+to add a row fails `"the table lists every registered tool"` immediately, and one that
+adds a row with the wrong `outputSchema`/`successBody` pairing fails the new test
+rather than shipping unchecked. The cost is real but small: every future `TOOL_CALLS`
+row needs two more fields than before, which each tool story's own fixture data
+(`ACCOUNT`-style constants already exist per test file) already provides.
+
+This does not reopen [D8](../../CONTEXT.md)'s "no descriptor table" ruling. D8 is about
+*registration* — the tool's name, description, and schemas staying hand-written per
+module so a model's tool-selection surface is never flattened into data a generic loop
+could silently mishandle. `TOOL_CALLS` is a *test* fixture that never reaches a model
+or a client; it exists purely to drive the invariant test, so extending it carries none
+of D8's cost.
+
+`npx vitest run src/server.test.ts` went from 14 to 15 passing tests
+(`src/server.test.ts` alone) with this addition; the new test passes on the first run
+because it asserts a property `registerReadTool` (TASK-2.4.6) and `list-accounts.ts`
+(TASK-2.4.7) already upheld — a regression net, like the rest of TASK-2.4.8's suite,
+not a red-green cycle.
+
+### A second, smaller correction: AC-14's `status: planned`
+
+TASK-2.4.1's own fix round (recorded in that task's report) already established that
+`status: planned` is not a member of this repo's `epicSchema` (`backlog | in-progress |
+done`), and substituted `status: backlog` for `EPIC-3.md` — the schema-valid state for
+an epic with no stories opened yet. That fix landed in `EPIC-3.md` itself, but AC-14's
+own text and its verification-table row were never updated to match, so ticking AC-14
+as originally worded would have asserted a string (`status: planned`) that does not
+exist in the file. Both are corrected above to `status: backlog`, with a one-line
+pointer to the reason; `EPIC-3.md` itself is unchanged (it already reads
+`status: backlog`, unmodified since Task 1).
+
+### TASK-2.4.1's checkbox
+
+TASK-2.4.1's work (opening the sprint file, this story and its five siblings,
+`EPIC-3.md`, and correcting the operation count in `AGENTS.md` and `EPIC-2.md`) was
+completed and committed in Task 1 (`335f53f`, per that task's report) — before this
+story file existed to tick its own box in. The checkbox lagged the work by
+construction: Task 1 authored this story from a template with the box unchecked, and
+no later task revisited its own bootstrapping step. It is ticked now, alongside its two
+sub-items, since the work it describes has been true since Task 1 landed.
+
+### Version bump and doc updates (this task's own work)
+
+`VERSION`, `package.json`, and `src/config.ts`'s `SERVER_VERSION` all moved to
+`0.2.0`; `src/config.test.ts`'s drift check passed unmodified. `docs/SETUP.md`,
+`.env.example`, and `README.md` were extended to name all five read scopes
+(`accounts:read`, `brokers:read`, `strategies:read`, `performance:read`,
+`trading:read`) and to state the failure mode explicitly — no key-introspection
+endpoint means a missing scope surfaces only as a `403` naming it when the affected
+tool is first called, with every other tool unaffected — and to note that only
+`accounts:read` is exercised by a shipped tool today. `docs/CONTEXT.md` gained D7
+(directory structure), D8 (`registerReadTool`/`parseOrThrow` over a descriptor table),
+and D9 (payload shaping), each read against two existing entries (D5, D6) first to
+match the register. `docs/CHANGELOG.md` gained the `[0.2.0]` section with no commit
+SHA (RULE-2). `docs/sprints/epics/EPIC-2.md`'s story index row for US-2.4 was flipped
+from `📋 backlog` to `✅ done (v0.2.0)` for consistency with this story's own closure —
+not in Task 9's literal file list, but the same update US-2.3 made to EPIC-2 when it
+closed the v0.1.0 stories, and leaving it stale would have made the epic table
+contradict this story file. `sprint-2026-W33.md`'s scope table row for US-2.4 was
+updated the same way; the sprint's own `status: in-progress` is unchanged since five
+sibling stories remain open.
 
 ## Files modified
 
-Not yet started — filled in when this story moves to `in-progress`.
+**Modified (version):**
+- `VERSION`, `package.json`, `src/config.ts` — `0.1.0` → `0.2.0`
+
+**Modified (AC-9 option (a)):**
+- `src/server.test.ts` — `TOOL_CALLS` gained `outputSchema` and `successBody` fields;
+  one new table-driven test for clause 2
+
+**Modified (five-scope documentation):**
+- `docs/SETUP.md` — prerequisites table, environment section (comment block + new
+  "Five scopes, not one" note), troubleshooting table, cross-references
+- `.env.example` — `SENTI_API_KEY` comment block
+- `README.md` — Requirements section
+
+**Modified (CONTEXT and CHANGELOG):**
+- `docs/CONTEXT.md` — appended `## Phase 2 — Read-tool expansion (2026-08-06)` with
+  D7, D8, D9
+- `docs/CHANGELOG.md` — added the `[0.2.0]` section above `[0.1.0]`, below
+  `[Unreleased]`
+
+**Modified (story closure and Active Context):**
+- `docs/sprints/stories/US-2.4-tool-substrate-and-layout.md` — this file: frontmatter
+  (`status: done`, `version_shipped: 0.2.0`), all AC and task boxes, AC-9 and AC-14
+  verification rows, this section
+- `docs/sprints/sprint-2026-W33.md` — US-2.4's scope-table row → `✅ done`
+- `docs/sprints/epics/EPIC-2.md` — US-2.4's story-index row → `✅ done (v0.2.0)`
+- `CLAUDE.md` — Active Context block refreshed (sprint W33 in progress, US-2.4 closed,
+  next up US-2.5, Last Version 0.2.0, D7–D9 in Recent Decisions)
+- `docs/sprints/STATUS.md` — regenerated by `npm run agile:status` (RULE-5, never
+  hand-edited)
+
+**Not modified:** `commit:` is deliberately absent from this story's frontmatter —
+RULE-2 forbids `--amend`-ing a commit's own SHA into its own commit; a follow-up commit
+backfills it, the same way [US-2.3](US-2.3-live-smoke-test-and-readme.md) records
+having done for US-2.1–2.3 after the v0.1.0 release.
 
 ## Cross-references
 

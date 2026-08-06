@@ -1,5 +1,6 @@
 import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 import { describe, expect, test } from 'vitest';
+import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { loadConfig } from './config.js';
 import { createServer } from './server.js';
@@ -168,11 +169,20 @@ describe('MCP server', () => {
 
 /**
  * One entry per registered tool. Later tool stories add a row here rather than
- * writing their own leak test — that is the point of the table.
+ * writing their own leak test or their own `outputSchema` assertion — that is
+ * the point of the table. `outputSchema` and `successBody` exist only for the
+ * "structuredContent validates against its own schema" test below:
+ * `successBody` is the raw HTTP response body a stubbed `fetch` returns (the
+ * shape the real API sends), and `outputSchema` is the same schema the tool
+ * registers with `registerReadTool` — each tool needs a different successful
+ * body, so this cannot be a single shared fixture (AC-9).
  */
-const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
-  { name: 'list_accounts' },
-];
+const TOOL_CALLS: {
+  name: string;
+  arguments?: Record<string, unknown>;
+  outputSchema: z.ZodType;
+  successBody: unknown;
+}[] = [{ name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] }];
 
 const errorStatuses = [401, 403, 404, 409, 429, 500];
 
@@ -205,6 +215,22 @@ describe('invariants across every registered tool', () => {
     for (const tool of tools) {
       expect(tool.annotations?.readOnlyHint, `${tool.name} readOnlyHint`).toBe(true);
       expect(tool.annotations?.openWorldHint, `${tool.name} openWorldHint`).toBe(true);
+    }
+  });
+
+  test("every tool's structuredContent validates against its own outputSchema", async () => {
+    for (const call of TOOL_CALLS) {
+      const succeeding = (async () =>
+        new Response(JSON.stringify(call.successBody), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })) as unknown as typeof fetch;
+      const client = await connect(succeeding);
+
+      const result = (await client.callTool({ name: call.name, arguments: call.arguments })) as ToolResult;
+
+      expect(result.isError, call.name).toBeFalsy();
+      expect(call.outputSchema.safeParse(result.structuredContent).success, call.name).toBe(true);
     }
   });
 

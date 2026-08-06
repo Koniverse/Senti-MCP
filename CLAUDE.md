@@ -9,17 +9,17 @@ invariants, and the documentation map. Read it first. On any conflict, AGENTS.md
 koni-docs:
   plugins: []
   docs_path: docs/
-  active_sprint: sprint-2026-W32
+  active_sprint: sprint-2026-W33
   version_file: VERSION
 
 ## Active Context <!-- koni-docs:auto-update -->
-- Sprint: sprint-2026-W32 (2026-08-03 → 2026-08-09) — 4 stories / 15 points — closed
-- Active Stories: none — all four closed this sprint: ✅ US-1.1 koni-docs adoption, ✅ US-2.1 authenticated Senti client, ✅ US-2.2 `list_accounts` tool, ✅ US-2.3 live smoke test + README + release
-- Next Up: US-2.4 onward — the remaining **9** read operations (not 16; the API is 10 `GET` + 7 `POST`), one tool per story, per the [read-tool expansion spec](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md). US-2.4 is a substrate story shipping no tool: `core/` + `tools/<tag>/` layout, `registerReadTool`, client `query`/`accountPath`/404, and the doc corrections listed in that spec (EPIC-2 stays `in-progress`)
-- Last Version: 0.1.0 — first release, tagged `v0.1.0`. Ships the authenticated Senti client and the `list_accounts` tool, proven against the live development API. A post-review fix wave was folded into this same version and the (never-pushed) tag moved — no 0.1.1
-- Recent Decisions: D6 reject a base URL that is not a bare `https:`/`http:` origin · D5 Node floor raised to 20.6.0 (`AbortSignal.any`, `node --env-file`) · D4 Active Context Pattern A · D3 wire `status` + `validate`, omit `sync` · D2 vendor via skills-lock.json, not a symlink · D1 adopt koni-docs
+- Sprint: sprint-2026-W33 (2026-08-10 → 2026-08-16) — 6 stories / 15 points — in-progress
+- Active Stories: ✅ US-2.4 tool substrate and directory layout — closed, ships 0.2.0. Open: US-2.5 `list_brokers`, US-2.6 `list_strategies`, US-2.7 `list_account_strategies`, US-2.8 `list_positions`, US-2.9 `list_pending_orders`
+- Next Up: US-2.5 `list_brokers` — the first tool on the new substrate (no path parameter, proves `registerReadTool` alone), per the [read-tool expansion spec](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md). Four more read operations (`get_account_performance`, `get_performance_breakdowns`, `get_equity_timeseries`, `list_deals`) carry to sprint W34 (EPIC-2 stays `in-progress`)
+- Last Version: 0.2.0 — substrate release, ships no new tool. Restructures `src/` into `core/` + `tools/<tag>/`, adds `registerReadTool`/`parseOrThrow`, client `query`/`accountPath`/`404`/`409`, and table-driven invariant tests (key-leak, `readOnlyHint`, `structuredContent`-vs-`outputSchema`, all generic across every registered tool). `list_accounts` migrates onto it with no behaviour change
+- Recent Decisions: D9 tools bind and shape their own payloads (a year of `breakdowns` is ~70k tokens) · D8 `registerReadTool`/`parseOrThrow` over a descriptor table — the repetition worth removing was the mechanical try/catch, not the descriptions and schemas a model picks a tool by · D7 `core/` + `tools/<tag>/` replaces the flat layout · D6 reject a base URL that is not a bare `https:`/`http:` origin · D5 Node floor raised to 20.6.0
 - Recent Lessons: none — `docs/LESSONS.md` is created with its first real entry
-- Watch: the version string lives in **three** places — `VERSION`, `package.json`, `SERVER_VERSION` in `src/config.ts`. koni-docs checks the first two; `config.test.ts` fails the suite if the third drifts. Adding an env var needs `docs/SETUP.md` + `.env.example` in the same commit (RULE-11)
+- Watch: the version string lives in **three** places — `VERSION`, `package.json`, `SERVER_VERSION` in `src/config.ts`. koni-docs checks the first two; `config.test.ts` fails the suite if the third drifts. The API key now needs **five** read scopes (`accounts:read`, `brokers:read`, `strategies:read`, `performance:read`, `trading:read`); there is no key-introspection endpoint, so a missing one surfaces only as a 403 naming it when the affected tool is first called. Adding an env var needs `docs/SETUP.md` + `.env.example` in the same commit (RULE-11)
 <!-- /koni-docs:auto-update -->
 
 Refresh this block at the koni-docs trigger points: story start or close, sprint open or
