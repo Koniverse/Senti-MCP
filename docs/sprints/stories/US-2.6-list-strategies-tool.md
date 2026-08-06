@@ -2,7 +2,8 @@
 id: US-2.6
 title: "list_strategies tool"
 epic: EPIC-2
-status: backlog
+status: done
+version_shipped: 0.4.0
 priority: P1
 points: 2
 sprint: sprint-2026-W33
@@ -38,18 +39,18 @@ zero-rated strategy.
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** a successful call, **When** the result is returned, **Then**
+- [x] **AC-1** — **Given** a successful call, **When** the result is returned, **Then**
   `structuredContent` is an object with a `strategies` key, **And** it validates
   against the tool's own `outputSchema`.
-- [ ] **AC-2** — **Given** a strategy response omitting `description`,
+- [x] **AC-2** — **Given** a strategy response omitting `description`,
   `supportedSymbols`, or `supportedTimeframes`, **When** it is parsed, **Then** the
   absence of any of the three is not a validation error.
-- [ ] **AC-3** — **Given** a null `avgRating`, **When** the entry is formatted,
+- [x] **AC-3** — **Given** a null `avgRating`, **When** the entry is formatted,
   **Then** it renders as `—` and never as `0`.
-- [ ] **AC-4** — The tool description states that the catalog is platform-wide — every
+- [x] **AC-4** — The tool description states that the catalog is platform-wide — every
   strategy Senti offers, not the ones deployed on the caller's accounts. Asserted on
   the description text.
-- [ ] **AC-5** — **Given** a `403` from the API, **When** the tool returns, **Then**
+- [x] **AC-5** — **Given** a `403` from the API, **When** the tool returns, **Then**
   `isError` is true and the text names the `strategies:read` scope.
 
 ## Tasks
@@ -59,8 +60,8 @@ zero-rated strategy.
   - [x] `StrategySchema` (optional `description`/`supportedSymbols`/
         `supportedTimeframes`, nullable `avgRating`), `parseStrategies`,
         `formatStrategies`
-- [ ] **TASK-2.6.2** — Registration and the 0.4.0 release (plan Task 13) (AC: 4, 5)
-  - [ ] Register through `registerReadTool`; `scope: 'strategies:read'`;
+- [x] **TASK-2.6.2** — Registration and the 0.4.0 release (plan Task 13) (AC: 4, 5)
+  - [x] Register through `registerReadTool`; `scope: 'strategies:read'`;
         platform-wide sentence in the description, phrased to contrast against
         `list_account_strategies`
 
@@ -118,11 +119,81 @@ zero-rated strategy.
 
 ## Implementation notes
 
-Not yet started — filled in when this story moves to `in-progress`.
+TASK-2.6.2 (plan Task 13) closed this story. Before any change, `npm test` was run as
+a baseline: **128 passed, 1 skipped (129 total)**, all green — TASK-2.6.1's domain
+module (`StrategySchema`, `parseStrategies`, `formatStrategies`, from plan Task 12)
+already existed and already had its own 11 passing tests in
+`src/tools/strategies/list-strategies.test.ts`; only the registration was missing.
+
+Following the TDD cycle: the `StrategiesOutputSchema` import, the `STRATEGY` fixture,
+a `describe('list_strategies', …)` block (3 tests), and a `list_strategies` row in
+`TOOL_CALLS` were appended to `src/server.test.ts` first. Running
+`npx vitest run src/server.test.ts -t 'list_strategies'` confirmed red: 3 failed as
+expected (`Tool list_strategies not found` on the two tests that call the tool, and
+`.toMatch() expects to receive a string, but got undefined` on the description-text
+test, since `tools.find(...)` returned `undefined`). Only then was
+`registerListStrategies` appended to `src/tools/strategies/list-strategies.ts` — the
+three new imports (`McpServer` type, `SentiClient` type, `registerReadTool`) plus the
+function itself, verbatim per the brief and shaped exactly like
+`registerListBrokers` in `src/tools/brokers/list-brokers.ts` — and wired into
+`src/server.ts` alongside `registerListAccounts` and `registerListBrokers`.
+
+**No pre-existing test broke.** Unlike US-2.5's registration (which hit two
+single-tool assumptions that predated the `TOOL_CALLS` table), this task's brief noted
+those were already de-hardcoded, and that held: `npm test` after wiring
+`registerListStrategies` into `server.ts` passed every test on the first run, with no
+edits needed to any test outside this task's own additions.
+
+`npm test` after implementation: **131 passed, 1 skipped (132 total)** — 3 new
+`list_strategies` tests in `src/server.test.ts`, no other file's test count changed.
+`npm run typecheck` (`tsc --noEmit` against both `tsconfig.json` and
+`tsconfig.test.json`) passed clean.
+
+Released `0.4.0`: `VERSION`, `package.json`, and `src/config.ts`'s `SERVER_VERSION`
+all moved in lockstep; `config.test.ts`'s drift check passed unmodified.
+`docs/CHANGELOG.md` gained the `[0.4.0]` section above `[0.3.0]`, matching that
+entry's register (a one-paragraph frame, then `### Added`/`### Changed`), and notes
+that `description`, `supportedSymbols` and `supportedTimeframes` are optional in the
+upstream schema per the brief. `README.md` gained a `list_strategies` row in the tool
+table; the scope-exercise sentence now names all three shipped scopes
+(`accounts:read`, `brokers:read`, `strategies:read`) and the two not yet exercised;
+the "Restart the client" sentence now names all three tools.
 
 ## Files modified
 
-Not yet started — filled in when this story moves to `in-progress`.
+**Modified (tool + registration):**
+- `src/tools/strategies/list-strategies.ts` — appended `registerListStrategies`,
+  `STRATEGIES_READ`, and the three new imports (`McpServer` type, `SentiClient` type,
+  `registerReadTool`)
+- `src/server.ts` — import and registration call for `registerListStrategies`
+
+**Modified (tests):**
+- `src/server.test.ts` — `StrategiesOutputSchema` import, `STRATEGY` fixture, the
+  `describe('list_strategies', …)` block (3 tests), and the extended `TOOL_CALLS`
+  table
+
+**Modified (version):**
+- `VERSION`, `package.json`, `src/config.ts` — `0.3.0` → `0.4.0`
+
+**Modified (CHANGELOG and README):**
+- `docs/CHANGELOG.md` — added the `[0.4.0]` section above `[0.3.0]`, below
+  `[Unreleased]`
+- `README.md` — `list_strategies` row in the tool table; the scope-exercise sentence
+  and the "Restart the client" sentence updated to name all three shipped tools
+
+**Modified (story closure and Active Context):**
+- `docs/sprints/stories/US-2.6-list-strategies-tool.md` — this file: frontmatter
+  (`status: done`, `version_shipped: 0.4.0`), all AC and task boxes, this section
+- `docs/sprints/sprint-2026-W33.md` — US-2.6's scope-table row → `✅ done`
+- `docs/sprints/epics/EPIC-2.md` — US-2.6's story-index row → `✅ done (v0.4.0)`
+- `CLAUDE.md` — Active Context block refreshed (US-2.6 closed, next up US-2.7, Last
+  Version 0.4.0)
+- `docs/sprints/STATUS.md` — regenerated by `npm run agile:status` (RULE-5, never
+  hand-edited)
+
+**Not modified:** `commit:` is deliberately absent from this story's frontmatter —
+RULE-2 forbids `--amend`-ing a commit's own SHA into its own commit; a follow-up
+commit backfills it later, the same precedent US-2.4 and US-2.5's closures recorded.
 
 ## Cross-references
 

@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
+import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
 import { loadConfig } from './config.js';
 import { createServer } from './server.js';
 
@@ -41,6 +42,18 @@ const BROKER = {
   name: 'Exness',
   servers: ['Exness-MT5Trial6'],
   accountTypes: [{ id: 'at1', name: 'Standard', defaultSymbol: 'EURUSD' }],
+};
+
+const STRATEGY = {
+  id: 's1',
+  name: 'TrendRider',
+  description: 'Follows the daily trend.',
+  isActive: true,
+  supportedSymbols: ['EURUSD'],
+  supportedTimeframes: ['H1'],
+  avgRating: 4.5,
+  reviewCount: 12,
+  presets: [{ id: 'p1', name: 'Conservative' }],
 };
 
 type ToolResult = {
@@ -225,6 +238,47 @@ describe('list_brokers', () => {
   });
 });
 
+describe('list_strategies', () => {
+  test('returns a readable summary and matching structured content', async () => {
+    const strategiesFetch = (async () =>
+      new Response(JSON.stringify([STRATEGY]), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof fetch;
+    const client = await connect(strategiesFetch);
+
+    const result = (await client.callTool({ name: 'list_strategies' })) as ToolResult;
+
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('TrendRider');
+    expect(StrategiesOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('sends the model to list_account_strategies for what is actually running', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const strategies = tools.find((tool) => tool.name === 'list_strategies');
+
+    expect(strategies?.description).toMatch(/platform-wide/i);
+    expect(strategies?.description).toMatch(/list_account_strategies/);
+  });
+
+  test('names the strategies:read scope on 403', async () => {
+    const forbidden = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Insufficient scope.' } }),
+        { status: 403, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(forbidden);
+
+    const result = (await client.callTool({ name: 'list_strategies' })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('strategies:read');
+  });
+});
+
 /**
  * One entry per registered tool. Later tool stories add a row here rather than
  * writing their own leak test or their own `outputSchema` assertion — that is
@@ -243,6 +297,7 @@ const TOOL_CALLS: {
 }[] = [
   { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
   { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
+  { name: 'list_strategies', outputSchema: StrategiesOutputSchema, successBody: [STRATEGY] },
 ];
 
 const errorStatuses = [401, 403, 404, 409, 429, 500];

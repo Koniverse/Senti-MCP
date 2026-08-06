@@ -17,6 +17,38 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ---
 
+## [0.4.0] — 2026-08-06 — `list_strategies`: the second tool on the new substrate
+
+Second tool built on the `core/` + `tools/<tag>/` substrate US-2.4 shipped in 0.2.0, and
+the second and last no-path-parameter, platform-wide catalog tool this sprint (sibling of
+`list_brokers`). `list_strategies` reads `GET /api/v1/strategies` and returns the
+platform-wide catalog of strategies (expert advisors) available to deploy — every symbol,
+timeframe, rating and preset Senti offers — not the strategies currently running on any
+particular account. The description says so explicitly and points at
+`list_account_strategies`, US-2.7's tool, for that user-scoped question.
+
+`description`, `supportedSymbols` and `supportedTimeframes` are optional in the upstream
+schema — absent from the endpoint's `required` array, not merely nullable — so
+`StrategySchema` marks them `.optional()` rather than only `.nullable()`, and a response
+omitting any of the three parses cleanly. `avgRating` stays nullable-not-optional and
+renders as `—`, never `0`, when a strategy has no reviews yet — the same
+null-is-not-zero precedent `list_accounts` set for `lastKnownBalance`.
+
+### Added
+- `list_strategies` tool (`src/tools/strategies/list-strategies.ts`) —
+  `registerListStrategies`, registered read-only via `registerReadTool` under the
+  `strategies:read` scope. Takes no arguments. Points a model at `id` as the
+  `eaDefinitionId` when deploying.
+- `src/server.test.ts` — a `list_strategies` invariant row in `TOOL_CALLS`, plus its own
+  `describe` block asserting the platform-wide description naming
+  `list_account_strategies`, and the `strategies:read` scope named on a `403`.
+
+### Changed
+- `src/server.ts` now registers three tools; `list_accounts` and `list_brokers` are
+  unchanged.
+
+---
+
 ## [0.3.0] — 2026-08-06 — `list_brokers`: the first tool on the new substrate
 
 First tool built on the `core/` + `tools/<tag>/` substrate US-2.4 shipped in 0.2.0.

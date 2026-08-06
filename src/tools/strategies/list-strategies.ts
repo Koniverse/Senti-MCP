@@ -1,5 +1,8 @@
+import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
+import type { SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
+import { registerReadTool } from '../../core/tool.js';
 
 const PresetSchema = z.object({
   id: z.string(),
@@ -83,4 +86,28 @@ export function formatStrategies(strategies: Strategy[]): string {
     'that, use list_account_strategies.\n\n' +
     blocks
   );
+}
+
+/** The scope `GET /api/v1/strategies` requires, quoted back in the 403 message. */
+const STRATEGIES_READ = 'strategies:read';
+
+export function registerListStrategies(server: McpServer, client: SentiClient): void {
+  registerReadTool(server, {
+    name: 'list_strategies',
+    title: 'List deployable strategies',
+    description:
+      'List every strategy (expert advisor) available to deploy on Senti Quant, with its ' +
+      'supported symbols, timeframes, rating and presets. This is the platform-wide ' +
+      'catalog of what COULD be deployed — it is NOT what is currently running on an ' +
+      'account. For the strategies running on a specific account, use ' +
+      'list_account_strategies. Use `id` as `eaDefinitionId` when deploying.',
+    inputSchema: z.object({}),
+    outputSchema: StrategiesOutputSchema,
+    run: async (_args, signal) => {
+      const payload = await client.get('/api/v1/strategies', { signal, scope: STRATEGIES_READ });
+      const strategies = parseStrategies(payload);
+
+      return { text: formatStrategies(strategies), structured: { strategies } };
+    },
+  });
 }
