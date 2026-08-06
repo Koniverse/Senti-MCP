@@ -163,8 +163,10 @@ describe('MCP server', () => {
     // The tool count is incidental to this test's intent — it is about the
     // session surviving a failed call, not about how many tools exist — so the
     // registered set is captured live rather than hardcoded, and re-asserted
-    // unchanged after the failure. A session that died would make this second
-    // `listTools()` reject or hang rather than return a mismatched count.
+    // unchanged after the failure. Verified by mutation: closing the client
+    // between the two calls turns this red. A dead session's `listTools()`
+    // resolves quietly to `[]` — it does not reject or hang — so comparing
+    // against a live `before` is what catches it, not a hardcoded count.
     const before = await client.listTools();
 
     await client.callTool({ name: 'list_accounts' });
