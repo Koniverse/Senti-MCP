@@ -7,6 +7,8 @@ const USER_AGENT = `${SERVER_NAME}/${SERVER_VERSION}`;
 
 export type ClientDeps = { fetch?: typeof fetch };
 
+export type QueryParams = Record<string, string | number | undefined>;
+
 export type RequestOptions = {
   signal?: AbortSignal;
   /**
@@ -15,12 +17,28 @@ export type RequestOptions = {
    * the caller knows which one it is asking for.
    */
   scope?: string;
+  /** `undefined` values are dropped rather than sent as the string "undefined". */
+  query?: QueryParams;
 };
 
 export type SentiClient = {
   /** Returns the parsed JSON body. Validation belongs to the domain module. */
   get(path: string, options?: RequestOptions): Promise<unknown>;
 };
+
+/** Render a query string, or the empty string when nothing survives. */
+function queryStringOf(query: QueryParams | undefined): string {
+  if (!query) return '';
+
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined) continue;
+    params.set(key, String(value));
+  }
+
+  const rendered = params.toString();
+  return rendered ? `?${rendered}` : '';
+}
 
 /** Pull `{ error: { code, message } }` out of a body that may be anything. */
 function envelopeOf(body: unknown): { code?: string; message?: string } {
@@ -101,7 +119,7 @@ export function createClient(config: Config, deps: ClientDeps = {}): SentiClient
     async get(path: string, options: RequestOptions = {}): Promise<unknown> {
       const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
 
-      const response = await doFetch(`${config.baseUrl}${path}`, {
+      const response = await doFetch(`${config.baseUrl}${path}${queryStringOf(options.query)}`, {
         headers: {
           authorization: `Bearer ${config.apiKey}`,
           accept: 'application/json',

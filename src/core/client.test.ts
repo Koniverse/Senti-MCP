@@ -215,4 +215,38 @@ describe('createClient', () => {
       timeout.mockRestore();
     }
   });
+
+  test('appends query parameters and drops undefined ones', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse([]));
+
+    await createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts/a/deals', {
+      query: { limit: 50, entry: 'out', cursor: undefined },
+    });
+
+    expect(calls[0]?.url).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts/a/deals?limit=50&entry=out',
+    );
+  });
+
+  test('omits the question mark entirely when every value is undefined', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse([]));
+
+    await createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts', {
+      query: { from: undefined, to: undefined },
+    });
+
+    expect(calls[0]?.url).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts');
+  });
+
+  test('percent-encodes query values rather than splicing them raw', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse([]));
+
+    await createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts', {
+      query: { reporting: 'US D&x=1' },
+    });
+
+    expect(calls[0]?.url).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts?reporting=US+D%26x%3D1',
+    );
+  });
 });
