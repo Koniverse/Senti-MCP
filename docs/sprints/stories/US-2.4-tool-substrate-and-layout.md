@@ -113,7 +113,7 @@ untouched, per the amend-via-CONTEXT precedent [D1](../../CONTEXT.md) and
   (AC: 1, 2, 8)
 - [x] **TASK-2.4.3** — Query-parameter support in `core/client.ts` (plan Task 3)
   (AC: 3)
-- [ ] **TASK-2.4.4** — `accountPath` — the only path builder (plan Task 4) (AC: 4)
+- [x] **TASK-2.4.4** — `accountPath` — the only path builder (plan Task 4) (AC: 4)
 - [ ] **TASK-2.4.5** — Dedicated `404` and `409` branches (plan Task 5) (AC: 5, 6)
 - [ ] **TASK-2.4.6** — `core/tool.ts` and `core/parse.ts` — the registration and
   validation helpers (plan Task 6) (AC: 7, 10)

@@ -112,6 +112,41 @@ function failureOf(
   }
 }
 
+/**
+ * What a path segment may contain. Deliberately not a UUID pattern: the
+ * OpenAPI document declares `accountId` as a bare `type: string` with no
+ * `format` and no `pattern`, so hard-coding UUID would take every
+ * account-scoped tool down at once the day Senti issues an id in another
+ * shape — this server's assumption failing, not the API's contract. What this
+ * does reject is everything that makes concatenation dangerous.
+ */
+const PATH_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * The only function permitted to build a path containing a parameter. No tool
+ * concatenates: `accountId` originates from the model, and a value such as
+ * `..%2F..%2Fadmin` escapes `/api/v1/accounts/` under naive concatenation.
+ *
+ * Note that a `login` (the MT5 account number, e.g. `413878201`) passes this
+ * check — it is a legal segment, just the wrong value. The 404 branch is what
+ * catches that, and says so.
+ */
+export function accountPath(accountId: string, ...rest: string[]): string {
+  const segments = [accountId, ...rest];
+
+  for (const segment of segments) {
+    if (!PATH_SEGMENT.test(segment)) {
+      throw new Error(
+        `Invalid path segment ${JSON.stringify(segment)}: expected 1-64 characters from ` +
+          'A-Z, a-z, 0-9, "_" and "-". Values containing "/", ".", "%" or whitespace are ' +
+          'rejected before they reach a URL. Use the `id` field from list_accounts.',
+      );
+    }
+  }
+
+  return `/api/v1/accounts/${segments.map(encodeURIComponent).join('/')}`;
+}
+
 export function createClient(config: Config, deps: ClientDeps = {}): SentiClient {
   const doFetch = deps.fetch ?? fetch;
 

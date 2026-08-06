@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { createClient } from './client.js';
+import { accountPath, createClient } from './client.js';
 import { ApiError } from './errors.js';
 import { loadConfig } from '../config.js';
 
@@ -260,5 +260,49 @@ describe('createClient', () => {
     expect(calls[0]?.url).toBe(
       'https://be-dev.sentitrade.xyz/api/v1/accounts?limit=0&reporting=',
     );
+  });
+});
+
+describe('accountPath', () => {
+  test('builds the account-scoped path from validated segments', () => {
+    expect(accountPath('8f2c1b40-3d5e-4a17-9c8b-2e1f0a6d4b93', 'positions')).toBe(
+      '/api/v1/accounts/8f2c1b40-3d5e-4a17-9c8b-2e1f0a6d4b93/positions',
+    );
+  });
+
+  test('supports a bare account path with no trailing segments', () => {
+    expect(accountPath('abc-123')).toBe('/api/v1/accounts/abc-123');
+  });
+
+  test('supports multiple trailing segments', () => {
+    expect(accountPath('abc-123', 'performance', 'breakdowns')).toBe(
+      '/api/v1/accounts/abc-123/performance/breakdowns',
+    );
+  });
+
+  test.each([
+    ['a traversal attempt', '../../admin'],
+    ['a pre-encoded traversal attempt', '..%2F..%2Fadmin'],
+    ['an empty string', ''],
+    ['a value with whitespace', 'abc 123'],
+    ['a value with a slash', 'abc/positions'],
+    ['a value with a dot', 'abc.123'],
+    ['a 65-character value', 'a'.repeat(65)],
+  ])('rejects %s before it reaches a URL', (_label, value) => {
+    expect(() => accountPath(value, 'positions')).toThrow(/Invalid path segment/);
+  });
+
+  test('accepts a 64-character value at the boundary', () => {
+    const id = 'a'.repeat(64);
+
+    expect(accountPath(id)).toBe(`/api/v1/accounts/${id}`);
+  });
+
+  test('validates trailing segments too, not only the accountId', () => {
+    expect(() => accountPath('abc-123', '../secrets')).toThrow(/Invalid path segment/);
+  });
+
+  test('names the id field a caller should have used', () => {
+    expect(() => accountPath('../etc')).toThrow(/list_accounts/);
   });
 });
