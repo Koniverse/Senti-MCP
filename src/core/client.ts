@@ -19,6 +19,12 @@ export type RequestOptions = {
   scope?: string;
   /** `undefined` values are dropped rather than sent as the string "undefined". */
   query?: QueryParams;
+  /**
+   * What a 409 means for THIS endpoint, quoted verbatim. The client cannot
+   * infer it: on account-scoped reads a 409 is "terminal offline", and on the
+   * write path it will mean something else entirely. Same reasoning as `scope`.
+   */
+  conflictMeans?: string;
 };
 
 export type SentiClient = {
@@ -66,6 +72,7 @@ function failureOf(
   headers: Headers,
   body: unknown,
   scope: string | undefined,
+  conflictMeans: string | undefined,
 ): ApiError {
   const { code, message } = envelopeOf(body);
   // Each template below ends its own sentence, so an envelope message that
@@ -105,6 +112,21 @@ function failureOf(
           : '';
 
       return new ApiError(`Senti API rate limit exceeded (429)${budget}${detail}.`, status, code);
+    }
+
+    case 404:
+      return new ApiError(
+        `Senti API returned 404${detail}. The account does not exist, is not owned by ` +
+          'this API key, or has been unlinked. If a `login` (the MT5 account number) was ' +
+          'passed where an `accountId` was expected, call list_accounts and use its `id`.',
+        status,
+        code,
+      );
+
+    case 409: {
+      const meaning = conflictMeans ? ` ${conflictMeans}` : '';
+
+      return new ApiError(`Senti API returned 409${detail}.${meaning}`, status, code);
     }
 
     default:
@@ -176,7 +198,7 @@ export function createClient(config: Config, deps: ClientDeps = {}): SentiClient
       }
 
       if (!response.ok) {
-        throw failureOf(response.status, response.headers, body, options.scope);
+        throw failureOf(response.status, response.headers, body, options.scope, options.conflictMeans);
       }
 
       if (body === undefined) {

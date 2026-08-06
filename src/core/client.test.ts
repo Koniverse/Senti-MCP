@@ -111,8 +111,36 @@ describe('createClient', () => {
     await expect(promise).rejects.toThrow(/not JSON/);
   });
 
+  test('maps 404 to the three real causes, and points a login at list_accounts', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('NOT_FOUND', 'Account not found.'), 404));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts/x/positions');
+
+    await expect(promise).rejects.toThrow(/does not exist, is not owned by this API key/);
+    await expect(promise).rejects.toThrow(/list_accounts/);
+    await expect(promise).rejects.toThrow(/login/);
+  });
+
+  test('gives 409 the meaning the call site supplied', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', 'Terminal offline.'), 409));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts/x/positions', {
+      conflictMeans: 'The MT5 terminal for this account is offline.',
+    });
+
+    await expect(promise).rejects.toThrow(/The MT5 terminal for this account is offline\./);
+  });
+
+  test('falls back to a bare 409 when the call site supplied no meaning', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', 'Conflict.'), 409));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts');
+
+    await expect(promise).rejects.toThrow(/409/);
+  });
+
   test('never leaks the API key into an error message', async () => {
-    const statuses = [401, 403, 429, 500, 502];
+    const statuses = [401, 403, 404, 409, 429, 500, 502];
 
     for (const status of statuses) {
       const { fetchImpl } = stub(jsonResponse(envelope('INTERNAL', 'boom'), status));
