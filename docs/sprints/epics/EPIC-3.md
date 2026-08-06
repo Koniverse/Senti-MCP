@@ -1,7 +1,7 @@
 ---
 id: EPIC-3
 title: "Write-path access to Senti Quant over MCP"
-status: planned
+status: backlog
 created: 2026-08-06
 updated: 2026-08-06
 ---

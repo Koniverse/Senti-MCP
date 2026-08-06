@@ -1,6 +1,6 @@
 ---
 id: sprint-2026-W33
-status: active
+status: in-progress
 start: 2026-08-10
 end: 2026-08-16
 goal: "Restructure src/ into core/ + tools/<tag>/, add the read-tool substrate, and ship the first five of the nine unshipped read tools"
