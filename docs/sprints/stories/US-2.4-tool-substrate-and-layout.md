@@ -117,7 +117,7 @@ untouched, per the amend-via-CONTEXT precedent [D1](../../CONTEXT.md) and
 - [x] **TASK-2.4.5** — Dedicated `404` and `409` branches (plan Task 5) (AC: 5, 6)
 - [x] **TASK-2.4.6** — `core/tool.ts` and `core/parse.ts` — the registration and
   validation helpers (plan Task 6) (AC: 7, 10)
-- [ ] **TASK-2.4.7** — Move accounts into `tools/accounts/` and migrate onto the
+- [x] **TASK-2.4.7** — Move accounts into `tools/accounts/` and migrate onto the
   helper (plan Task 7) (AC: 1, 8, 10)
 - [ ] **TASK-2.4.8** — Table-driven invariant tests (plan Task 8) (AC: 9)
 - [ ] **TASK-2.4.9** — Scope documentation, CONTEXT decisions, and the 0.2.0 release

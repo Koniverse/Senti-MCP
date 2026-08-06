@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { formatAccounts, parseAccounts } from './accounts.js';
+import { formatAccounts, parseAccounts } from './tools/accounts/list-accounts.js';
 import { createClient } from './core/client.js';
 import { loadConfig } from './config.js';
 

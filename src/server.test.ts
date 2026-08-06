@@ -1,6 +1,6 @@
 import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 import { describe, expect, test } from 'vitest';
-import { AccountsOutputSchema } from './accounts.js';
+import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { loadConfig } from './config.js';
 import { createServer } from './server.js';
 
