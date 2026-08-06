@@ -8,6 +8,12 @@ dist/
 # Per-machine Claude Code permissions, not project config.
 .claude/settings.local.json
 
+# Isolated worktrees for in-progress work. Never part of the repository.
+.claude/worktrees/
+
+# Subagent-driven-development scratch: ledgers, briefs, review packages.
+.superpowers/
+
 # Byproduct of running the skills' Python helpers.
 __pycache__/
 *.pyc
