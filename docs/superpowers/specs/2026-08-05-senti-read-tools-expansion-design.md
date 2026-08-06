@@ -281,7 +281,16 @@ invariant in its most dangerous form: **"no positions could be read" and "this a
 holds no positions" are different sentences**, and merging them produces "you have no
 open positions" for an account that is holding open risk.
 
-Every affected `formatX` states terminal state before it states a count.
+The API makes this cheap to get right. Both endpoints declare a **`409`** whose meaning
+is stated outright — *"The account terminal is offline — positions are temporarily
+unavailable."* So the distinction is a status-code branch, not something `formatX` has
+to infer: a `409` reports the offline terminal, and reaching the empty-list path at all
+proves the terminal answered.
+
+The client cannot hardcode that meaning, because `409` on the write path will mean
+something else entirely. It takes `conflictMeans` from the call site — the same shape
+`scope` already uses, and for the same reason: only the caller knows what its endpoint's
+conflict is. Each empty-list rendering then says explicitly that it is a real zero.
 
 ## Testing
 
