@@ -1143,6 +1143,10 @@ Append to `src/server.test.ts`. `TOOL_CALLS` grows by one entry per tool in ever
 const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
   { name: 'list_accounts' },
 ];
+// NOTE (added after execution): Task 9 extended this type with two further
+// REQUIRED fields — `outputSchema: z.ZodType` and `successBody: unknown` — when
+// AC-9's second clause was generalised into this table. The shape above is what
+// Task 8 shipped; every later task's rows carry all four fields.
 
 const errorStatuses = [401, 403, 404, 409, 429, 500];
 
@@ -1566,11 +1570,22 @@ import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 And extend the table:
 
 ```ts
-const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
-  { name: 'list_accounts' },
-  { name: 'list_brokers' },
+const TOOL_CALLS: {
+  name: string;
+  arguments?: Record<string, unknown>;
+  outputSchema: z.ZodType;
+  successBody: unknown;
+}[] = [
+  { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
+  { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
 ];
 ```
+
+> **`outputSchema` and `successBody` are required row fields**, added in Task 9 when AC-9's
+> second clause was generalised into this table. They are deliberately non-optional, so
+> omitting either is a compile error rather than a silent gap in coverage. `successBody` is
+> the raw HTTP body a stubbed `fetch` returns — the shape the real API sends, so for
+> `list_brokers` that is a **bare array**, not `{ brokers: [...] }`.
 
 Note that the default `okFetch` returns an account array for every path, which `parseBrokers` rejects — so the two description/schema tests above call `connect()` without a fetch only because they never invoke the tool. Tests that *call* `list_brokers` supply their own fetch.
 
@@ -1901,12 +1916,19 @@ import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
 ```
 
 ```ts
-const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
-  { name: 'list_accounts' },
-  { name: 'list_brokers' },
-  { name: 'list_strategies' },
+const TOOL_CALLS: {
+  name: string;
+  arguments?: Record<string, unknown>;
+  outputSchema: z.ZodType;
+  successBody: unknown;
+}[] = [
+  { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
+  { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
+  { name: 'list_strategies', outputSchema: StrategiesOutputSchema, successBody: [STRATEGY] },
 ];
 ```
+
+> `successBody` is the raw HTTP body, so for `list_strategies` it is a **bare array**.
 
 ```ts
 const STRATEGY = {
@@ -2244,13 +2266,26 @@ import { AccountStrategiesOutputSchema } from './tools/strategies/list-account-s
 ```
 
 ```ts
-const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
-  { name: 'list_accounts' },
-  { name: 'list_brokers' },
-  { name: 'list_strategies' },
-  { name: 'list_account_strategies', arguments: { accountId: 'abc-123' } },
+const TOOL_CALLS: {
+  name: string;
+  arguments?: Record<string, unknown>;
+  outputSchema: z.ZodType;
+  successBody: unknown;
+}[] = [
+  { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
+  { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
+  { name: 'list_strategies', outputSchema: StrategiesOutputSchema, successBody: [STRATEGY] },
+  {
+    name: 'list_account_strategies',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: AccountStrategiesOutputSchema,
+    successBody: [DEPLOYED],
+  },
 ];
 ```
+
+> This is the first row carrying `arguments` — the table's type has allowed it since Task 8
+> precisely so this row would not need a type change. `successBody` is a **bare array** here.
 
 ```ts
 const DEPLOYED = {
@@ -2727,7 +2762,12 @@ import { PositionsOutputSchema } from './tools/trading/positions.js';
 ```
 
 ```ts
-  { name: 'list_positions', arguments: { accountId: 'abc-123' } },
+  {
+    name: 'list_positions',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: PositionsOutputSchema,
+    successBody: { positions: [POSITION] },
+  },
 ```
 
 ```ts
@@ -3191,7 +3231,12 @@ import { OrdersOutputSchema } from './tools/trading/orders.js';
 ```
 
 ```ts
-  { name: 'list_pending_orders', arguments: { accountId: 'abc-123' } },
+  {
+    name: 'list_pending_orders',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: OrdersOutputSchema,
+    successBody: { orders: [ORDER] },
+  },
 ```
 
 ```ts
