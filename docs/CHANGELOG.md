@@ -17,6 +17,28 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ---
 
+## [0.3.0] — 2026-08-06 — `list_brokers`: the first tool on the new substrate
+
+First tool built on the `core/` + `tools/<tag>/` substrate US-2.4 shipped in 0.2.0.
+`list_brokers` reads `GET /api/v1/brokers` and returns the platform-wide catalog of
+brokers Senti supports — every MT5 server name and account type available to link,
+not the accounts this API key already has. The description says so explicitly, since
+read plainly "brokers" is easily mistaken for "the brokers I trade with."
+
+### Added
+- `list_brokers` tool (`src/tools/brokers/list-brokers.ts`) — `registerListBrokers`,
+  registered read-only via `registerReadTool` under the `brokers:read` scope. Takes no
+  arguments. Points a model at `accountTypes[].id` as the `brokerAccountTypeId` and a
+  `servers[]` value as the `server` the account-linking endpoint takes.
+- `src/server.test.ts` — a `list_brokers` invariant row in `TOOL_CALLS`, plus its own
+  `describe` block asserting the platform-wide description, the empty input schema, and
+  the `brokers:read` scope named on a `403`.
+
+### Changed
+- `src/server.ts` now registers two tools; `list_accounts` is unchanged.
+
+---
+
 ## [0.2.0] — 2026-08-06 — Read-tool substrate: core/ + tools/, registerReadTool, five scopes
 
 Substrate release — ships no new tool. Restructures `src/` into `core/`

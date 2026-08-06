@@ -9,6 +9,7 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | Tool | Input | What it does |
 |------|-------|--------------|
 | `list_accounts` | none | Lists the MT5 accounts linked to the configured API key: id, login, broker, last known balance and equity, sync state, running strategies. |
+| `list_brokers` | none | Lists the platform-wide catalog of brokers Senti Quant supports — not the accounts this API key already has — with each broker's MT5 server names and account types. |
 
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
@@ -24,8 +25,9 @@ the MT5 account number, not a key.
   [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). There is
   no key-introspection endpoint, so a missing scope isn't caught at startup: it
   surfaces as a `403` naming the scope the first time the affected tool is
-  called, and every other tool keeps working. Only `accounts:read` is
-  exercised by a shipped tool today (`list_accounts`).
+  called, and every other tool keeps working. As of v0.3.0, `accounts:read`
+  (`list_accounts`) and `brokers:read` (`list_brokers`) are exercised by a
+  shipped tool; the other three are not yet.
 
 ## Configuration
 
@@ -68,7 +70,7 @@ No install step — `npx` fetches the published package on first run:
 }
 ```
 
-Restart the client; the `list_accounts` tool should appear.
+Restart the client; the `list_accounts` and `list_brokers` tools should appear.
 
 To pin a version, use `senti-mcp-server@0.1.0`. To put it on your `PATH`
 instead:

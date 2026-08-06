@@ -1,5 +1,8 @@
+import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
+import type { SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
+import { registerReadTool } from '../../core/tool.js';
 
 const AccountTypeSchema = z.object({
   id: z.string(),
@@ -69,4 +72,28 @@ export function formatBrokers(brokers: Broker[]): string {
     'available to link, not the accounts this API key already has.\n\n' +
     blocks
   );
+}
+
+/** The scope `GET /api/v1/brokers` requires, quoted back in the 403 message. */
+const BROKERS_READ = 'brokers:read';
+
+export function registerListBrokers(server: McpServer, client: SentiClient): void {
+  registerReadTool(server, {
+    name: 'list_brokers',
+    title: 'List brokers available to link',
+    description:
+      'List the brokers Senti Quant supports, with each broker\'s MT5 server names and ' +
+      'account types. This is the platform-wide catalog of what can be linked — it is ' +
+      'NOT the set of accounts this API key already has, which is `list_accounts`. Use ' +
+      '`accountTypes[].id` as `brokerAccountTypeId` and a `servers[]` value as `server` ' +
+      'when linking a new account.',
+    inputSchema: z.object({}),
+    outputSchema: BrokersOutputSchema,
+    run: async (_args, signal) => {
+      const payload = await client.get('/api/v1/brokers', { signal, scope: BROKERS_READ });
+      const brokers = parseBrokers(payload);
+
+      return { text: formatBrokers(brokers), structured: { brokers } };
+    },
+  });
 }

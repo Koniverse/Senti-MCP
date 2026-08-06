@@ -2,7 +2,8 @@
 id: US-2.5
 title: "list_brokers tool"
 epic: EPIC-2
-status: backlog
+status: done
+version_shipped: 0.3.0
 priority: P1
 points: 2
 sprint: sprint-2026-W33
@@ -35,18 +36,18 @@ a model can answer about a broker it is looking at.
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** a successful call, **When** the result is returned, **Then**
+- [x] **AC-1** — **Given** a successful call, **When** the result is returned, **Then**
   `structuredContent` is an object with a `brokers` key (never a bare array), **And**
   it validates against the tool's own `outputSchema`.
-- [ ] **AC-2** — The tool description states that the catalog is platform-wide — the
+- [x] **AC-2** — The tool description states that the catalog is platform-wide — the
   brokers Senti supports, not the user's linked accounts. Asserted on the description
   text.
-- [ ] **AC-3** — **Given** a broker with `servers` and `accountTypes` arrays, **When**
+- [x] **AC-3** — **Given** a broker with `servers` and `accountTypes` arrays, **When**
   the list is formatted, **Then** both render in the text summary for that broker.
-- [ ] **AC-4** — **Given** an empty broker list, **When** it is formatted, **Then** the
+- [x] **AC-4** — **Given** an empty broker list, **When** it is formatted, **Then** the
   output explains itself rather than returning nothing, following the precedent
   `list_accounts` set in [US-2.2](US-2.2-list-accounts-tool.md) AC-8.
-- [ ] **AC-5** — **Given** a `403` from the API, **When** the tool returns, **Then**
+- [x] **AC-5** — **Given** a `403` from the API, **When** the tool returns, **Then**
   `isError` is true and the text names the `brokers:read` scope.
 
 ## Tasks
@@ -55,8 +56,8 @@ a model can answer about a broker it is looking at.
   (AC: 1, 3, 4)
   - [x] `BrokerSchema`, `parseBrokers` (via `core/parse.ts`'s `parseOrThrow`),
         `formatBrokers`
-- [ ] **TASK-2.5.2** — Registration and the 0.3.0 release (plan Task 11) (AC: 2, 5)
-  - [ ] Register through `registerReadTool` in `server.ts`; `outputSchema`;
+- [x] **TASK-2.5.2** — Registration and the 0.3.0 release (plan Task 11) (AC: 2, 5)
+  - [x] Register through `registerReadTool` in `server.ts`; `outputSchema`;
         `scope: 'brokers:read'`; platform-wide sentence in the description
 
 ## Dev notes
@@ -109,11 +110,81 @@ a model can answer about a broker it is looking at.
 
 ## Implementation notes
 
-Not yet started — filled in when this story moves to `in-progress`.
+TASK-2.5.2 (plan Task 11) closed this story. Following the TDD cycle: a `list_brokers`
+`describe` block and a `list_brokers` row in `TOOL_CALLS` were appended to
+`src/server.test.ts` first, confirmed to fail (`Tool list_brokers not found`, plus two
+assertions against an `undefined` tool), then `registerListBrokers` was appended to
+`src/tools/brokers/list-brokers.ts` (TASK-2.5.1's domain module from Task 10) verbatim
+per the plan, and wired into `src/server.ts` alongside `registerListAccounts`.
+
+**One gap in the plan, resolved here.** Registering a second tool broke two
+pre-existing single-tool assumptions in `src/server.test.ts` that neither the story nor
+plan Task 11 called out: `'exposes exactly the list_accounts tool'` asserted
+`tools.map(...).toEqual(['list_accounts'])`, and `'keeps the session alive after a
+failed call'` asserted `tools.toHaveLength(1)`. Both are artifacts of the single-tool
+v0.1.0/v0.2.0 era, now stale by construction the moment a second tool registers — not a
+defect in either test's original intent. Reproduced directly: `npm test` after wiring
+`registerListBrokers` into `server.ts` failed exactly these two, with `list_brokers`
+correctly appearing in `tools`. Resolved by updating both to expect two tools: the
+first renamed to `'exposes exactly the registered tools'` and its expectation extended
+to `['list_accounts', 'list_brokers']`; the second's length assertion changed to `2`.
+Neither test's actual invariant (the tool list is exhaustive; the session survives a
+failed call) changed — only the now-stale cardinality. The generic
+`'the table lists every registered tool'` invariant test (added in US-2.4/AC-9)
+duplicates the first test's coverage for every future tool, which is why this
+per-story test does not need touching again as later stories in this sprint add more
+tools.
+
+`npx vitest run src/server.test.ts -t 'list_brokers'` went from 15 passing / 4 failing
+before implementation to all passing after. The full suite went from 114 passed / 1
+skipped (per this task's brief) to 118 passed / 1 skipped: 4 new `list_brokers` tests,
+with the two corrected pre-existing tests still counted once each (not added).
+
+Released `0.3.0`: `VERSION`, `package.json`, and `src/config.ts`'s `SERVER_VERSION`
+all moved in lockstep; `config.test.ts`'s drift check passed unmodified.
+`docs/CHANGELOG.md` gained the `[0.3.0]` section above `[0.2.0]`, matching that
+entry's register (a one-paragraph frame, then `### Added`/`### Changed`). `README.md`
+gained a `list_brokers` row in the tool table; `brokers:read` was already listed in
+the scope requirement from 0.2.0 and was left alone rather than duplicated, per the
+task brief. Two README sentences that were accurate at 0.2.0 but became stale at
+0.3.0 were also updated for consistency: the "only `accounts:read` is exercised"
+line now names both `accounts:read`/`list_accounts` and `brokers:read`/`list_brokers`,
+and the "Restart the client" line now names both tools.
 
 ## Files modified
 
-Not yet started — filled in when this story moves to `in-progress`.
+**Modified (tool + registration):**
+- `src/tools/brokers/list-brokers.ts` — appended `registerListBrokers`, `BROKERS_READ`,
+  and the three new imports (`McpServer` type, `SentiClient` type, `registerReadTool`)
+- `src/server.ts` — import and registration call for `registerListBrokers`
+
+**Modified (tests):**
+- `src/server.test.ts` — `BrokersOutputSchema` import, `BROKER` fixture, the
+  `describe('list_brokers', …)` block (4 tests), the extended `TOOL_CALLS` table, and
+  the two corrected pre-existing assertions described above
+
+**Modified (version):**
+- `VERSION`, `package.json`, `src/config.ts` — `0.2.0` → `0.3.0`
+
+**Modified (CHANGELOG and README):**
+- `docs/CHANGELOG.md` — added the `[0.3.0]` section above `[0.2.0]`, below
+  `[Unreleased]`
+- `README.md` — `list_brokers` row in the tool table; two now-stale sentences updated
+  (scope-exercise note, "Restart the client" note)
+
+**Modified (story closure and Active Context):**
+- `docs/sprints/stories/US-2.5-list-brokers-tool.md` — this file: frontmatter
+  (`status: done`, `version_shipped: 0.3.0`), all AC and task boxes, this section
+- `docs/sprints/sprint-2026-W33.md` — US-2.5's scope-table row → `✅ done`
+- `docs/sprints/epics/EPIC-2.md` — US-2.5's story-index row → `✅ done (v0.3.0)`
+- `CLAUDE.md` — Active Context block refreshed (US-2.5 closed, next up US-2.6, Last
+  Version 0.3.0)
+- `docs/sprints/STATUS.md` — regenerated by `npm run agile:status` (RULE-5, never
+  hand-edited)
+
+**Not modified:** `commit:` is deliberately absent from this story's frontmatter —
+RULE-2 forbids `--amend`-ing a commit's own SHA into its own commit; a follow-up commit
+backfills it later, the same precedent US-2.4's closure recorded.
 
 ## Cross-references
 

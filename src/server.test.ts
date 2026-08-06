@@ -2,6 +2,7 @@ import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 import { describe, expect, test } from 'vitest';
 import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
+import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 import { loadConfig } from './config.js';
 import { createServer } from './server.js';
 
@@ -35,6 +36,13 @@ const okFetch = (async () =>
     headers: { 'content-type': 'application/json' },
   })) as unknown as typeof fetch;
 
+const BROKER = {
+  id: 'b1',
+  name: 'Exness',
+  servers: ['Exness-MT5Trial6'],
+  accountTypes: [{ id: 'at1', name: 'Standard', defaultSymbol: 'EURUSD' }],
+};
+
 type ToolResult = {
   content: { type: string; text?: string }[];
   structuredContent?: unknown;
@@ -57,12 +65,12 @@ async function connect(fetchImpl: typeof fetch = okFetch) {
 }
 
 describe('MCP server', () => {
-  test('exposes exactly the list_accounts tool', async () => {
+  test('exposes exactly the registered tools', async () => {
     const client = await connect();
 
     const { tools } = await client.listTools();
 
-    expect(tools.map((tool) => tool.name)).toEqual(['list_accounts']);
+    expect(tools.map((tool) => tool.name)).toEqual(['list_accounts', 'list_brokers']);
   });
 
   test('tells the model that id, not login, is the handle other tools take', async () => {
@@ -163,7 +171,56 @@ describe('MCP server', () => {
     await client.callTool({ name: 'list_accounts' });
     const { tools } = await client.listTools();
 
-    expect(tools).toHaveLength(1);
+    expect(tools).toHaveLength(2);
+  });
+});
+
+describe('list_brokers', () => {
+  test('returns a readable summary and matching structured content', async () => {
+    const brokersFetch = (async () =>
+      new Response(JSON.stringify([BROKER]), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof fetch;
+    const client = await connect(brokersFetch);
+
+    const result = (await client.callTool({ name: 'list_brokers' })) as ToolResult;
+
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('Exness');
+    expect(BrokersOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('tells the model the catalog is platform-wide', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const brokers = tools.find((tool) => tool.name === 'list_brokers');
+
+    expect(brokers?.description).toMatch(/platform-wide/i);
+  });
+
+  test('takes no arguments', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const brokers = tools.find((tool) => tool.name === 'list_brokers');
+
+    expect(brokers?.inputSchema.properties).toEqual({});
+  });
+
+  test('names the brokers:read scope on 403', async () => {
+    const forbidden = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Insufficient scope.' } }),
+        { status: 403, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(forbidden);
+
+    const result = (await client.callTool({ name: 'list_brokers' })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('brokers:read');
   });
 });
 
@@ -182,7 +239,10 @@ const TOOL_CALLS: {
   arguments?: Record<string, unknown>;
   outputSchema: z.ZodType;
   successBody: unknown;
-}[] = [{ name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] }];
+}[] = [
+  { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
+  { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
+];
 
 const errorStatuses = [401, 403, 404, 409, 429, 500];
 
