@@ -129,11 +129,18 @@ correctly appearing in `tools`. Resolved by updating both to expect two tools: t
 first renamed to `'exposes exactly the registered tools'` and its expectation extended
 to `['list_accounts', 'list_brokers']`; the second's length assertion changed to `2`.
 Neither test's actual invariant (the tool list is exhaustive; the session survives a
-failed call) changed — only the now-stale cardinality. The generic
-`'the table lists every registered tool'` invariant test (added in US-2.4/AC-9)
-duplicates the first test's coverage for every future tool, which is why this
-per-story test does not need touching again as later stories in this sprint add more
-tools.
+failed call) changed — only the now-stale cardinality.
+
+> **Correction (Fix round 1):** the sentence originally here claimed this per-story
+> test "does not need touching again as later stories in this sprint add more tools."
+> That was false as written — review caught it before it could bite. `'exposes exactly
+> the registered tools'` was still a hardcoded literal array, so it would have needed
+> a manual edit on every one of Tasks 13/15/17/19, exactly the hand-maintenance burden
+> the rest of this sprint's substrate work (`TOOL_CALLS`, the invariant tests) exists to
+> avoid. See the **Fix round 1** section below for what actually shipped instead: the
+> hardcoded test was deleted as a genuine duplicate of `'the table lists every
+> registered tool'` (US-2.4/AC-9), which already asserts the same set,
+> self-maintainingly, against `TOOL_CALLS`.
 
 `npx vitest run src/server.test.ts -t 'list_brokers'` went from 15 passing / 4 failing
 before implementation to all passing after. The full suite went from 114 passed / 1
@@ -151,6 +158,65 @@ task brief. Two README sentences that were accurate at 0.2.0 but became stale at
 line now names both `accounts:read`/`list_accounts` and `brokers:read`/`list_brokers`,
 and the "Restart the client" line now names both tools.
 
+### Fix round 1 (review correction)
+
+Review on the task-11 closure confirmed both test edits above were legitimate — the
+old assertions genuinely needed updating, not loosening — but flagged two
+forward-looking problems with *how* they were fixed, plus the false claim quoted
+above. Both fixes landed in `src/server.test.ts` only; no production code changed.
+
+1. **`'exposes exactly the registered tools'` was a hardcoded duplicate.** It asserted
+   a literal `['list_accounts', 'list_brokers']` array — a magic value that would need
+   hand-editing on every one of Tasks 13/15/17/19 as more tools register, and it
+   asserted nothing that `'the table lists every registered tool'`
+   (`describe('invariants across every registered tool', …)`, US-2.4/AC-9) does not
+   already cover: that test does a **sorted** comparison of the live tool set against
+   `TOOL_CALLS`, so it proves set-equality — the same property, self-maintainingly,
+   because it grows with each story's new `TOOL_CALLS` row instead of needing a
+   separate hand-edit. The only thing the deleted test additionally asserted was
+   **order** (an unsorted array-equality), which is not a stated invariant anywhere
+   else in this repo and is not relied on by any test that isn't already independently
+   fragile in the same way (`tools[0]` in three of the `describe('MCP server', …)`
+   tests, pre-existing and out of this story's scope). **Chosen: delete**, not derive
+   — deriving it would have produced a near-duplicate of the US-2.4 test (`tools.map(t
+   => t.name)` vs. `TOOL_CALLS.map(c => c.name)`, unsorted instead of sorted) for no
+   invariant not already covered.
+2. **`'keeps the session alive after a failed call'` hardcoded a tool count as a proxy
+   for its real intent.** The test is about the session surviving a failed call, not
+   about how many tools are registered, so a literal `toHaveLength(2)` would need
+   bumping on every future tool story for a reason unrelated to what the test claims
+   to check. Rewritten to capture `listTools()` **before** the failing call and
+   compare it against `listTools()` **after** — the assertion is now that the
+   registered set is unchanged by a failed call, with no tool count anywhere in the
+   test.
+
+**Proof the rewritten assertions still bite** (both mutations applied and reverted;
+`git diff` confirmed clean before proceeding — see Verification commands):
+- Commenting out `registerListBrokers(server, client)` in `src/server.ts` turned
+  `'the table lists every registered tool'` red:
+  `AssertionError: expected [ 'list_accounts' ] to deeply equal [ 'list_accounts', 'list_brokers' ]`
+  (three other tests that call `list_brokers` directly also failed, as expected).
+  Restored; full suite green again.
+- Removing the `try`/`catch` in `core/tool.ts` so a failing call's rejection escapes
+  the handler **did not** kill the session — `@modelcontextprotocol/server`'s own
+  `registerTool` wrapper catches the unhandled rejection upstream and returns a
+  JSON-RPC error response, so `'keeps the session alive after a failed call'` still
+  passed under this mutation. This is a useful finding in its own right (the SDK
+  carries a second layer of resilience behind `registerReadTool`'s own `try`/`catch`),
+  but it meant this mutation could not demonstrate the new assertion biting. Restored,
+  then tried a mutation that does genuinely kill the session: calling `client.close()`
+  between the failing tool call and the second `listTools()`. That turned the test red
+  — `AssertionError: expected [] to deeply equal [ 'list_accounts', 'list_brokers' ]`
+  (a closed client's `listTools()` resolves to `[]` with a console warning rather than
+  rejecting, but the before/after comparison still catches it). Restored; full suite
+  green again.
+
+Full suite after fix round 1: **117 passed, 1 skipped** (118 total) — one test file
+(`src/server.test.ts`) has 18 tests, down from 19, since one hardcoded duplicate was
+deleted and no new test was added in its place. `npm run typecheck` passed clean.
+Version stays `0.3.0` — this is a test-only correction to an already-shipped release,
+not a new one.
+
 ## Files modified
 
 **Modified (tool + registration):**
@@ -162,6 +228,10 @@ and the "Restart the client" line now names both tools.
 - `src/server.test.ts` — `BrokersOutputSchema` import, `BROKER` fixture, the
   `describe('list_brokers', …)` block (4 tests), the extended `TOOL_CALLS` table, and
   the two corrected pre-existing assertions described above
+- `src/server.test.ts` (fix round 1) — `'exposes exactly the registered tools'`
+  deleted as a hardcoded duplicate of the US-2.4 invariant test; `'keeps the session
+  alive after a failed call'` rewritten to compare `listTools()` before/after instead
+  of asserting a hardcoded tool count
 
 **Modified (version):**
 - `VERSION`, `package.json`, `src/config.ts` — `0.2.0` → `0.3.0`
