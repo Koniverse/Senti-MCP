@@ -17,6 +17,41 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ---
 
+## [0.5.0] — 2026-08-06 — `list_account_strategies`: the first tool with a path parameter
+
+Closes US-2.7. `list_account_strategies` reads `GET /api/v1/accounts/{accountId}/strategies`
+and returns the strategies (expert advisors) currently deployed on one MT5 account — a
+different question from `list_strategies`'s platform-wide catalog of what could be
+deployed. This is the first tool this sprint to take a path parameter, and so the first
+to route through `accountPath` (US-2.4, shipped in 0.2.0): every segment is validated
+against `/^[A-Za-z0-9_-]{1,64}$/` and `encodeURIComponent`-ed before it is joined into a
+URL, and the guard runs *before* `client.get` is entered — a traversal payload such as
+`../../admin` is rejected with no HTTP request made at all, not merely rejected by the
+server. The description names `list_accounts`' `id` field as the source of `accountId`
+and states plainly that `login` (the MT5 account number) is the wrong value; a `404`
+repeats that hint via `core/client.ts`'s dedicated branch.
+
+### Added
+- `registerListAccountStrategies` (`src/tools/strategies/list-account-strategies.ts`) —
+  registered read-only via `registerReadTool` under the `strategies:read` scope. Takes
+  one required argument, `accountId`. Builds the request path exclusively through
+  `accountPath`; no template literal or concatenation touches the parameter.
+- `src/server.test.ts` — a `list_account_strategies` invariant row in `TOOL_CALLS` (the
+  first row carrying `arguments`, exercising the key-leak table across all six error
+  statuses for a tool that takes a parameter), plus its own `describe` block: the
+  account-scoped path is called correctly, a traversal attempt is rejected with the
+  stubbed `fetch` asserted **never invoked**, `accountId` is a required input, the
+  description names `list_accounts` and `login`, a `404` carries the login/id hint, and
+  a `403` names the `strategies:read` scope (this last test is not in the plan's Task
+  15 brief; added so AC-6 has an assertion behind it, matching the "names the scope on
+  403" test both `list_brokers` and `list_strategies` already carry).
+
+### Changed
+- `src/server.ts` now registers four tools; `list_accounts`, `list_brokers` and
+  `list_strategies` are unchanged.
+
+---
+
 ## [0.4.0] — 2026-08-06 — `list_strategies`: the second tool on the new substrate
 
 Second tool built on the `core/` + `tools/<tag>/` substrate US-2.4 shipped in 0.2.0, and

@@ -3,6 +3,7 @@ import { createClient } from './core/client.js';
 import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
 import { registerListAccounts } from './tools/accounts/list-accounts.js';
 import { registerListBrokers } from './tools/brokers/list-brokers.js';
+import { registerListAccountStrategies } from './tools/strategies/list-account-strategies.js';
 import { registerListStrategies } from './tools/strategies/list-strategies.js';
 
 export type ServerDeps = { fetch?: typeof fetch };
@@ -30,6 +31,7 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
   registerListAccounts(server, client);
   registerListBrokers(server, client);
   registerListStrategies(server, client);
+  registerListAccountStrategies(server, client);
 
   return server;
 }

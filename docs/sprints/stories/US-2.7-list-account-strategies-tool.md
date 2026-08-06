@@ -2,7 +2,8 @@
 id: US-2.7
 title: "list_account_strategies tool"
 epic: EPIC-2
-status: backlog
+status: done
+version_shipped: 0.5.0
 priority: P1
 points: 2
 sprint: sprint-2026-W33
@@ -39,20 +40,20 @@ every tool that takes the parameter.
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** a call with `accountId`, **When** the request is built,
+- [x] **AC-1** — **Given** a call with `accountId`, **When** the request is built,
   **Then** the path is constructed via `accountPath` — never by string concatenation.
-- [ ] **AC-2** — **Given** a traversal payload (`../`, `..%2F..%2Fadmin`, or similar)
+- [x] **AC-2** — **Given** a traversal payload (`../`, `..%2F..%2Fadmin`, or similar)
   passed as `accountId`, **When** the tool runs, **Then** `accountPath` rejects it and
   **no HTTP request is made**.
-- [ ] **AC-3** — The tool description names `list_accounts`.`id` as the source of
+- [x] **AC-3** — The tool description names `list_accounts`.`id` as the source of
   `accountId` and states that `login` is rejected.
-- [ ] **AC-4** — **Given** a `404` response, **When** the tool returns, **Then** the
+- [x] **AC-4** — **Given** a `404` response, **When** the tool returns, **Then** the
   error text carries the `login`/`id` hint from `core/client.ts`'s dedicated `404`
   branch ([US-2.4](US-2.4-tool-substrate-and-layout.md) AC-5).
-- [ ] **AC-5** — **Given** an account with no deployed strategies, **When** the list is
+- [x] **AC-5** — **Given** an account with no deployed strategies, **When** the list is
   formatted, **Then** the output states this explicitly rather than returning an
   unexplained empty list.
-- [ ] **AC-6** — **Given** a `403` from the API, **When** the tool returns, **Then**
+- [x] **AC-6** — **Given** a `403` from the API, **When** the tool returns, **Then**
   `isError` is true and the text names the `strategies:read` scope.
 
 ## Tasks
@@ -60,9 +61,9 @@ every tool that takes the parameter.
 - [x] **TASK-2.7.1** — `tools/strategies/list-account-strategies.ts` domain module
   (plan Task 14) (AC: 1, 3, 5)
   - [x] `AccountStrategySchema`, `parseAccountStrategies`, `formatAccountStrategies`
-- [ ] **TASK-2.7.2** — Registration, the first path parameter, and the 0.5.0 release
+- [x] **TASK-2.7.2** — Registration, the first path parameter, and the 0.5.0 release
   (plan Task 15) (AC: 1, 2, 4, 6)
-  - [ ] Register through `registerReadTool`; `inputSchema` carrying `accountId`; build
+  - [x] Register through `registerReadTool`; `inputSchema` carrying `accountId`; build
         the path via `accountPath`; `scope: 'strategies:read'`; a traversal-payload
         test; a `404` hint assertion
 
@@ -111,7 +112,7 @@ every tool that takes the parameter.
 | AC | Command |
 |---|---|
 | AC-1, AC-3, AC-5 | `npm test -- src/tools/strategies/list-account-strategies.test.ts` |
-| AC-2 | `npm test -- src/tools/strategies/list-account-strategies.test.ts -t traversal` |
+| AC-2 | `npm test -- src/server.test.ts -t traversal` — the guard is only meaningfully exercised at the registration level (asserts the stubbed `fetch` was never invoked), not in the domain-module test file, which has no `accountPath` call to guard |
 | AC-4 | `npm test -- src/server.test.ts -t "list_account_strategies.*404"` |
 | AC-6 | `npm test -- src/server.test.ts -t "list_account_strategies.*403"` |
 
@@ -124,11 +125,109 @@ every tool that takes the parameter.
 
 ## Implementation notes
 
-Not yet started — filled in when this story moves to `in-progress`.
+TASK-2.7.2 (plan Task 15) closed this story. Before any change, `npm test` was run as a
+baseline: **139 passed, 1 skipped (140 total)**, all green — TASK-2.7.1's domain module
+(`AccountStrategySchema`, `parseAccountStrategies`, `formatAccountStrategies`, from plan
+Task 14) already existed with its own 8 passing tests; only registration was missing.
+
+Following the TDD cycle: the `AccountStrategiesOutputSchema` import, the `DEPLOYED`
+fixture, a `describe('list_account_strategies', …)` block, and a
+`list_account_strategies` row in `TOOL_CALLS` (the first row carrying `arguments`) were
+appended to `src/server.test.ts` first, verbatim from the brief. Running
+`npx vitest run src/server.test.ts -t 'list_account_strategies'` confirmed genuine red:
+5 failed (`Tool list_account_strategies not found` on the three tests that call the
+tool or list tools and then dereference the missing entry via `.find`; the two
+description/schema assertions threw `TypeError`s — `Cannot convert undefined or null to
+object` and `.toMatch() expects to receive a string, but got undefined` — because
+`tools.find(...)` returned `undefined` before the tool existed). No test in this
+describe block could have passed before `registerListAccountStrategies` existed.
+
+Only then was `registerListAccountStrategies` appended to
+`src/tools/strategies/list-account-strategies.ts` — three new imports (`McpServer`
+type, `SentiClient` type and `accountPath` from `core/client.js`, `registerReadTool`)
+plus the function itself, verbatim per the brief, building the request path exclusively
+through `accountPath(args.accountId, 'strategies')` — and wired into `src/server.ts`
+alongside the three existing registrations.
+
+**Extra test added beyond the brief, to make AC-6 actually verified.** The brief's
+Step 1 test block (5 tests) covers AC-1 through AC-5 but has no test asserting a `403`
+names the `strategies:read` scope, unlike the parallel "names the X scope on 403" tests
+`list_brokers` and `list_strategies` each carry for their own scope. AC-6 explicitly
+requires this, and this story's own pre-existing Verification-commands table already
+named the command `npm test -- src/server.test.ts -t "list_account_strategies.*403"`
+that such a test would satisfy. Rather than checking AC-6 off with no assertion behind
+it, a sixth test — `'names the strategies:read scope on 403'` — was added to the same
+`describe` block, mirroring the sibling pattern exactly. It passes because
+`registerListAccountStrategies` already passes `scope: STRATEGIES_READ` through to
+`client.get`, and `core/client.ts`'s 403 branch names whatever scope it is given; no
+implementation change was needed, only the test.
+
+**One more correction while closing the story.** This story's own Verification-commands
+table (present before this task, from earlier scaffolding) pointed AC-2's command at
+`src/tools/strategies/list-account-strategies.test.ts -t traversal` — but that file (the
+domain-module tests from Task 14) has no traversal test; it never calls `accountPath` at
+all, only `parseAccountStrategies`/`formatAccountStrategies`. Running that command
+returns "8 skipped, 0 run" — it does not exercise AC-2. The traversal-rejection test is
+in `src/server.test.ts` (asserting the stubbed `fetch` is never invoked), which is where
+`accountPath` is actually reached through registration. Corrected the table to point
+there rather than leave a command in the story doc that silently verifies nothing.
+
+**No pre-existing test broke.** `npm test` after wiring `registerListAccountStrategies`
+into `server.ts` passed every prior test on the first run.
+
+`npm test` after implementation: **145 passed, 1 skipped (146 total)** — 6 new
+`list_account_strategies` tests in `src/server.test.ts` (the brief's 5 plus the added
+403 test), no other file's test count changed. `npm run typecheck` (`tsc --noEmit`
+against both `tsconfig.json` and `tsconfig.test.json`) passed clean.
+
+Released `0.5.0`: `VERSION`, `package.json`, and `src/config.ts`'s `SERVER_VERSION` all
+moved in lockstep; `config.test.ts`'s drift check passed unmodified. `docs/CHANGELOG.md`
+gained the `[0.5.0]` section above `[0.4.0]`, matching that entry's register, and calls
+out that this is the first tool taking a path parameter, that it routes through
+`accountPath`, and that the guard runs before `client.get` is entered so a traversal
+attempt never reaches the network. `README.md` gained a `list_account_strategies` row in
+the tool table, the scope-exercise sentence now names `strategies:read` as covered by
+both `list_strategies` and `list_account_strategies`, and the "Restart the client"
+sentence now names all four tools.
 
 ## Files modified
 
-Not yet started — filled in when this story moves to `in-progress`.
+**Modified (tool + registration):**
+- `src/tools/strategies/list-account-strategies.ts` — appended
+  `registerListAccountStrategies`, `STRATEGIES_READ`, and three new imports
+  (`McpServer` type, `accountPath` + `SentiClient` type, `registerReadTool`)
+- `src/server.ts` — import and registration call for `registerListAccountStrategies`
+
+**Modified (tests):**
+- `src/server.test.ts` — `AccountStrategiesOutputSchema` import, `DEPLOYED` fixture, the
+  `describe('list_account_strategies', …)` block (6 tests — the brief's 5 plus a
+  403/scope test added to give AC-6 an actual assertion), and the extended
+  `TOOL_CALLS` table (first row carrying `arguments`)
+
+**Modified (version):**
+- `VERSION`, `package.json`, `src/config.ts` — `0.4.0` → `0.5.0`
+
+**Modified (CHANGELOG and README):**
+- `docs/CHANGELOG.md` — added the `[0.5.0]` section above `[0.4.0]`, below
+  `[Unreleased]`
+- `README.md` — `list_account_strategies` row in the tool table; the scope-exercise
+  sentence and the "Restart the client" sentence updated to name all four shipped tools
+
+**Modified (story closure and Active Context):**
+- `docs/sprints/stories/US-2.7-list-account-strategies-tool.md` — this file:
+  frontmatter (`status: done`, `version_shipped: 0.5.0`), all AC and task boxes, the
+  Verification-commands table (AC-2 row corrected to the file that actually contains
+  the traversal test), this section
+- `docs/sprints/sprint-2026-W33.md` — US-2.7's scope-table row → `✅ done`
+- `docs/sprints/epics/EPIC-2.md` — US-2.7's story-index row → `✅ done (v0.5.0)`
+- `CLAUDE.md` — Active Context block refreshed (US-2.7 closed, next up US-2.8, Last
+  Version 0.5.0)
+- `docs/sprints/STATUS.md` — regenerated by `npm run agile:status` (RULE-5, never
+  hand-edited)
+
+**Not modified:** `commit:` is deliberately absent from this story's frontmatter —
+RULE-2 forbids `--amend`-ing a commit's own SHA into its own commit; a follow-up commit
+backfills it later, the same precedent US-2.4 through US-2.6's closures recorded.
 
 ## Cross-references
 

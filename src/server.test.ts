@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
+import { AccountStrategiesOutputSchema } from './tools/strategies/list-account-strategies.js';
 import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
 import { loadConfig } from './config.js';
 import { createServer } from './server.js';
@@ -279,6 +280,115 @@ describe('list_strategies', () => {
   });
 });
 
+const DEPLOYED = {
+  id: 'ae1',
+  mt5AccountId: 'abc-123',
+  eaDefinitionId: 's1',
+  symbol: 'EURUSD',
+  timeframe: 'H1',
+  status: 'RUNNING',
+  chartId: '12345',
+  eaDefinition: { name: 'TrendRider' },
+  mt5Account: { id: 'abc-123', login: '51234567', label: 'Main Live' },
+};
+
+describe('list_account_strategies', () => {
+  test('calls the account-scoped path and returns both channels', async () => {
+    const calls: string[] = [];
+    const deployedFetch = (async (url: string | URL) => {
+      calls.push(String(url));
+      return new Response(JSON.stringify([DEPLOYED]), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+    const client = await connect(deployedFetch);
+
+    const result = (await client.callTool({
+      name: 'list_account_strategies',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/strategies');
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('TrendRider');
+    expect(AccountStrategiesOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('rejects a traversal attempt before any HTTP call happens', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'list_account_strategies',
+      arguments: { accountId: '../../admin' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/Invalid path segment/);
+    expect(called).toBe(false);
+  });
+
+  test('declares accountId as a required argument', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'list_account_strategies');
+
+    expect(tool?.inputSchema.properties).toHaveProperty('accountId');
+    expect(tool?.inputSchema.required).toContain('accountId');
+  });
+
+  test('tells the model to pass id rather than login', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'list_account_strategies');
+
+    expect(tool?.description).toMatch(/list_accounts/);
+    expect(tool?.description).toMatch(/login/);
+  });
+
+  test('turns a 404 into the login-versus-id hint', async () => {
+    const missing = (async () =>
+      new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found.' } }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof fetch;
+    const client = await connect(missing);
+
+    const result = (await client.callTool({
+      name: 'list_account_strategies',
+      arguments: { accountId: '413878201' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/list_accounts/);
+    expect(textOf(result)).toMatch(/login/);
+  });
+
+  test('names the strategies:read scope on 403', async () => {
+    const forbidden = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Insufficient scope.' } }),
+        { status: 403, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(forbidden);
+
+    const result = (await client.callTool({
+      name: 'list_account_strategies',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('strategies:read');
+  });
+});
+
 /**
  * One entry per registered tool. Later tool stories add a row here rather than
  * writing their own leak test or their own `outputSchema` assertion — that is
@@ -298,6 +408,12 @@ const TOOL_CALLS: {
   { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
   { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
   { name: 'list_strategies', outputSchema: StrategiesOutputSchema, successBody: [STRATEGY] },
+  {
+    name: 'list_account_strategies',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: AccountStrategiesOutputSchema,
+    successBody: [DEPLOYED],
+  },
 ];
 
 const errorStatuses = [401, 403, 404, 409, 429, 500];

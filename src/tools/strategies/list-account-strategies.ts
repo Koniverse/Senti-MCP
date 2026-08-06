@@ -1,5 +1,8 @@
+import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
+import { accountPath, type SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
+import { registerReadTool } from '../../core/tool.js';
 
 /**
  * Transcribed from `GET /api/v1/accounts/{accountId}/strategies` in the live
@@ -60,4 +63,35 @@ export function formatAccountStrategies(strategies: AccountStrategy[]): string {
   const blocks = strategies.map(block).join('\n\n');
 
   return `${strategies.length} ${noun} deployed on this account.\n\n${blocks}`;
+}
+
+/** The scope this endpoint requires, quoted back in the 403 message. */
+const STRATEGIES_READ = 'strategies:read';
+
+export function registerListAccountStrategies(server: McpServer, client: SentiClient): void {
+  registerReadTool(server, {
+    name: 'list_account_strategies',
+    title: 'List strategies deployed on an account',
+    description:
+      'List the strategies (expert advisors) currently deployed on one MT5 account, with ' +
+      "each deployment's symbol, timeframe and status. `accountId` is the `id` field from " +
+      'list_accounts — NOT `login`, which is the MT5 account number and is not a valid ' +
+      'accountId. For the platform-wide catalog of strategies available to deploy, use ' +
+      'list_strategies instead.',
+    inputSchema: z.object({
+      accountId: z
+        .string()
+        .describe('The `id` field from list_accounts. Not the `login` (MT5 account number).'),
+    }),
+    outputSchema: AccountStrategiesOutputSchema,
+    run: async (args, signal) => {
+      const payload = await client.get(accountPath(args.accountId, 'strategies'), {
+        signal,
+        scope: STRATEGIES_READ,
+      });
+      const strategies = parseAccountStrategies(payload);
+
+      return { text: formatAccountStrategies(strategies), structured: { strategies } };
+    },
+  });
 }

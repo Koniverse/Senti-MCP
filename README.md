@@ -11,6 +11,7 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | `list_accounts` | none | Lists the MT5 accounts linked to the configured API key: id, login, broker, last known balance and equity, sync state, running strategies. |
 | `list_brokers` | none | Lists the platform-wide catalog of brokers Senti Quant supports — not the accounts this API key already has — with each broker's MT5 server names and account types. |
 | `list_strategies` | none | Lists the platform-wide catalog of strategies (expert advisors) available to deploy — not the strategies currently running on any account — with each strategy's supported symbols, timeframes, rating and presets. |
+| `list_account_strategies` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the strategies currently deployed on one MT5 account, with each deployment's symbol, timeframe and status. |
 
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
@@ -26,10 +27,10 @@ the MT5 account number, not a key.
   [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). There is
   no key-introspection endpoint, so a missing scope isn't caught at startup: it
   surfaces as a `403` naming the scope the first time the affected tool is
-  called, and every other tool keeps working. As of v0.4.0, `accounts:read`
+  called, and every other tool keeps working. As of v0.5.0, `accounts:read`
   (`list_accounts`), `brokers:read` (`list_brokers`) and `strategies:read`
-  (`list_strategies`) are exercised by a shipped tool; the other two are not
-  yet.
+  (`list_strategies`, `list_account_strategies`) are exercised by a shipped
+  tool; `performance:read` and `trading:read` are not yet.
 
 ## Configuration
 
@@ -72,8 +73,8 @@ No install step — `npx` fetches the published package on first run:
 }
 ```
 
-Restart the client; the `list_accounts`, `list_brokers` and `list_strategies`
-tools should appear.
+Restart the client; the `list_accounts`, `list_brokers`, `list_strategies` and
+`list_account_strategies` tools should appear.
 
 To pin a version, use `senti-mcp-server@0.1.0`. To put it on your `PATH`
 instead:

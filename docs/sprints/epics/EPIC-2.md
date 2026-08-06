@@ -89,7 +89,7 @@ most likely to break by copying an earlier one:
 | [US-2.4](../stories/US-2.4-tool-substrate-and-layout.md) | Tool substrate and directory layout | P1 | 5 | ✅ done (v0.2.0) | 1–9 |
 | [US-2.5](../stories/US-2.5-list-brokers-tool.md) | `list_brokers` tool | P1 | 2 | ✅ done (v0.3.0) | 10–11 |
 | [US-2.6](../stories/US-2.6-list-strategies-tool.md) | `list_strategies` tool | P1 | 2 | ✅ done (v0.4.0) | 12–13 |
-| [US-2.7](../stories/US-2.7-list-account-strategies-tool.md) | `list_account_strategies` tool | P1 | 2 | 📋 backlog | 14–15 |
+| [US-2.7](../stories/US-2.7-list-account-strategies-tool.md) | `list_account_strategies` tool | P1 | 2 | ✅ done (v0.5.0) | 14–15 |
 | [US-2.8](../stories/US-2.8-list-positions-tool.md) | `list_positions` tool | P1 | 2 | 📋 backlog | 16–17 |
 | [US-2.9](../stories/US-2.9-list-pending-orders-tool.md) | `list_pending_orders` tool | P1 | 2 | 📋 backlog | 18–19 |
 
