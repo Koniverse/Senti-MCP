@@ -54,10 +54,12 @@ despite covering an equally real endpoint.
 
 ## Tasks
 
-- [ ] **TASK-2.9.1** — `tools/trading/orders.ts` domain module (plan Task 18)
+- [x] **TASK-2.9.1** — `tools/trading/orders.ts` domain module (plan Task 18)
   (AC: 3, 4, 5)
-  - [ ] `OrderSchema`, `parseOrders`, `formatOrders` — nullable `priceStopLimit`, the
-        200-row cap and `notes`, mirroring `positions.ts`'s formatting shape
+  - [x] `OrderSchema`, `parseOrders`, `formatOrders` — `priceStopLimit` is a
+        non-nullable number where `0` means "not set" and renders as `—`, the same
+        MT5 sentinel convention `sl`/`tp` use in `positions.ts`; the 200-row cap and
+        `notes`
 - [ ] **TASK-2.9.2** — Registration, the 0.7.0 release, and the sprint close
   (plan Task 19) (AC: 1, 2, 6)
   - [ ] Register through `registerReadTool`; build the path via `accountPath`;
