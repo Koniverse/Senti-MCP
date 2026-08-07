@@ -479,6 +479,16 @@ describe('invariants across every registered tool', () => {
         const result = (await client.callTool(call)) as ToolResult;
 
         expect(result.isError, `${call.name} @ ${status}`).toBe(true);
+        // A row whose `arguments` fail input-schema validation (missing or
+        // malformed, e.g. a mistyped `accountId`) also comes back with
+        // `isError: true`, but from the SDK's own schema check — `client.get`
+        // is never called, so "no key leaked" would hold trivially, and a
+        // row with bad `arguments` would silently disarm this test for that
+        // tool. Asserting the failure text is shaped like the real
+        // downstream error (`core/client.ts`'s `failureOf`, which always
+        // says "Senti API") forces the call to have actually reached that
+        // path before the leak assertions below mean anything.
+        expect(textOf(result), `${call.name} @ ${status}`).toMatch(/Senti API/);
         expect(textOf(result), `${call.name} @ ${status}`).not.toContain('supersecret');
         expect(textOf(result), `${call.name} @ ${status}`).not.toMatch(KEY_SHAPED);
         expect(result.structuredContent, `${call.name} @ ${status}`).toBeUndefined();
@@ -495,6 +505,14 @@ describe('invariants across every registered tool', () => {
     for (const call of TOOL_CALLS) {
       const result = (await client.callTool(call)) as ToolResult;
 
+      // Same defense as the error-status test above: a row whose `arguments`
+      // fail input-schema validation never reaches the thrown `fetch`
+      // rejection at all, so the leak assertions below would pass on a call
+      // that was never actually made. `describeError` (`core/errors.ts`)
+      // renders this stub's cause chain as "fetch failed: ENOTFOUND" — that
+      // marker only appears once the call has genuinely gone through
+      // `client.get` and hit the network stub.
+      expect(textOf(result), call.name).toContain('ENOTFOUND');
       expect(textOf(result), call.name).not.toContain('supersecret');
       expect(textOf(result), call.name).not.toMatch(KEY_SHAPED);
     }
