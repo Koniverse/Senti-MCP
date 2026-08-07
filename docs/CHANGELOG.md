@@ -17,6 +17,44 @@ _Nothing yet._
 
 ---
 
+## [1.0.1] — 2026-08-07 — The six tools reach npm — v1.0.1
+
+The npm publish `1.0.0` deferred ([CONTEXT D11](CONTEXT.md)), now taken
+([CONTEXT D12](CONTEXT.md)). `latest` moves `0.1.0` → `1.0.1`, so
+`npx -y senti-mcp-server` reaches all six read tools instead of the lone
+`list_accounts` that `0.1.0` shipped. **No tool or tool behaviour changes** — the
+runtime is byte-identical to `1.0.0` in intent; what changes is the tarball and the
+prose describing it.
+
+`1.0.0` itself is deliberately left unpublished. Its CHANGELOG entry says the release
+is the git tag and the GitHub Release only, and that stays true rather than being
+quietly contradicted by a tarball; `1.0.1` is the version that carries the corrected
+README into the registry.
+
+### Fixed
+- **`npm run build` shipped dead code.** `tsc` does not remove output whose source is
+  gone, and `dist/` is gitignored, so `dist/client.js`, `dist/accounts.js` and
+  `dist/errors.js` — outputs of `src/client.ts`, `src/accounts.ts` and `src/errors.ts`,
+  all deleted in the `0.2.0` restructure (`0ed5e80`, `1e8becd`) — survived in every
+  local `dist/` and were listed by `npm pack --dry-run` for the `1.0.0` tarball.
+  Nothing imports them and `bin` points at `dist/index.js`, so no runtime path was
+  affected; they would simply have been published. `build` is now
+  `rm -rf dist && tsc && chmod +x dist/index.js`.
+- **`README.md` would have shipped a false claim about itself.** The install section
+  stated "**The published package is still v0.1.0** … `list_brokers`, `list_strategies`,
+  `list_account_strategies`, `list_positions` and `list_pending_orders` are not
+  available through `npx` yet", directing readers to a git checkout. `README.md` is
+  inside the tarball and is the npm package page, so publishing without rewriting it
+  would have put a package on the registry whose own front page told users it did not
+  contain what it contains. The section now names `latest` as the thing to trust, gives
+  the `npm view senti-mcp-server dist-tags` check, and shows how to pin a version.
+- `docs/README.md`'s absent-file table pinned the registry state to
+  `senti-mcp-server@0.1.0` and asserted a `gitHead` match against the `v0.1.0` tag —
+  both stale the moment `1.0.1` publishes. The row now states the published-ness
+  without pinning a version claim it cannot keep current.
+
+---
+
 ## [1.0.0] — 2026-08-07 — The W33 read surface, declared stable — v1.0.0
 
 Promotes the six read tools shipped across `0.2.0`–`0.7.0` to a stable major version.

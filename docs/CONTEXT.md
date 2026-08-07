@@ -446,3 +446,48 @@ repo version.
 
 **Date**: 2026-08-07
 **Version**: 1.0.0
+
+---
+
+### D12. Publish to npm as `1.0.1`, leaving `1.0.0` git-only (revision of D11)
+
+**Context**: [D11](#d11-cut-100-from-070-not-071) deferred the npm publish as its own
+decision rather than a side effect of numbering. That decision is now taken — publish.
+But `1.0.0` had already shipped saying otherwise: its CHANGELOG entry reads "**Not
+published to npm.** … This release is the git tag `v1.0.0` and its GitHub Release only",
+CHANGELOG entries are never rewritten, and `README.md` — which is *inside* the tarball
+and *is* the npm package page — told readers the published package was `0.1.0` and to
+use a git checkout. A publish-readiness pass also found `dist/` carrying three outputs
+whose sources were deleted in the `0.2.0` restructure, which `npm pack --dry-run`
+confirmed would ship.
+
+**Decision**: leave `1.0.0` unpublished exactly as its own entry describes, and cut
+`1.0.1` as the version that reaches the registry. `1.0.1` fixes the build script to
+clean `dist/` first, rewrites `README.md`'s install section around npm's `latest` tag,
+and de-pins `docs/README.md`'s registry claim. `latest` moves `0.1.0` → `1.0.1`.
+
+**Rationale**: a released CHANGELOG entry is a claim about the world at a version, and
+the cheapest way to keep "not published to npm" true was to not publish that version.
+The alternative — publishing a `1.0.0` tarball whose bundled CHANGELOG denies its own
+existence, and whose README sends readers away from the package they just installed —
+buys nothing and costs the reader's trust at the exact moment they are deciding whether
+to install. A patch number is not scarce.
+
+**Alternatives considered**:
+- Publish `1.0.0` after fixing README and `dist/` in the working tree — rejected: the
+  tarball would then differ from the `v1.0.0` tag it claims to be, and the entry's "git
+  tag and GitHub Release only" sentence would be false in the very artifact carrying it.
+- Publish `1.0.0` unchanged — rejected outright; it ships dead code and a package page
+  stating the package lacks five of its six tools.
+- Rewrite the `1.0.0` CHANGELOG entry to remove the "not published" wording — rejected:
+  CHANGELOG entries are append-only in the same spirit as [RULE-7](#d7-no-active-context-block-in-this-repo),
+  and this repo has already paid once for renumbering published history (see the
+  `1.0.0` entry's third `### Fixed` bullet).
+
+**Impact**: `VERSION`, `package.json` (`version` and the `build` script), `src/config.ts`;
+the `## [1.0.1]` CHANGELOG section; `README.md`'s install section; `docs/README.md`'s
+absent-file table. `v1.0.0` stays tagged and released on GitHub, unpublished on npm, in
+perpetuity.
+
+**Date**: 2026-08-07
+**Version**: 1.0.1

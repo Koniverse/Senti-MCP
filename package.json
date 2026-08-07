@@ -1,6 +1,6 @@
 {
   "name": "senti-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server exposing the Senti Quant Public API to an AI host",
   "type": "module",
   "engines": {
@@ -17,7 +17,7 @@
   "scripts": {
     "agile:status": "koni-docs status --docs-path docs/",
     "agile:validate": "koni-docs validate --docs-path docs/",
-    "build": "tsc && chmod +x dist/index.js",
+    "build": "rm -rf dist && tsc && chmod +x dist/index.js",
     "dev": "tsx src/index.ts",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "test": "vitest run",
