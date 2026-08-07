@@ -57,10 +57,11 @@ a defensive cap of 200 rows, recording any truncation in `notes` — the same
 
 ## Tasks
 
-- [ ] **TASK-2.8.1** — `tools/trading/positions.ts` domain module (plan Task 16)
+- [x] **TASK-2.8.1** — `tools/trading/positions.ts` domain module (plan Task 16)
   (AC: 3, 4, 5)
-  - [ ] `PositionSchema`, `parsePositions`, `formatPositions` — nullable `sl`/`tp`
-        via the same `money()`-style helper `list_accounts` established; the 200-row
+  - [x] `PositionSchema`, `parsePositions`, `formatPositions` — `sl`/`tp` are
+        non-nullable numbers where `0` means "not set" and renders as `—`, the same
+        em-dash convention `list_accounts`' `money()` uses for `null`; the 200-row
         cap and `notes`
 - [ ] **TASK-2.8.2** — Registration, the `409` branch, and the 0.6.0 release
   (plan Task 17) (AC: 1, 2, 6)
