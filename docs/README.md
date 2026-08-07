@@ -30,7 +30,7 @@ Repo root:
   .env.example               ← env var template; copy to gitignored .env.local
   VERSION                    ← current semver string, bare (no `v`)
   AGENTS.md                  ← canonical project guide
-  CLAUDE.md                  ← pointer + Koni-Docs Integration + Active Context
+  CLAUDE.md                  ← pointer + Koni-Docs Integration (no Active Context — D10)
   skills-lock.json           ← skill provenance (source + content hash)
   .agents/skills/koni-docs/  ← the vendored skill, real files
   .claude/skills/koni-docs   → relative symlink into .agents/
@@ -52,6 +52,7 @@ A missing file here is a decision, not an oversight.
 | `DESIGN.md` | No UI. This is a stdio MCP server; output formatting lives beside the code that emits it. |
 | `docs/tests/`, `docs/design/` | Owned by `koni-qc`, which is not wired. |
 | `docs/sprints/README.md` | The vendored skill's [`sprint-system.md`](../.agents/skills/koni-docs/references/sprint-system.md) is the live source for the sprint schema; a copy here would drift from it. |
+| Active Context — the `CLAUDE.md` block and `.active-context.md` | Removed, and not to be recreated in either form. It duplicated the sprint file and STATUS.md and went stale between refreshes ([CONTEXT D10](CONTEXT.md)). |
 
 `LESSONS.md` is no longer on this list — it was created with its first real entry
 during sprint W33; see [docs/LESSONS.md](LESSONS.md). An empty traps file teaches
@@ -77,10 +78,14 @@ Walk every applicable item before committing.
 [ ] npm run agile:status    — regenerate STATUS.md (RULE-5)
 [ ] npm run agile:validate  — ID graph resolves; must exit 0
 [ ] Touched the skill? python3 .agents/skills/koni-docs/scripts/check-references.py .agents/skills/koni-docs
-[ ] CLAUDE.md Active Context block refreshed (integration.md T1–T7)
 [ ] English-only: code, comments, errors, commits, docs (RULE-13)
 [ ] Commit prefix: feat:/fix:/chore:/docs:/style:/refactor:/test: (RULE-14)
 ```
+
+> **The skill's `CLAUDE.md Active Context block updated` item is deliberately absent
+> from this list.** This repo keeps no Active Context block, in `CLAUDE.md` or in a
+> `.active-context.md`, and the koni-docs T1–T7 trigger points do not apply here. See
+> [CONTEXT D10](CONTEXT.md).
 
 > **`npx koni-docs sync` is deliberately absent from this list.** It propagates story
 > status up into PRD and epic tables, and at CLI 0.10.0 it over-aggregated the "Ship"

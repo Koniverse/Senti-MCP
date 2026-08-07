@@ -3,7 +3,7 @@
 > **This file is the single source of truth for all AI agent instructions in this
 > project.** Cursor, Gemini, Codex CLI, Copilot CLI, and Claude Code all read it.
 > [`CLAUDE.md`](CLAUDE.md) is a thin pointer back to this file plus the Koni-Docs
-> Integration and Active Context blocks; on any conflict, this file wins.
+> Integration block; on any conflict, this file wins.
 
 ## Project purpose
 
@@ -172,6 +172,11 @@ come back via `npx skills update koni-docs`.
 - **`docs/sprints/STATUS.md` is generated.** Regenerate it; never edit it (RULE-5).
 - **`docs/CONTEXT.md` is append-only** (RULE-7). A changed decision is a new entry
   citing the old one by `D<N>`, never an edit to the original.
+- **No Active Context block, anywhere.** This repo does not maintain one — not inline
+  in `CLAUDE.md` (koni-docs Pattern A), not in a `.active-context.md` (Pattern B). Do
+  not write, restore, or refresh one, and ignore the skill's T1–T7 trigger points and
+  its `CLAUDE.md Active Context` checklist item ([CONTEXT D10](docs/CONTEXT.md)). The
+  sprint file plus generated `STATUS.md` are the only in-flight snapshot.
 - **Frontmatter `id` matches the filename** (RULE-6). Stories are `US-X.Y-<slug>.md`.
 - **`version_shipped` is bare semver** (`0.1.0`, never `v0.1.0`) — RULE-16.
 - **`assignee` is a GitHub login**, never `git user.name` — RULE-15.
@@ -211,7 +216,7 @@ built entry point, because that is the artifact US-2.2 AC-18 is a claim about.
 
 | I want to… | Do this |
 |---|---|
-| Know what's in flight | Read the Active Context block in [CLAUDE.md](CLAUDE.md) |
+| Know what's in flight | Read the active sprint file in [docs/sprints/](docs/sprints/) and the generated [STATUS.md](docs/sprints/STATUS.md) |
 | Start a story | Flip `status: in-progress`, confirm it is in the sprint scope table |
 | Record a decision | Append the next `D<N>` to [docs/CONTEXT.md](docs/CONTEXT.md) |
 | Add a tool | Read [EPIC-2](docs/sprints/epics/EPIC-2.md) invariants first, then the design spec |
