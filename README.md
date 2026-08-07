@@ -135,7 +135,10 @@ npm run dev        # run from source, e.g. SENTI_API_KEY=… npm run dev
 ```
 
 `npm run test:smoke` reads `SENTI_SMOKE_KEY` from `.env.local`, which is
-gitignored. Without that file the smoke test is skipped, not failed.
+gitignored. If `.env.local` exists but doesn't set `SENTI_SMOKE_KEY`, the smoke
+test skips cleanly. If `.env.local` doesn't exist at all, `node --env-file` fails
+to start (`node: .env.local: not found`, exit 9) rather than skipping — create
+the file, even empty, to get the skip instead of the failure.
 
 ## License
 

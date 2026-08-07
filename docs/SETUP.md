@@ -49,7 +49,9 @@ SENTI_API_KEY=sq_live_…
 SENTI_API_BASE_URL=https://be-dev.sentitrade.xyz
 
 # Smoke-test key (added in v0.1.0) — optional, test-only.
-# Read by `npm run test:smoke`; absent, that suite skips rather than fails.
+# Read by `npm run test:smoke`. Left unset (but this file present), that suite
+# skips cleanly. If .env.local doesn't exist at all, `node --env-file` fails to
+# start (`node: .env.local: not found`, exit 9) instead of skipping.
 SENTI_SMOKE_KEY=sq_live_…
 ```
 
@@ -70,10 +72,12 @@ SENTI_SMOKE_KEY=sq_live_…
 > startup. It surfaces as a `403` naming the missing scope the first time a tool that
 > needs it is called; every other tool keeps working normally.
 >
-> Only `accounts:read` is exercised by a shipped tool today (`list_accounts`). The
-> other four become necessary as [US-2.5](sprints/stories/US-2.5-list-brokers-tool.md)
-> through [US-2.9](sprints/stories/US-2.9-list-pending-orders-tool.md) land the
-> remaining read tools this sprint.
+> As of v0.7.0, `accounts:read` (`list_accounts`), `brokers:read` (`list_brokers`),
+> `strategies:read` (`list_strategies`, `list_account_strategies`) and `trading:read`
+> (`list_positions`, `list_pending_orders`) are exercised by a shipped tool.
+> `performance:read` is not yet — it belongs to sprint W34's remaining read
+> operations. Creating the key with all five now still saves a trip back to the
+> dashboard once those land.
 
 > ### The key and the base URL must match environments
 >

@@ -17,7 +17,7 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ---
 
-## [0.7.0] — 2026-08-06 — `list_pending_orders`: the last tool of sprint W33
+## [0.7.0] — 2026-08-07 — `list_pending_orders`: the last tool of sprint W33
 
 Closes US-2.9 and closes sprint W33. `list_pending_orders` reads `GET
 /api/v1/accounts/{accountId}/orders` and returns the pending limit and stop orders
@@ -69,7 +69,7 @@ through `accountPath` (US-2.4) — no template literal or concatenation touches
 
 ---
 
-## [0.6.0] — 2026-08-06 — `list_positions`: empty is a real zero, `409` is not
+## [0.6.0] — 2026-08-07 — `list_positions`: empty is a real zero, `409` is not
 
 Closes US-2.8. `list_positions` reads `GET /api/v1/accounts/{accountId}/positions` and
 returns the positions currently open on one MT5 account — symbol, direction, volume,

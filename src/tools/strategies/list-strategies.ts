@@ -31,6 +31,12 @@ export const StrategySchema = z.object({
 
 export type Strategy = z.infer<typeof StrategySchema>;
 
+/**
+ * The tool's advertised output. The API returns a bare array, but this server
+ * speaks both protocol eras from one process: a non-object `structuredContent`
+ * reaches 2025-era clients wrapped as `{ result: … }` and 2026-era clients
+ * unwrapped. Naming the field keeps one shape on both.
+ */
 export const StrategiesOutputSchema = z.object({
   strategies: z.array(StrategySchema),
 });
