@@ -37,6 +37,12 @@ describe('parseStrategies', () => {
     ).not.toThrow();
   });
 
+  test('accepts a null supportedSymbols and supportedTimeframes — null and absent are both allowed', () => {
+    expect(() =>
+      parseStrategies([{ ...STRATEGY, supportedSymbols: null, supportedTimeframes: null }]),
+    ).not.toThrow();
+  });
+
   test('rejects a strategy missing a genuinely required field, naming it', () => {
     const { presets: _dropped, ...incomplete } = STRATEGY;
 
@@ -71,6 +77,15 @@ describe('formatStrategies', () => {
 
     expect(rendered).not.toContain('undefined');
     expect(rendered).not.toContain('symbols:');
+  });
+
+  test('omits the symbols and timeframes lines when the fields are null, not merely absent', () => {
+    const rendered = formatStrategies([
+      { ...STRATEGY, supportedSymbols: null, supportedTimeframes: null },
+    ]);
+
+    expect(rendered).not.toContain('symbols:');
+    expect(rendered).not.toContain('timeframes:');
   });
 
   test('marks an inactive strategy', () => {
