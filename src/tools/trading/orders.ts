@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import { accountPath, type SentiClient } from '../../core/client.js';
+import { ACCOUNT_NOT_FOUND, accountPath, type SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
 import { registerReadTool } from '../../core/tool.js';
 
@@ -56,8 +56,22 @@ export function parseOrders(payload: unknown): Order[] {
  */
 const MAX_ROWS = 200;
 
-export function capOrders(orders: Order[]): { orders: Order[]; notes: string[] } {
-  if (orders.length <= MAX_ROWS) return { orders, notes: [] };
+/** What the account holds, before any truncation. */
+export type OrderTotals = {
+  count: number;
+};
+
+export type CappedOrders = {
+  orders: Order[];
+  notes: string[];
+  /** Derived from the full list, never from the slice above. */
+  totals: OrderTotals;
+};
+
+export function capOrders(orders: Order[]): CappedOrders {
+  const totals: OrderTotals = { count: orders.length };
+
+  if (orders.length <= MAX_ROWS) return { orders, notes: [], totals };
 
   return {
     orders: orders.slice(0, MAX_ROWS),
@@ -66,6 +80,7 @@ export function capOrders(orders: Order[]): { orders: Order[]; notes: string[] }
         'returned them. Senti does not paginate this endpoint, so the remainder is not ' +
         'retrievable through this tool.',
     ],
+    totals,
   };
 }
 
@@ -97,10 +112,10 @@ function block(order: Order): string {
   return lines.join('\n');
 }
 
-export function formatOrders(orders: Order[], notes: string[]): string {
+export function formatOrders(orders: Order[], notes: string[], totals: OrderTotals): string {
   const trailer = notes.length > 0 ? `\n\n${notes.join('\n')}` : '';
 
-  if (orders.length === 0) {
+  if (totals.count === 0) {
     // This sentence is the whole point of the 409 branch existing. An offline
     // terminal returns 409, so reaching this line means the terminal answered
     // and the account genuinely has nothing pending.
@@ -111,10 +126,13 @@ export function formatOrders(orders: Order[], notes: string[]): string {
     );
   }
 
-  const noun = orders.length === 1 ? 'order' : 'orders';
+  const noun = totals.count === 1 ? 'order' : 'orders';
   const blocks = orders.map(block).join('\n\n');
+  // Said in the header rather than only in the trailing note: the note sits
+  // below 200 order blocks, and the header is what gets quoted back.
+  const shown = orders.length < totals.count ? ` (showing the first ${orders.length})` : '';
 
-  return `${orders.length} pending ${noun}.\n\n${blocks}${trailer}`;
+  return `${totals.count} pending ${noun}${shown}.\n\n${blocks}${trailer}`;
 }
 
 /** The scope this endpoint requires, quoted back in the 403 message. */
@@ -148,10 +166,11 @@ export function registerListPendingOrders(server: McpServer, client: SentiClient
         signal,
         scope: TRADING_READ,
         conflictMeans: TERMINAL_OFFLINE,
+        notFoundMeans: ACCOUNT_NOT_FOUND,
       });
-      const { orders, notes } = capOrders(parseOrders(payload));
+      const { orders, notes, totals } = capOrders(parseOrders(payload));
 
-      return { text: formatOrders(orders, notes), structured: { orders, notes } };
+      return { text: formatOrders(orders, notes, totals), structured: { orders, notes } };
     },
   });
 }

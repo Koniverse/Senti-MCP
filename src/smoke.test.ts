@@ -60,7 +60,9 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
       );
       const capped = capPositions(positions);
 
-      expect(formatPositions(capped.positions, capped.notes).length).toBeGreaterThan(0);
+      expect(
+        formatPositions(capped.positions, capped.notes, capped.totals).length,
+      ).toBeGreaterThan(0);
     } catch (error) {
       expect(String(error)).toMatch(/409/);
     }
@@ -78,7 +80,9 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
       );
       const cappedOrders = capOrders(orders);
 
-      expect(formatOrders(cappedOrders.orders, cappedOrders.notes).length).toBeGreaterThan(0);
+      expect(
+        formatOrders(cappedOrders.orders, cappedOrders.notes, cappedOrders.totals).length,
+      ).toBeGreaterThan(0);
     } catch (error) {
       expect(String(error)).toMatch(/409/);
     }

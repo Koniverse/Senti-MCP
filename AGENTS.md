@@ -175,7 +175,7 @@ come back via `npx skills update koni-docs`.
 - **No Active Context block, anywhere.** This repo does not maintain one — not inline
   in `CLAUDE.md` (koni-docs Pattern A), not in a `.active-context.md` (Pattern B). Do
   not write, restore, or refresh one, and ignore the skill's T1–T7 trigger points and
-  its `CLAUDE.md Active Context` checklist item ([CONTEXT D10](docs/CONTEXT.md)). The
+  its `CLAUDE.md Active Context` checklist item ([CONTEXT D7](docs/CONTEXT.md)). The
   sprint file plus generated `STATUS.md` are the only in-flight snapshot.
 - **Frontmatter `id` matches the filename** (RULE-6). Stories are `US-X.Y-<slug>.md`.
 - **`version_shipped` is bare semver** (`0.1.0`, never `v0.1.0`) — RULE-16.

@@ -173,5 +173,5 @@ Restart the client; `list_accounts` should appear in its tool list.
 
 - [README.md](../README.md) — tool table, configuration, security posture
 - [docs/README.md](README.md) — doc hub and pre-commit checklist
-- [CONTEXT.md](CONTEXT.md) — decision log (D5 Node floor, D6 base-URL validation, D7–D9 the read-tool substrate)
+- [CONTEXT.md](CONTEXT.md) — decision log (D5 Node floor, D6 base-URL validation, D8–D10 the read-tool substrate)
 - [v1 design spec](superpowers/specs/2026-08-05-senti-mcp-server-design.md)

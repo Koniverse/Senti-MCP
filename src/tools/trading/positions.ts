@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import { accountPath, type SentiClient } from '../../core/client.js';
+import { ACCOUNT_NOT_FOUND, accountPath, type SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
 import { registerReadTool } from '../../core/tool.js';
 
@@ -57,8 +57,30 @@ export function parsePositions(payload: unknown): Position[] {
  */
 const MAX_ROWS = 200;
 
-export function capPositions(positions: Position[]): { positions: Position[]; notes: string[] } {
-  if (positions.length <= MAX_ROWS) return { positions, notes: [] };
+/** What the account holds, before any truncation. */
+export type PositionTotals = {
+  count: number;
+  floating: number;
+};
+
+export type CappedPositions = {
+  positions: Position[];
+  notes: string[];
+  /**
+   * Derived from the full list, never from the slice above. The header quotes
+   * these as the account's own figures, so summing only the survivors would
+   * present a partial float — about real money — as the total.
+   */
+  totals: PositionTotals;
+};
+
+export function capPositions(positions: Position[]): CappedPositions {
+  const totals: PositionTotals = {
+    count: positions.length,
+    floating: positions.reduce((sum, position) => sum + position.profit, 0),
+  };
+
+  if (positions.length <= MAX_ROWS) return { positions, notes: [], totals };
 
   return {
     positions: positions.slice(0, MAX_ROWS),
@@ -67,6 +89,7 @@ export function capPositions(positions: Position[]): { positions: Position[]; no
         'returned them. Senti does not paginate this endpoint, so the remainder is not ' +
         'retrievable through this tool.',
     ],
+    totals,
   };
 }
 
@@ -98,10 +121,14 @@ function block(position: Position): string {
   return lines.join('\n');
 }
 
-export function formatPositions(positions: Position[], notes: string[]): string {
+export function formatPositions(
+  positions: Position[],
+  notes: string[],
+  totals: PositionTotals,
+): string {
   const trailer = notes.length > 0 ? `\n\n${notes.join('\n')}` : '';
 
-  if (positions.length === 0) {
+  if (totals.count === 0) {
     // This sentence is the whole point of the 409 branch existing. An offline
     // terminal returns 409, so reaching this line means the terminal answered
     // and the account genuinely holds nothing.
@@ -112,11 +139,17 @@ export function formatPositions(positions: Position[], notes: string[]): string 
     );
   }
 
-  const noun = positions.length === 1 ? 'position' : 'positions';
+  const noun = totals.count === 1 ? 'position' : 'positions';
   const blocks = positions.map(block).join('\n\n');
-  const total = positions.reduce((sum, position) => sum + position.profit, 0);
+  // Said in the header rather than only in the trailing note: the note sits
+  // below 200 position blocks, and the header is what gets quoted back.
+  const shown =
+    positions.length < totals.count ? ` (showing the first ${positions.length})` : '';
 
-  return `${positions.length} open ${noun} · floating P&L ${money(total)}.\n\n${blocks}${trailer}`;
+  return (
+    `${totals.count} open ${noun} · floating P&L ${money(totals.floating)}${shown}.` +
+    `\n\n${blocks}${trailer}`
+  );
 }
 
 /** The scope this endpoint requires, quoted back in the 403 message. */
@@ -153,10 +186,14 @@ export function registerListPositions(server: McpServer, client: SentiClient): v
         signal,
         scope: TRADING_READ,
         conflictMeans: TERMINAL_OFFLINE,
+        notFoundMeans: ACCOUNT_NOT_FOUND,
       });
-      const { positions, notes } = capPositions(parsePositions(payload));
+      const { positions, notes, totals } = capPositions(parsePositions(payload));
 
-      return { text: formatPositions(positions, notes), structured: { positions, notes } };
+      return {
+        text: formatPositions(positions, notes, totals),
+        structured: { positions, notes },
+      };
     },
   });
 }

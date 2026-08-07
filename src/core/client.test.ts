@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { accountPath, createClient } from './client.js';
+import { ACCOUNT_NOT_FOUND, accountPath, createClient } from './client.js';
 import { ApiError } from './errors.js';
 import { loadConfig } from '../config.js';
 
@@ -111,14 +111,46 @@ describe('createClient', () => {
     await expect(promise).rejects.toThrow(/not JSON/);
   });
 
-  test('maps 404 to the three real causes, and points a login at list_accounts', async () => {
+  test('gives 404 the meaning the call site supplied', async () => {
     const { fetchImpl } = stub(jsonResponse(envelope('NOT_FOUND', 'Account not found.'), 404));
 
-    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts/x/positions');
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts/x/positions', {
+      notFoundMeans: ACCOUNT_NOT_FOUND,
+    });
 
     await expect(promise).rejects.toThrow(/does not exist, is not owned by this API key/);
     await expect(promise).rejects.toThrow(/list_accounts/);
     await expect(promise).rejects.toThrow(/login/);
+  });
+
+  test('does not blame the account on a 404 from an endpoint that takes no account', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('NOT_FOUND', 'Not found.'), 404));
+
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/brokers')
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
+
+    expect(message).toContain('404');
+    // The catalogue endpoints take no accountId at all, so account guidance
+    // here sends the reader to check the wrong thing.
+    expect(message).not.toMatch(/account/i);
+    expect(message).not.toContain('list_accounts');
+  });
+
+  test('points a bare 404 at the base URL, the cause it cannot rule out', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('NOT_FOUND', 'Not found.'), 404));
+
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/brokers')
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
+
+    expect(message).toContain('SENTI_API_BASE_URL');
   });
 
   test('gives 409 the meaning the call site supplied', async () => {

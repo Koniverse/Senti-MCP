@@ -17,7 +17,7 @@ koni-docs:
 - **This repo keeps no Active Context block. Never write one.** Do not add an
   `## Active Context` section to this file, do not create `.active-context.md`, and do
   not restore the `<!-- koni-docs:auto-update -->` markers — neither koni-docs Pattern A
-  nor Pattern B is in use here ([CONTEXT D10](docs/CONTEXT.md)). This overrides the
+  nor Pattern B is in use here ([CONTEXT D7](docs/CONTEXT.md)). This overrides the
   koni-docs skill's §4 trigger points (T1–T7) and the Active Context line in its §3c
   checklist. What is in flight lives in the sprint file and
   [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — read those, and keep them current

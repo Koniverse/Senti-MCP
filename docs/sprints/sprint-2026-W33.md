@@ -160,7 +160,7 @@ live key), `npm run typecheck` and `npm run build` clean at close.
 ### Followups
 
 - **A working smoke key for W34.** `get_performance_breakdowns`'s ~70,000-token
-  `breakdowns` payload (D9) and `get_equity_timeseries`'s downsampling are exactly the
+  `breakdowns` payload (D10) and `get_equity_timeseries`'s downsampling are exactly the
   cases where "what the live payload actually weighs" (this plan's own Post-sprint
   note) cannot be estimated from the schema — W34 needs a key that authenticates before
   its first story closes, not after.

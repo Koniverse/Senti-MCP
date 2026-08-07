@@ -350,9 +350,9 @@ US-2.4 carries these in its own commit, per RULE-1:
   operations" become 7 `POST` / 10 `GET` / nine read operations remaining.
 - The repo structure section of [AGENTS.md](../../../AGENTS.md), which currently
   asserts the opposite of the layout above.
-- Three [CONTEXT.md](../../CONTEXT.md) entries: **D7** the directory structure
-  (reversing the flat rule), **D8** `registerReadTool` (the resolution of the v1 spec's
-  deferred "revisit when the repetition is real"), **D9** the payload-shaping policy.
+- Three [CONTEXT.md](../../CONTEXT.md) entries: **D8** the directory structure
+  (reversing the flat rule), **D9** `registerReadTool` (the resolution of the v1 spec's
+  deferred "revisit when the repetition is real"), **D10** the payload-shaping policy.
 - [SETUP.md](../../SETUP.md), `.env.example` and `README.md`: five scopes, not one.
 
 The v1 design spec is not edited. It is a snapshot, and D1 and D5 both established that

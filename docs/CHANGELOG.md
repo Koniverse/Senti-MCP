@@ -13,7 +13,32 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ## [Unreleased]
 
-(empty — track here while in dev but not yet shipped)
+Review fixes on the W33 read-tool branch, before it merges.
+
+### Fixed
+- `list_positions` reported the floating P&L and the position count of the **surviving**
+  rows after truncation, presenting a partial figure as the account's total: an account
+  holding 250 positions of `+10` rendered `200 open positions · floating P&L 2,000.00`
+  against a true float of `2,500.00`, with the only disclosure sitting below 200 position
+  blocks. `capPositions` now returns `totals` derived from the full list, and
+  `formatPositions` takes them as a required argument, so the header quotes the account's
+  own figures and appends `(showing the first 200)` when rows were cut.
+  `list_pending_orders` had the same defect in its count and is fixed the same way
+  (`capOrders` → `totals`, `formatOrders` third argument).
+- A `404` from any endpoint claimed "the account does not exist, is not owned by this API
+  key, or has been unlinked" and pointed the reader at `list_accounts` — including from
+  `list_brokers`, `list_strategies` and `list_accounts`, which take no `accountId` at all,
+  so a mistyped `SENTI_API_BASE_URL` sent the operator to check the one thing that could
+  not be the cause. `RequestOptions` gains `notFoundMeans`, matching the existing `scope`
+  (403) and `conflictMeans` (409) treatment, and the account wording moves to the exported
+  `ACCOUNT_NOT_FOUND` constant that only the three account-scoped tools pass. A bare `404`
+  now points at `SENTI_API_BASE_URL` and the path instead.
+- `docs/CONTEXT.md` had renumbered the already-published **D7** ("No Active Context block
+  in this repo") to D10 and reassigned D7–D9 to the read-tool decisions, breaking RULE-7
+  append-only: `CONTEXT D7` as cited by commit `e50faab` and by `CLAUDE.md` resolved to a
+  different decision. D7 is restored byte-for-byte in place, the read-tool entries are
+  D8–D10 under `## Phase 3 — Read-tool expansion`, and every reference across `AGENTS.md`,
+  `CLAUDE.md`, `docs/` and the W33 plan, spec and story is remapped to match.
 
 ---
 
@@ -251,8 +276,8 @@ sprint and the next.
 ### Changed
 - Repo layout: `src/` splits into `core/` and `tools/<tag>/` — `accounts/` today,
   `brokers/`, `strategies/`, `performance/`, and `trading/` as their tools land
-  ([CONTEXT D7](CONTEXT.md)). Reverses the flat-layout rule v0.1.0 shipped with.
-- `list_accounts` now registers through `registerReadTool` ([CONTEXT D8](CONTEXT.md)).
+  ([CONTEXT D8](CONTEXT.md)). Reverses the flat-layout rule v0.1.0 shipped with.
+- `list_accounts` now registers through `registerReadTool` ([CONTEXT D9](CONTEXT.md)).
 - The API key now needs five read scopes, not one: `accounts:read`, `brokers:read`,
   `strategies:read`, `performance:read`, `trading:read` — documented in
   `docs/SETUP.md`, `.env.example`, and `README.md`. There is no key-introspection

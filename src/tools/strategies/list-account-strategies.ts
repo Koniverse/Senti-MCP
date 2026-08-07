@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import { accountPath, type SentiClient } from '../../core/client.js';
+import { ACCOUNT_NOT_FOUND, accountPath, type SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
 import { registerReadTool } from '../../core/tool.js';
 
@@ -88,6 +88,7 @@ export function registerListAccountStrategies(server: McpServer, client: SentiCl
       const payload = await client.get(accountPath(args.accountId, 'strategies'), {
         signal,
         scope: STRATEGIES_READ,
+        notFoundMeans: ACCOUNT_NOT_FOUND,
       });
       const strategies = parseAccountStrategies(payload);
 

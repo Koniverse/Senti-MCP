@@ -25,7 +25,24 @@ export type RequestOptions = {
    * write path it will mean something else entirely. Same reasoning as `scope`.
    */
   conflictMeans?: string;
+  /**
+   * What a 404 means for THIS endpoint, quoted verbatim. Same reasoning again:
+   * only the account-scoped paths can say an account is missing. `/brokers`
+   * and `/strategies` take no `accountId`, so account guidance on their 404s
+   * sends the reader to check the one thing that cannot be the cause.
+   */
+  notFoundMeans?: string;
 };
+
+/**
+ * What a 404 means on an account-scoped path. Lives here so the three tools
+ * that build such a path share one wording, but is passed in rather than
+ * assumed — see `notFoundMeans`.
+ */
+export const ACCOUNT_NOT_FOUND =
+  'The account does not exist, is not owned by this API key, or has been unlinked. ' +
+  'If a `login` (the MT5 account number) was passed where an `accountId` was expected, ' +
+  'call list_accounts and use its `id`.';
 
 export type SentiClient = {
   /** Returns the parsed JSON body. Validation belongs to the domain module. */
@@ -71,9 +88,9 @@ function failureOf(
   status: number,
   headers: Headers,
   body: unknown,
-  scope: string | undefined,
-  conflictMeans: string | undefined,
+  options: RequestOptions,
 ): ApiError {
+  const { scope, conflictMeans, notFoundMeans } = options;
   const { code, message } = envelopeOf(body);
   // Each template below ends its own sentence, so an envelope message that
   // already carries a terminator would render as "…Insufficient scope.. The API
@@ -114,14 +131,14 @@ function failureOf(
       return new ApiError(`Senti API rate limit exceeded (429)${budget}${detail}.`, status, code);
     }
 
-    case 404:
-      return new ApiError(
-        `Senti API returned 404${detail}. The account does not exist, is not owned by ` +
-          'this API key, or has been unlinked. If a `login` (the MT5 account number) was ' +
-          'passed where an `accountId` was expected, call list_accounts and use its `id`.',
-        status,
-        code,
-      );
+    case 404: {
+      const meaning = notFoundMeans
+        ? ` ${notFoundMeans}`
+        : ' Nothing is served at that path. Check that SENTI_API_BASE_URL points at the ' +
+          'environment you mean, and that this API still serves the path.';
+
+      return new ApiError(`Senti API returned 404${detail}.${meaning}`, status, code);
+    }
 
     case 409: {
       const meaning = conflictMeans
@@ -152,8 +169,8 @@ const PATH_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
  * `..%2F..%2Fadmin` escapes `/api/v1/accounts/` under naive concatenation.
  *
  * Note that a `login` (the MT5 account number, e.g. `413878201`) passes this
- * check — it is a legal segment, just the wrong value. The 404 branch is what
- * catches that, and says so.
+ * check — it is a legal segment, just the wrong value. What catches that is the
+ * 404 message, and only when the caller passed `ACCOUNT_NOT_FOUND`.
  */
 export function accountPath(accountId: string, ...rest: string[]): string {
   const segments = [accountId, ...rest];
@@ -200,7 +217,7 @@ export function createClient(config: Config, deps: ClientDeps = {}): SentiClient
       }
 
       if (!response.ok) {
-        throw failureOf(response.status, response.headers, body, options.scope, options.conflictMeans);
+        throw failureOf(response.status, response.headers, body, options);
       }
 
       if (body === undefined) {

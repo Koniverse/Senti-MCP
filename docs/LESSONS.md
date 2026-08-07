@@ -47,5 +47,5 @@ literal, `grep`-confirmed to have landed, run against
 was genuinely exercised), then reverted and `grep`-confirmed again before the suite was
 trusted to be green for the right reason.
 
-See [CONTEXT.md D8](CONTEXT.md) — the table-driven invariant tests this pattern most
+See [CONTEXT.md D9](CONTEXT.md) — the table-driven invariant tests this pattern most
 often gets applied to.
