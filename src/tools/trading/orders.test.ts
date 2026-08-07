@@ -55,10 +55,10 @@ describe('capOrders', () => {
 });
 
 describe('formatOrders', () => {
-  test('renders an unused priceStopLimit as an em dash, never as zero', () => {
+  test('omits the stop-limit line entirely when priceStopLimit is unused', () => {
     const rendered = formatOrders([ORDER], []);
 
-    expect(rendered).not.toContain('stop-limit 0');
+    expect(rendered).not.toMatch(/stop-limit/i);
   });
 
   test('renders a used priceStopLimit', () => {

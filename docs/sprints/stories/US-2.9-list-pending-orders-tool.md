@@ -45,7 +45,10 @@ despite covering an equally real endpoint.
 - [ ] **AC-3** — **Given** a successful response with zero pending orders, **When** it
   is formatted, **Then** the output states that this is a real zero.
 - [ ] **AC-4** — **Given** an order with `priceStopLimit` equal to `0`, **When** it is
-  formatted, **Then** it renders as `—`, never as `0.00`.
+  formatted, **Then** the `stop-limit` line is omitted entirely — never printed as `0`
+  or `0.00` — because `priceStopLimit` only means something for stop-limit order
+  types, unlike `sl`/`tp`, which apply to every order and so still render an explicit
+  `—` when unset.
 - [ ] **AC-5** — **Given** more than 200 pending orders, **When** the list is
   formatted, **Then** it truncates at 200 rows, **And** `notes` records how many were
   dropped — mirroring [US-2.8](US-2.8-list-positions-tool.md) AC-5.
@@ -56,10 +59,11 @@ despite covering an equally real endpoint.
 
 - [x] **TASK-2.9.1** — `tools/trading/orders.ts` domain module (plan Task 18)
   (AC: 3, 4, 5)
-  - [x] `OrderSchema`, `parseOrders`, `formatOrders` — `priceStopLimit` is a
-        non-nullable number where `0` means "not set" and renders as `—`, the same
-        MT5 sentinel convention `sl`/`tp` use in `positions.ts`; the 200-row cap and
-        `notes`
+  - [x] `OrderSchema`, `parseOrders`, `formatOrders` — `sl`/`tp` are non-nullable
+        numbers where `0` means "not set" and render as `—`, the same MT5 sentinel
+        convention `positions.ts` uses; `priceStopLimit` is a different mechanism —
+        its `0` means the field doesn't apply to this order type at all, so its whole
+        line is omitted rather than shown with an em dash; the 200-row cap and `notes`
 - [ ] **TASK-2.9.2** — Registration, the 0.7.0 release, and the sprint close
   (plan Task 19) (AC: 1, 2, 6)
   - [ ] Register through `registerReadTool`; build the path via `accountPath`;
