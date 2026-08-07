@@ -316,24 +316,6 @@ describe('list_account_strategies', () => {
     expect(AccountStrategiesOutputSchema.safeParse(result.structuredContent).success).toBe(true);
   });
 
-  test('rejects a traversal attempt before any HTTP call happens', async () => {
-    let called = false;
-    const watching = (async () => {
-      called = true;
-      return new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } });
-    }) as unknown as typeof fetch;
-    const client = await connect(watching);
-
-    const result = (await client.callTool({
-      name: 'list_account_strategies',
-      arguments: { accountId: '../../admin' },
-    })) as ToolResult;
-
-    expect(result.isError).toBe(true);
-    expect(textOf(result)).toMatch(/Invalid path segment/);
-    expect(called).toBe(false);
-  });
-
   test('declares accountId as a required argument', async () => {
     const client = await connect();
 
@@ -565,6 +547,35 @@ describe('invariants across every registered tool', () => {
 
       expect(result.isError, call.name).toBeFalsy();
       expect(call.outputSchema.safeParse(result.structuredContent).success, call.name).toBe(true);
+    }
+  });
+
+  test('rejects a path-traversal accountId before any HTTP call, for every account-scoped tool', async () => {
+    const accountScoped = TOOL_CALLS.filter(
+      (call): call is typeof call & { arguments: Record<string, unknown> } =>
+        call.arguments !== undefined && 'accountId' in call.arguments,
+    );
+
+    for (const call of accountScoped) {
+      let called = false;
+      const watching = (async () => {
+        called = true;
+        return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+      }) as unknown as typeof fetch;
+      const client = await connect(watching);
+
+      const result = (await client.callTool({
+        name: call.name,
+        arguments: { ...call.arguments, accountId: '../../admin' },
+      })) as ToolResult;
+
+      expect(result.isError, call.name).toBe(true);
+      expect(textOf(result), call.name).toMatch(/Invalid path segment/);
+      // The load-bearing assertion: `accountPath` throws before `client.get`
+      // is entered, so a hostile value never reaches the network at all —
+      // materially stronger than a value that reaches the network and is
+      // merely rejected server-side.
+      expect(called, call.name).toBe(false);
     }
   });
 
