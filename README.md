@@ -29,7 +29,7 @@ the MT5 account number, not a key.
   [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). There is
   no key-introspection endpoint, so a missing scope isn't caught at startup: it
   surfaces as a `403` naming the scope the first time the affected tool is
-  called, and every other tool keeps working. As of v0.7.0, `accounts:read`
+  called, and every other tool keeps working. As of v1.0.0, `accounts:read`
   (`list_accounts`), `brokers:read` (`list_brokers`), `strategies:read`
   (`list_strategies`, `list_account_strategies`) and `trading:read`
   (`list_positions`, `list_pending_orders`) are exercised by a shipped tool;

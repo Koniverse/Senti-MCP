@@ -13,7 +13,35 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ## [Unreleased]
 
-Review fixes on the W33 read-tool branch, before it merges.
+_Nothing yet._
+
+---
+
+## [1.0.0] — 2026-08-07 — The W33 read surface, declared stable — v1.0.0
+
+Promotes the six read tools shipped across `0.2.0`–`0.7.0` to a stable major version.
+**No tool is added, removed or renamed relative to `0.7.0`** — `list_accounts`,
+`list_brokers`, `list_strategies`, `list_account_strategies`, `list_positions` and
+`list_pending_orders` are the same six `src/server.ts` registers, and the code delta is
+exactly the three review fixes below. What changes is the commitment: tool names, their
+arguments, and their `structuredContent` shapes are now under semver, so breaking any of
+them costs a `2.0.0` ([CONTEXT D11](CONTEXT.md)).
+
+**Not published to npm.** `npm view senti-mcp-server dist-tags` still resolves `latest`
+to `0.1.0`. This release is the git tag `v1.0.0` and its GitHub Release only — reaching
+the six tools still means [a git checkout](../README.md#from-a-git-checkout), exactly as
+it did at `0.7.0`.
+
+The five read scopes an API key needs are unchanged: `accounts:read`, `brokers:read`,
+`strategies:read`, `trading:read` are each exercised by a shipped tool;
+`performance:read` is not yet, and its three tools carry to sprint W34 along with
+`list_deals`.
+
+### Changed
+- `VERSION`, `package.json` and `src/config.ts`'s `SERVER_VERSION` move `0.7.0` →
+  `1.0.0` together, as `src/config.test.ts` requires. The jump is a stability
+  declaration, not new functionality — the alternative, `0.7.1`, is what the diff alone
+  would have earned ([CONTEXT D11](CONTEXT.md)).
 
 ### Fixed
 - `list_positions` reported the floating P&L and the position count of the **surviving**

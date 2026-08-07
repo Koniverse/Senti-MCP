@@ -401,3 +401,48 @@ does not return in one page.
 
 **Date**: 2026-08-06
 **Version**: 0.2.0
+
+---
+
+## Phase 4 — The 1.0.0 cut (2026-08-07)
+
+### D11. Cut `1.0.0` from `0.7.0`, not `0.7.1`
+
+**Context**: sprint W33 closed with `0.7.0` and six registered read tools, then three
+review fixes landed on `main` under `## [Unreleased]` with no version of their own. By
+the diff alone that backlog is a patch — three `### Fixed` bullets, no tool added,
+removed or renamed — so `0.7.1` is what semver would have assigned mechanically. The
+open question was not how to number the diff but whether the tool surface underneath it
+had stopped moving.
+
+**Decision**: release it as `1.0.0`. `VERSION`, `package.json` and `src/config.ts`'s
+`SERVER_VERSION` all move `0.7.0` → `1.0.0` in one commit, tagged `v1.0.0` and published
+as a GitHub Release carrying the CHANGELOG entry. **The package is deliberately not
+pushed to npm** — `latest` stays at `0.1.0` until a separate, explicit decision to
+publish.
+
+**Rationale**: a `0.x` version tells an integrator that any release may break them, and
+that is no longer what this repo means. The six tools' names, their single `accountId`
+argument, and their `structuredContent` shapes have been stable since each one shipped,
+and the read-only posture means no tool can be made destructive without a new tool. `1.0.0`
+states that promise where an integrator can act on it, and buys the cost of breaking it:
+a `2.0.0`. Deferring to `0.7.1` would have kept a stable surface labelled unstable for
+another sprint, with nothing in W34 (four remaining read tools) planning to break it.
+
+**Alternatives considered**:
+- `0.7.1` — mechanically correct for the diff, rejected: it re-affirms `0.x`'s "anything
+  may break" for a surface that has not broken across six releases, and W34's remaining
+  read tools are additive.
+- `1.0.0` **plus** an npm publish, making the six tools reachable via `npx` — deferred,
+  not rejected. Publishing changes what every existing `npx -y senti-mcp-server` config
+  in the world resolves to, and `dist-tags latest: 0.1.0` has been the documented state
+  in `README.md` since `0.2.0`; it is its own decision, not a side effect of numbering.
+
+**Impact**: `VERSION`, `package.json`, `src/config.ts`; the `## [1.0.0]` CHANGELOG
+section; the `As of v0.7.0` scope sentences in `README.md`, `docs/SETUP.md` and
+`docs/README.md`; `AGENTS.md`'s current-state line. `README.md`'s "the published package
+is still v0.1.0" paragraph stays **unchanged and true** — it is the npm claim, not the
+repo version.
+
+**Date**: 2026-08-07
+**Version**: 1.0.0

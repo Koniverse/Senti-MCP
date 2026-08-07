@@ -17,7 +17,7 @@ Trading. An MCP host cannot call it directly: something has to own the API key, 
 typed tools whose descriptions let a model choose correctly, and turn API errors into
 text a model can act on. This server is that something.
 
-**Current state: v0.7.0 shipped.** Six tools are registered in `src/server.ts`:
+**Current state: v1.0.0 shipped.** Six tools are registered in `src/server.ts`:
 `list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
 `list_positions`, `list_pending_orders` — covering six of the API's 10 `GET`
 operations. `list_accounts` shipped first, in v0.1.0, tracked as
