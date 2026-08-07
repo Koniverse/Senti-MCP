@@ -103,14 +103,16 @@ live key), `npm run typecheck` and `npm run build` clean at close.
   new registration pattern; each is `accountPath` + `registerReadTool` + a scope
   constant + (for the terminal-backed pair) a `conflictMeans` string. That is the
   "close to transcription" the sprint's own goal recap predicted.
-- **`conflictMeans`, designed once in US-2.4 and unexercised until US-2.8, needed zero
-  changes on its second use.** `list_pending_orders` reused the identical
-  `client.get(path, { scope, conflictMeans })` shape `list_positions` established, with
-  only the string's wording changed (`positions`/`holding` → `orders`/`resting`,
-  `close` → `cancel`). Designing the parametrized 409 branch before any call site
-  needed it (US-2.4) rather than hardcoding "terminal offline" the first time a 409
-  showed up (US-2.8) is why the second use was a two-word content edit, not a design
-  question.
+- **`conflictMeans`, designed in US-2.4 (`c8c56bc`, the substrate commit predating any
+  tool) and unexercised until US-2.8's `list_positions`, needed zero structural changes
+  on its second use.** `list_pending_orders` reused the identical
+  `client.get(path, { scope, conflictMeans })` call shape verbatim; only the
+  `TERMINAL_OFFLINE` string's nouns changed to match the domain (`positions`/`holding
+  no positions`/`open and still carrying risk` → `pending orders`/`having no pending
+  orders`/`resting and may still trigger`). Designing the parametrized 409 branch
+  before any call site needed it (US-2.4) rather than hardcoding "terminal offline" the
+  first time a 409 showed up (US-2.8) is why the second use was a content edit, not a
+  design question.
 - **The domain-module / registration split (separate commits per story) kept the red
   phase honest.** Every registration commit had a real failing state to point at
   (`Tool <name> not found`) because the schema/parse/format code had already landed and
@@ -119,14 +121,21 @@ live key), `npm run typecheck` and `npm run build` clean at close.
 
 ### What didn't
 
-- **The same verification-table defect recurred three times.** US-2.7, US-2.8 and now
-  US-2.9 each shipped with AC-1's row in the story's Verification-commands table
-  pointing at `<domain-module>.test.ts -t accountPath` — a command that runs zero tests
-  and passes vacuously, because the domain-module test file never calls `accountPath`
-  itself (only the `register*` function does). Each story's own closure caught and
-  corrected it, but the pattern was copied forward twice before anyone generalized the
-  fix into "always run every row in a new Verification-commands table before trusting
-  it." See the candidate `docs/LESSONS.md` entry this sprint produced.
+- **A dead verification-table row shipped three times, but not as three copies of the
+  same row.** Checked against `git show` on each story's pre-fix version, not
+  memory: US-2.8 (`git show c42894c`) and US-2.9 shipped with **AC-1**'s row reading
+  `<domain-module>.test.ts -t accountPath` — 0 tests run, because the domain-module
+  test file never calls `accountPath` itself (only the `register*` function does).
+  US-2.7 (`git show 058b518`) is a different instance, not a third copy of that one:
+  its AC-1 row was `npm test -- src/tools/strategies/list-account-strategies.test.ts`
+  with no `-t` filter, which runs the whole file for real and was never vacuous — the
+  dead row there was **AC-2**'s, `list-account-strategies.test.ts -t traversal`,
+  vacuous for the same underlying reason (no traversal test in the domain module) but
+  a different AC and a different filter string. All three corrected rows were run and
+  confirmed passing before being written into their stories. The shared root cause,
+  true of all three: every story's Verification-commands table was drafted during
+  planning, before the tests it names existed, guessing which file and filter a given
+  AC would land in once written.
 - **A tool's *total* size is well past "roughly thirty lines,"** the figure the original
   v1 design spec used for "the second read tool" before ten tools' worth of schema,
   cap, and format code existed to measure against. Every shipped tool file, counting
@@ -163,8 +172,6 @@ live key), `npm run typecheck` and `npm run build` clean at close.
 - **Add "run every row of a new Verification-commands table before trusting it" to
   whatever checklist a story's closure follows**, so the three-time recurrence above
   does not become a fourth.
-
-- TBD
 
 ## Cross-references
 
