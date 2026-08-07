@@ -5,7 +5,7 @@
  * package.json.
  */
 export const SERVER_NAME = 'senti-mcp-server';
-export const SERVER_VERSION = '0.5.0';
+export const SERVER_VERSION = '0.6.0';
 const DEFAULT_BASE_URL = 'https://api.sentitrade.xyz';
 const ALLOWED_PROTOCOLS: readonly string[] = ['https:', 'http:'];
 

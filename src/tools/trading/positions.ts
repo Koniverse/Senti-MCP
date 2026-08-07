@@ -1,5 +1,8 @@
+import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
+import { accountPath, type SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
+import { registerReadTool } from '../../core/tool.js';
 
 /**
  * Transcribed from `GET /api/v1/accounts/{accountId}/positions` in the live
@@ -108,4 +111,46 @@ export function formatPositions(positions: Position[], notes: string[]): string 
   const total = positions.reduce((sum, position) => sum + position.profit, 0);
 
   return `${positions.length} open ${noun} · floating P&L ${money(total)}.\n\n${blocks}${trailer}`;
+}
+
+/** The scope this endpoint requires, quoted back in the 403 message. */
+const TRADING_READ = 'trading:read';
+
+/**
+ * What a 409 means here. The API declares it as "The account terminal is
+ * offline — positions are temporarily unavailable", which is the one failure
+ * a model must not read as "no open positions".
+ */
+const TERMINAL_OFFLINE =
+  'The MT5 terminal for this account is offline, so its live positions cannot be read ' +
+  'right now. This is NOT the same as the account holding no positions — any open ' +
+  'positions are still open and still carrying risk.';
+
+export function registerListPositions(server: McpServer, client: SentiClient): void {
+  registerReadTool(server, {
+    name: 'list_positions',
+    title: 'List open positions on an account',
+    description:
+      'List the positions currently open on one MT5 account, read live from the terminal: ' +
+      'symbol, direction, volume, open and current price, stop loss, take profit, swap and ' +
+      'floating profit. `accountId` is the `id` field from list_accounts — NOT `login`. ' +
+      "Each position's `ticket` is the handle used to close it. An `sl` or `tp` of 0 means " +
+      'no stop loss or take profit is set.',
+    inputSchema: z.object({
+      accountId: z
+        .string()
+        .describe('The `id` field from list_accounts. Not the `login` (MT5 account number).'),
+    }),
+    outputSchema: PositionsOutputSchema,
+    run: async (args, signal) => {
+      const payload = await client.get(accountPath(args.accountId, 'positions'), {
+        signal,
+        scope: TRADING_READ,
+        conflictMeans: TERMINAL_OFFLINE,
+      });
+      const { positions, notes } = capPositions(parsePositions(payload));
+
+      return { text: formatPositions(positions, notes), structured: { positions, notes } };
+    },
+  });
 }

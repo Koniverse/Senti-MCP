@@ -17,6 +17,50 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ---
 
+## [0.6.0] — 2026-08-06 — `list_positions`: empty is a real zero, `409` is not
+
+Closes US-2.8. `list_positions` reads `GET /api/v1/accounts/{accountId}/positions` and
+returns the positions currently open on one MT5 account — symbol, direction, volume,
+open/current price, stop loss, take profit, swap, and floating profit — read live from
+the account's MT5 terminal. This is the first tool this sprint where the terminal being
+reachable is itself part of the answer: the endpoint's `409` means the terminal is
+offline, not that the account holds nothing, and conflating the two would tell a trader
+holding open risk that they hold none.
+
+**The terminal-offline distinction, stated plainly because it is easy to misread as a
+bug:** a `200` with an empty `positions` array means the terminal answered and the
+account genuinely holds no open positions — a real zero. A `409` means the terminal
+could not be reached at all, so the API cannot say what is held — this is reported as an
+error, with text that explicitly states it is "NOT the same as the account holding no
+positions." A model (or a person) reading only the two surface forms — "no positions"
+text vs. an error — should never be able to mistake one for the other; that separation
+is what `formatPositions`'s empty-list branch and the `409` branch's `conflictMeans`
+text each say outright, and what `src/server.test.ts`'s two dedicated assertions
+(`/real zero/i` and `/not the same as/i`) hold in place.
+
+Like 0.5.0's `list_account_strategies`, this tool is account-scoped and routes its path
+exclusively through `accountPath` (US-2.4) — no template literal or concatenation
+touches `accountId`.
+
+### Added
+- `registerListPositions` (`src/tools/trading/positions.ts`) — registered read-only via
+  `registerReadTool` under the `trading:read` scope. Takes one required argument,
+  `accountId`. Passes a call-site `conflictMeans` string to `client.get` so the `409`
+  branch in `core/client.ts` reports the terminal-offline meaning specific to this
+  endpoint rather than a generic conflict message.
+- `src/server.test.ts` — a `list_positions` invariant row in `TOOL_CALLS` (`successBody`
+  is the `{ positions: [...] }` envelope, not a bare array, since this endpoint wraps its
+  array unlike `list_brokers` and `list_strategies`), plus its own `describe` block: the
+  account-scoped path is called correctly, a `409` is reported as an offline terminal and
+  is explicitly distinguished from holding no positions, an empty `200` is presented as a
+  real zero, and a `403` names the `trading:read` scope.
+
+### Changed
+- `src/server.ts` now registers five tools; `list_accounts`, `list_brokers`,
+  `list_strategies` and `list_account_strategies` are unchanged.
+
+---
+
 ## [0.5.0] — 2026-08-06 — `list_account_strategies`: the first tool with a path parameter
 
 Closes US-2.7. `list_account_strategies` reads `GET /api/v1/accounts/{accountId}/strategies`

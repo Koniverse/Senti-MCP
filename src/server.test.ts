@@ -5,6 +5,7 @@ import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 import { AccountStrategiesOutputSchema } from './tools/strategies/list-account-strategies.js';
 import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
+import { PositionsOutputSchema } from './tools/trading/positions.js';
 import { loadConfig } from './config.js';
 import { createServer } from './server.js';
 
@@ -389,6 +390,101 @@ describe('list_account_strategies', () => {
   });
 });
 
+const POSITION = {
+  ticket: 123456,
+  symbol: 'EURUSD',
+  type: 'POSITION_TYPE_BUY',
+  volume: 0.1,
+  priceOpen: 1.0855,
+  priceCurrent: 1.0871,
+  sl: 0,
+  tp: 0,
+  swap: -0.12,
+  profit: 16.0,
+  openTime: '2026-08-05T09:12:00Z',
+  magic: 0,
+  comment: 'TrendRider',
+};
+
+describe('list_positions', () => {
+  test('calls the account-scoped path and returns both channels', async () => {
+    const calls: string[] = [];
+    const positionsFetch = (async (url: string | URL) => {
+      calls.push(String(url));
+      return new Response(JSON.stringify({ positions: [POSITION] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+    const client = await connect(positionsFetch);
+
+    const result = (await client.callTool({
+      name: 'list_positions',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/positions');
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('ticket 123456');
+    expect(PositionsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('reports an offline terminal on 409 and distinguishes it from holding nothing', async () => {
+    const offline = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'CONFLICT', message: 'Terminal offline.' } }),
+        { status: 409, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(offline);
+
+    const result = (await client.callTool({
+      name: 'list_positions',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/terminal/i);
+    expect(textOf(result)).toMatch(/offline/i);
+    // The sentence that stops a model reporting "you have no open positions"
+    // for an account that is holding open risk.
+    expect(textOf(result)).toMatch(/not the same as/i);
+  });
+
+  test('an empty list is presented as a real zero', async () => {
+    const emptyFetch = (async () =>
+      new Response(JSON.stringify({ positions: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof fetch;
+    const client = await connect(emptyFetch);
+
+    const result = (await client.callTool({
+      name: 'list_positions',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toMatch(/real zero/i);
+  });
+
+  test('names the trading:read scope on 403', async () => {
+    const forbidden = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Insufficient scope.' } }),
+        { status: 403, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(forbidden);
+
+    const result = (await client.callTool({
+      name: 'list_positions',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('trading:read');
+  });
+});
+
 /**
  * One entry per registered tool. Later tool stories add a row here rather than
  * writing their own leak test or their own `outputSchema` assertion — that is
@@ -413,6 +509,12 @@ const TOOL_CALLS: {
     arguments: { accountId: 'abc-123' },
     outputSchema: AccountStrategiesOutputSchema,
     successBody: [DEPLOYED],
+  },
+  {
+    name: 'list_positions',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: PositionsOutputSchema,
+    successBody: { positions: [POSITION] },
   },
 ];
 
