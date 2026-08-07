@@ -17,6 +17,58 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ---
 
+## [0.7.0] — 2026-08-06 — `list_pending_orders`: the last tool of sprint W33
+
+Closes US-2.9 and closes sprint W33. `list_pending_orders` reads `GET
+/api/v1/accounts/{accountId}/orders` and returns the pending limit and stop orders
+resting on one MT5 account — symbol, order type, volume, trigger price, stop loss, take
+profit and stop-limit price — read live from the account's MT5 terminal. It is the
+order-side twin of 0.6.0's `list_positions`: filled positions are what `list_positions`
+answers, unfilled resting orders are what this tool answers, and the tool's description
+points each one at the other.
+
+**The terminal-offline distinction, carried over from `list_positions` unchanged:** a
+`200` with an empty `orders` array means the terminal answered and the account
+genuinely has nothing pending — a real zero. A `409` means the terminal could not be
+reached at all, reported as an error whose text explicitly states it is "NOT the same
+as the account having no pending orders" — any resting orders are still resting and may
+still trigger. `src/server.test.ts`'s `/offline/i` and `/not the same as/i` assertions
+hold that distinction in place the same way they do for `list_positions`.
+
+**One field this tool adds that `list_positions` does not have:** `priceStopLimit`. Unlike
+`sl`/`tp` — which apply to every order and render an explicit `—` when `0` — a `0`
+`priceStopLimit` means the field does not apply to this order's type at all, so its whole
+line is omitted from the rendering rather than shown as a dash.
+
+Like `list_positions`, this tool is account-scoped and routes its path exclusively
+through `accountPath` (US-2.4) — no template literal or concatenation touches
+`accountId`.
+
+### Added
+- `registerListPendingOrders` (`src/tools/trading/orders.ts`) — registered read-only via
+  `registerReadTool` under the `trading:read` scope. Takes one required argument,
+  `accountId`. Passes a call-site `conflictMeans` string to `client.get` so the `409`
+  branch in `core/client.ts` reports the terminal-offline meaning specific to this
+  endpoint.
+- `src/server.test.ts` — a `list_pending_orders` invariant row in `TOOL_CALLS`
+  (`successBody` is the `{ orders: [...] }` envelope, not a bare array), plus its own
+  `describe` block: the account-scoped path is called correctly, a `409` is reported as
+  an offline terminal distinguished from holding no pending orders, and a `403` names
+  the `trading:read` scope.
+- `src/smoke.test.ts` now walks the whole W33 read path in one live call:
+  `list_accounts` → `list_brokers` → `list_strategies` → (if the key owns an account)
+  `list_account_strategies` → `list_positions` → `list_pending_orders`, tolerating a
+  `409` on the last two as a real state of the world rather than a broken contract. A
+  key with no linked account still exercises every platform-wide endpoint before
+  returning early — that is not a failure.
+
+### Changed
+- `src/server.ts` now registers six tools — the full W33 tool surface;
+  `list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies` and
+  `list_positions` are unchanged.
+
+---
+
 ## [0.6.0] — 2026-08-06 — `list_positions`: empty is a real zero, `409` is not
 
 Closes US-2.8. `list_positions` reads `GET /api/v1/accounts/{accountId}/positions` and

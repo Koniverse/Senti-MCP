@@ -1,18 +1,16 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-07 03:00:45 UTC
+> Last generated: 2026-08-07 03:42:11 UTC
 > Total stories: 10
 
 ## ⏰ Deadlines (0)
 
 _No stories carry an explicit deadline._
 
-## 📋 Backlog (1)
+## 📋 Backlog (0)
 
-| ID | Title | Epic | Pri | Points | Sprint | Assignee |
-|---|---|---|---|---|---|---|
-| US-2.9 | list_pending_orders tool | EPIC-2 | P1 | 2 | sprint-2026-W33 | bluezdot |
+_No stories_
 
 ## 🟢 Ready (0)
 
@@ -26,7 +24,7 @@ _No stories_
 
 _No stories_
 
-## ✅ Done (9)
+## ✅ Done (10)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
@@ -39,6 +37,7 @@ _No stories_
 | US-2.6 | list_strategies tool | EPIC-2 | P1 | 2 | sprint-2026-W33 | bluezdot |
 | US-2.7 | list_account_strategies tool | EPIC-2 | P1 | 2 | sprint-2026-W33 | bluezdot |
 | US-2.8 | list_positions tool | EPIC-2 | P1 | 2 | sprint-2026-W33 | bluezdot |
+| US-2.9 | list_pending_orders tool | EPIC-2 | P1 | 2 | sprint-2026-W33 | bluezdot |
 
 ## 🚫 Blocked (0)
 
@@ -52,11 +51,11 @@ _No stories_
 
 ## Summary
 
-- 📋 **Backlog**: 1
+- 📋 **Backlog**: 0
 - 🟢 **Ready**: 0
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0
-- ✅ **Done**: 9
+- ✅ **Done**: 10
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 

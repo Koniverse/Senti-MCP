@@ -5,6 +5,7 @@ import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 import { AccountStrategiesOutputSchema } from './tools/strategies/list-account-strategies.js';
 import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
+import { OrdersOutputSchema } from './tools/trading/orders.js';
 import { PositionsOutputSchema } from './tools/trading/positions.js';
 import { loadConfig } from './config.js';
 import { createServer } from './server.js';
@@ -467,6 +468,79 @@ describe('list_positions', () => {
   });
 });
 
+const ORDER = {
+  ticket: 987654,
+  symbol: 'XAUUSD',
+  type: 'ORDER_TYPE_BUY_LIMIT',
+  volume: 0.2,
+  priceOpen: 2380.5,
+  sl: 0,
+  tp: 0,
+  timeSetup: '2026-08-05T10:00:00Z',
+  priceStopLimit: 0,
+  magic: 0,
+  comment: '',
+};
+
+describe('list_pending_orders', () => {
+  test('calls the account-scoped path and returns both channels', async () => {
+    const calls: string[] = [];
+    const ordersFetch = (async (url: string | URL) => {
+      calls.push(String(url));
+      return new Response(JSON.stringify({ orders: [ORDER] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+    const client = await connect(ordersFetch);
+
+    const result = (await client.callTool({
+      name: 'list_pending_orders',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/orders');
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('ticket 987654');
+    expect(OrdersOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('reports an offline terminal on 409', async () => {
+    const offline = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'CONFLICT', message: 'Terminal offline.' } }),
+        { status: 409, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(offline);
+
+    const result = (await client.callTool({
+      name: 'list_pending_orders',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/offline/i);
+    expect(textOf(result)).toMatch(/not the same as/i);
+  });
+
+  test('names the trading:read scope on 403', async () => {
+    const forbidden = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Insufficient scope.' } }),
+        { status: 403, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(forbidden);
+
+    const result = (await client.callTool({
+      name: 'list_pending_orders',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('trading:read');
+  });
+});
+
 /**
  * One entry per registered tool. Later tool stories add a row here rather than
  * writing their own leak test or their own `outputSchema` assertion — that is
@@ -497,6 +571,12 @@ const TOOL_CALLS: {
     arguments: { accountId: 'abc-123' },
     outputSchema: PositionsOutputSchema,
     successBody: { positions: [POSITION] },
+  },
+  {
+    name: 'list_pending_orders',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: OrdersOutputSchema,
+    successBody: { orders: [ORDER] },
   },
 ];
 

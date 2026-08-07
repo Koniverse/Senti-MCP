@@ -1,5 +1,8 @@
+import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
+import { accountPath, type SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
+import { registerReadTool } from '../../core/tool.js';
 
 /**
  * Transcribed from `GET /api/v1/accounts/{accountId}/orders` in the live
@@ -100,4 +103,43 @@ export function formatOrders(orders: Order[], notes: string[]): string {
   const blocks = orders.map(block).join('\n\n');
 
   return `${orders.length} pending ${noun}.\n\n${blocks}${trailer}`;
+}
+
+/** The scope this endpoint requires, quoted back in the 403 message. */
+const TRADING_READ = 'trading:read';
+
+/** The API declares 409 here as "The account terminal is offline". */
+const TERMINAL_OFFLINE =
+  'The MT5 terminal for this account is offline, so its pending orders cannot be read ' +
+  'right now. This is NOT the same as the account having no pending orders — any ' +
+  'resting orders are still resting and may still trigger.';
+
+export function registerListPendingOrders(server: McpServer, client: SentiClient): void {
+  registerReadTool(server, {
+    name: 'list_pending_orders',
+    title: 'List pending orders on an account',
+    description:
+      'List the pending limit and stop orders resting on one MT5 account, read live from ' +
+      'the terminal: symbol, order type, volume, trigger price, stop loss and take profit. ' +
+      'These are orders that have NOT been filled — for filled positions currently open, ' +
+      'use list_positions. `accountId` is the `id` field from list_accounts, NOT `login`. ' +
+      "Each order's `ticket` is the handle used to cancel it. An `sl`, `tp` or " +
+      '`priceStopLimit` of 0 means that level is not set.',
+    inputSchema: z.object({
+      accountId: z
+        .string()
+        .describe('The `id` field from list_accounts. Not the `login` (MT5 account number).'),
+    }),
+    outputSchema: OrdersOutputSchema,
+    run: async (args, signal) => {
+      const payload = await client.get(accountPath(args.accountId, 'orders'), {
+        signal,
+        scope: TRADING_READ,
+        conflictMeans: TERMINAL_OFFLINE,
+      });
+      const { orders, notes } = capOrders(parseOrders(payload));
+
+      return { text: formatOrders(orders, notes), structured: { orders, notes } };
+    },
+  });
 }

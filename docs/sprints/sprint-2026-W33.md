@@ -1,6 +1,6 @@
 ---
 id: sprint-2026-W33
-status: in-progress
+status: closed
 start: 2026-08-10
 end: 2026-08-16
 goal: "Restructure src/ into core/ + tools/<tag>/, add the read-tool substrate, and ship the first five of the nine unshipped read tools"
@@ -15,7 +15,7 @@ goal: "Restructure src/ into core/ + tools/<tag>/, add the read-tool substrate, 
 | US-2.6 | `list_strategies` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.6-list-strategies-tool.md) |
 | US-2.7 | `list_account_strategies` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.7-list-account-strategies-tool.md) |
 | US-2.8 | `list_positions` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.8-list-positions-tool.md) |
-| US-2.9 | `list_pending_orders` tool | EPIC-2 | P1 | 2 | 📋 backlog | [link](stories/US-2.9-list-pending-orders-tool.md) |
+| US-2.9 | `list_pending_orders` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.9-list-pending-orders-tool.md) |
 
 **Total: 6 stories / 15 points.**
 
@@ -88,17 +88,81 @@ every later story consumes what it substrates.
 
 ## Retrospective
 
-<Filled on sprint close.>
+All six stories closed: US-2.4 (substrate, v0.2.0) through US-2.9 (`list_pending_orders`,
+v0.7.0). 179 tests total (178 passed, 1 skipped — the smoke test, opt-in and gated on a
+live key), `npm run typecheck` and `npm run build` clean at close.
 
 ### What went well
 
-- TBD
+- **The substrate paid for itself, measured in lines, not just asserted.** Once US-2.4
+  landed `registerReadTool`, `parseOrThrow` and `accountPath`, the *registration*
+  increment for each later tool — the part substrate could actually shrink — came in
+  small and uniform: `list_brokers` +27 lines, `list_strategies` +27,
+  `list_account_strategies` +34, `list_positions` +45, `list_pending_orders` +42
+  (`git show --stat` on each story's registration commit). None of the five needed a
+  new registration pattern; each is `accountPath` + `registerReadTool` + a scope
+  constant + (for the terminal-backed pair) a `conflictMeans` string. That is the
+  "close to transcription" the sprint's own goal recap predicted.
+- **`conflictMeans`, designed once in US-2.4 and unexercised until US-2.8, needed zero
+  changes on its second use.** `list_pending_orders` reused the identical
+  `client.get(path, { scope, conflictMeans })` shape `list_positions` established, with
+  only the string's wording changed (`positions`/`holding` → `orders`/`resting`,
+  `close` → `cancel`). Designing the parametrized 409 branch before any call site
+  needed it (US-2.4) rather than hardcoding "terminal offline" the first time a 409
+  showed up (US-2.8) is why the second use was a two-word content edit, not a design
+  question.
+- **The domain-module / registration split (separate commits per story) kept the red
+  phase honest.** Every registration commit had a real failing state to point at
+  (`Tool <name> not found`) because the schema/parse/format code had already landed and
+  compiled in a prior commit — the red phase was about wiring, not about typos in
+  brand-new schema code fighting for attention at the same time.
 
 ### What didn't
 
-- TBD
+- **The same verification-table defect recurred three times.** US-2.7, US-2.8 and now
+  US-2.9 each shipped with AC-1's row in the story's Verification-commands table
+  pointing at `<domain-module>.test.ts -t accountPath` — a command that runs zero tests
+  and passes vacuously, because the domain-module test file never calls `accountPath`
+  itself (only the `register*` function does). Each story's own closure caught and
+  corrected it, but the pattern was copied forward twice before anyone generalized the
+  fix into "always run every row in a new Verification-commands table before trusting
+  it." See the candidate `docs/LESSONS.md` entry this sprint produced.
+- **A tool's *total* size is well past "roughly thirty lines,"** the figure the original
+  v1 design spec used for "the second read tool" before ten tools' worth of schema,
+  cap, and format code existed to measure against. Every shipped tool file, counting
+  its Zod schema, parser, (where present) cap helper, formatter, and registration
+  together, lands at 97–156 lines (`list_brokers` 99, `list_strategies` 113,
+  `list_account_strategies` 97, `list_positions` 156, `list_pending_orders` 145) — the
+  ~30-line figure only ever described the registration sliver substrate made cheap, not
+  the tool as a whole, and EPIC-2.md's Business context paragraph still repeats the
+  original number without that qualification.
+- **The Task 19 brief's own smoke-test extension omitted the tool the task exists to
+  ship.** Its Step 4 code block walks five endpoints and stops before
+  `list_pending_orders`, despite the task's own top-level instructions asking the live
+  run to settle whether `sl`/`tp`/`priceStopLimit` can be `null` on *both*
+  `list_positions` and `list_pending_orders`. Caught and extended during this task
+  rather than left as shipped; see US-2.9's Implementation notes.
+- **The one available `SENTI_SMOKE_KEY` was rejected with `401` against both the
+  documented dev pairing and production**, so this sprint closes without either open
+  schema question (`list_strategies`'s three optional fields; nullability of
+  `sl`/`tp`/`priceStopLimit`) settled by a live payload. The credential, not the code,
+  is what is unverified.
 
 ### Followups
+
+- **A working smoke key for W34.** `get_performance_breakdowns`'s ~70,000-token
+  `breakdowns` payload (D9) and `get_equity_timeseries`'s downsampling are exactly the
+  cases where "what the live payload actually weighs" (this plan's own Post-sprint
+  note) cannot be estimated from the schema — W34 needs a key that authenticates before
+  its first story closes, not after.
+- **Revisit `capPositions`/`capOrders` when `list_deals` lands in W34.** Ruled on at
+  this plan's pre-flight: two copies returning differently-shaped objects
+  (`{ positions, notes }` vs `{ orders, notes }`) is not yet the sixfold repetition that
+  justified extracting `parseOrThrow`. If `list_deals` needs a third cap helper, that is
+  the point to generalize, not before.
+- **Add "run every row of a new Verification-commands table before trusting it" to
+  whatever checklist a story's closure follows**, so the three-time recurrence above
+  does not become a fourth.
 
 - TBD
 

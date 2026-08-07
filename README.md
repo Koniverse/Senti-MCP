@@ -13,6 +13,7 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | `list_strategies` | none | Lists the platform-wide catalog of strategies (expert advisors) available to deploy — not the strategies currently running on any account — with each strategy's supported symbols, timeframes, rating and presets. |
 | `list_account_strategies` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the strategies currently deployed on one MT5 account, with each deployment's symbol, timeframe and status. |
 | `list_positions` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the positions currently open on one MT5 account, read live from the terminal: symbol, direction, volume, open/current price, stop loss, take profit, swap and floating profit. A `409` means the account's terminal is offline — not that the account holds no positions. |
+| `list_pending_orders` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the pending limit and stop orders resting on one MT5 account, read live from the terminal: symbol, order type, volume, trigger price, stop loss, take profit and stop-limit price. These are orders that have NOT been filled — for open positions, use `list_positions`. A `409` means the account's terminal is offline — not that the account has no pending orders. |
 
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
@@ -28,11 +29,11 @@ the MT5 account number, not a key.
   [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). There is
   no key-introspection endpoint, so a missing scope isn't caught at startup: it
   surfaces as a `403` naming the scope the first time the affected tool is
-  called, and every other tool keeps working. As of v0.6.0, `accounts:read`
+  called, and every other tool keeps working. As of v0.7.0, `accounts:read`
   (`list_accounts`), `brokers:read` (`list_brokers`), `strategies:read`
   (`list_strategies`, `list_account_strategies`) and `trading:read`
-  (`list_positions`) are exercised by a shipped tool; `performance:read` is
-  not yet.
+  (`list_positions`, `list_pending_orders`) are exercised by a shipped tool;
+  `performance:read` is not yet.
 
 ## Configuration
 
@@ -76,7 +77,8 @@ No install step — `npx` fetches the published package on first run:
 ```
 
 Restart the client; the `list_accounts`, `list_brokers`, `list_strategies`,
-`list_account_strategies` and `list_positions` tools should appear.
+`list_account_strategies`, `list_positions` and `list_pending_orders` tools
+should appear.
 
 To pin a version, use `senti-mcp-server@0.1.0`. To put it on your `PATH`
 instead:
