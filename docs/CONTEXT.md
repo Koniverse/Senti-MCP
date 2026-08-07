@@ -209,3 +209,50 @@ a query does not — so this rejects only what could not have worked anyway.
 
 **Date**: 2026-08-05
 **Version**: 0.1.0
+
+---
+
+## Phase 2 — Post-v0.1.0 doc hygiene (2026-08-07)
+
+### D7. No Active Context block in this repo (revision of D4)
+
+**What changed**: D4 chose Pattern A — the Active Context block inline in `CLAUDE.md`
+between `<!-- koni-docs:auto-update -->` markers. It framed the choice as A vs. B and
+never considered the third option: keeping no such block at all. That is the option
+this repo now takes.
+
+**New decision**: this repo maintains **no** Active Context block, in any form. The
+block is removed from `CLAUDE.md`, `.active-context.md` is not created, and the markers
+are not to be restored. The koni-docs T1–T7 trigger points
+([`integration.md` §4](../.agents/skills/koni-docs/references/templates/integration.md))
+and the `CLAUDE.md Active Context block updated` item in the skill's §3c checklist do
+not apply here. The prohibition is recorded in `AGENTS.md` §Conventions, in `CLAUDE.md`,
+and in this repo's own pre-commit checklist — all three override the vendored skill.
+
+**Rationale**: because the block was a hand-maintained copy of facts that already have a
+generated or canonical home — the sprint file owns scope and story status, `STATUS.md`
+is generated from the stories (RULE-5), `VERSION` plus `CHANGELOG.md` own the shipped
+version, and this file owns the decisions. A second copy has no authority of its own: it
+can only agree with those sources or be wrong about them, and between its seven trigger
+points it is routinely wrong. D4's own rationale for A over B was "one contributor, one
+branch" — equally an argument that a personal snapshot buys nothing that reading the
+sprint file does not.
+
+**Alternatives considered**:
+- Migrate to Pattern B (`.active-context.md`, gitignored) — rejected: it relocates the
+  staleness rather than removing it, and a gitignored file is never reviewed, so no
+  reader catches it drifting.
+- Keep the block but refresh it only at sprint close — rejected: a snapshot known to be
+  stale for most of a sprint is worse than none, because it still reads as current.
+
+**Impact**: `CLAUDE.md` is now a pointer, the `koni-docs:` integration block, and
+repo-specific notes. `AGENTS.md` §Conventions carries the prohibition, and its Quick
+reference points "know what's in flight" at the sprint file and `STATUS.md`.
+`docs/README.md` drops the checklist item and records the absence. The unstarted W33
+plan is amended so its per-story close steps no longer recreate the block; closed
+stories and the CHANGELOG keep their references, because they record what did happen.
+Consequence to accept: `docs/sprints/STATUS.md` must actually be regenerated at every
+story close — with the block gone it is the only in-flight snapshot left.
+
+**Date**: 2026-08-07
+**Version**: 0.1.0
