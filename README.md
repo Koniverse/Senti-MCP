@@ -76,12 +76,17 @@ No install step — `npx` fetches the published package on first run:
 }
 ```
 
-Restart the client; the `list_accounts`, `list_brokers`, `list_strategies`,
-`list_account_strategies`, `list_positions` and `list_pending_orders` tools
-should appear.
+Restart the client; `list_accounts` should appear. **The published package is
+still v0.1.0** (`npm view senti-mcp-server dist-tags` → `latest: 0.1.0`) — the
+version that shipped before this repo's other five tools existed, so
+`list_brokers`, `list_strategies`, `list_account_strategies`, `list_positions`
+and `list_pending_orders` are not available through `npx` yet. For all six
+tools, use [a git checkout](#from-a-git-checkout) below until a newer version
+is published.
 
-To pin a version, use `senti-mcp-server@0.1.0`. To put it on your `PATH`
-instead:
+`senti-mcp-server@0.1.0` is what the config above already resolves to; naming
+it explicitly only matters once a newer version is published and you want to
+hold back. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server

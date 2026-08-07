@@ -1,8 +1,11 @@
 # SETUP.md — senti-mcp-server local development
 
-Clone to a running `list_accounts` tool. This is the local development path; there is
-no `DEPLOY.md` because v0.1.0 is not published — it runs from a local build, wired
-into an MCP client by absolute path.
+Clone to a running `list_accounts` tool. This is the local development path —
+building from a checkout and wiring an MCP client at `dist/index.js`'s absolute
+path, distinct from the published-package path (`npx senti-mcp-server`) that
+[README.md](../README.md) covers. There is no `DEPLOY.md`; see
+[docs/README.md](README.md)'s absent-file table for why — it is not because
+nothing was ever published.
 
 ---
 
