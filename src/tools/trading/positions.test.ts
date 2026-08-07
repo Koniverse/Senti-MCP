@@ -35,6 +35,12 @@ describe('parsePositions', () => {
 
     expect(() => parsePositions({ positions: [incomplete] })).toThrow(/profit/);
   });
+
+  test('accepts a null sl and tp — the live API may send either null or 0 for "not set"', () => {
+    expect(() =>
+      parsePositions({ positions: [{ ...POSITION, sl: null, tp: null }] }),
+    ).not.toThrow();
+  });
 });
 
 describe('capPositions', () => {
@@ -66,6 +72,12 @@ describe('formatPositions', () => {
 
     expect(rendered).toContain('SL — · TP —');
     expect(rendered).not.toContain('SL 0.00');
+  });
+
+  test('renders a null stop loss and take profit as an em dash, same as zero', () => {
+    const rendered = formatPositions([{ ...POSITION, sl: null, tp: null }], []);
+
+    expect(rendered).toContain('SL — · TP —');
   });
 
   test('renders a set stop loss and take profit', () => {

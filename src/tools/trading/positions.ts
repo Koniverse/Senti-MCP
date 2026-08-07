@@ -6,7 +6,9 @@ import { registerReadTool } from '../../core/tool.js';
 
 /**
  * Transcribed from `GET /api/v1/accounts/{accountId}/positions` in the live
- * OpenAPI document. Every field is required and none is nullable.
+ * OpenAPI document. Every field is required, but `sl` and `tp` are also
+ * nullable — the live API is entitled to send either `null` or `0` for "not
+ * set", and the two must render identically (see `price` below).
  */
 export const PositionSchema = z.object({
   ticket: z.number(),
@@ -15,8 +17,8 @@ export const PositionSchema = z.object({
   volume: z.number(),
   priceOpen: z.number(),
   priceCurrent: z.number(),
-  sl: z.number(),
-  tp: z.number(),
+  sl: z.number().nullable(),
+  tp: z.number().nullable(),
   swap: z.number(),
   profit: z.number(),
   openTime: z.string(),
@@ -68,11 +70,15 @@ export function capPositions(positions: Position[]): { positions: Position[]; no
   };
 }
 
-/** MT5 writes `0` into `sl`/`tp` to mean "not set". Zero is not a price here. */
+/**
+ * MT5 writes `0` into `sl`/`tp` to mean "not set"; the API may also send
+ * `null` for the same thing. Zero is not a price here, and null renders
+ * identically to zero — the code never needs to distinguish them.
+ */
 const NO_VALUE = '—';
 
-function price(value: number): string {
-  return value === 0 ? NO_VALUE : String(value);
+function price(value: number | null): string {
+  return value === 0 || value === null ? NO_VALUE : String(value);
 }
 
 function money(value: number): string {

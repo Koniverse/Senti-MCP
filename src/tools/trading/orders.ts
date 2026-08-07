@@ -6,7 +6,10 @@ import { registerReadTool } from '../../core/tool.js';
 
 /**
  * Transcribed from `GET /api/v1/accounts/{accountId}/orders` in the live
- * OpenAPI document. Every field is required and none is nullable.
+ * OpenAPI document. Every field is required, but `sl`, `tp` and
+ * `priceStopLimit` are also nullable — the live API is entitled to send
+ * either `null` or `0` for "not set", and both must render identically (see
+ * `price` below).
  */
 export const OrderSchema = z.object({
   ticket: z.number(),
@@ -14,10 +17,10 @@ export const OrderSchema = z.object({
   type: z.string(),
   volume: z.number(),
   priceOpen: z.number(),
-  sl: z.number(),
-  tp: z.number(),
+  sl: z.number().nullable(),
+  tp: z.number().nullable(),
   timeSetup: z.string(),
-  priceStopLimit: z.number(),
+  priceStopLimit: z.number().nullable(),
   magic: z.number(),
   comment: z.string(),
 });
@@ -66,11 +69,16 @@ export function capOrders(orders: Order[]): { orders: Order[]; notes: string[] }
   };
 }
 
-/** MT5 writes `0` into `sl`/`tp`/`priceStopLimit` to mean "not set". Zero is not a price here. */
+/**
+ * MT5 writes `0` into `sl`/`tp`/`priceStopLimit` to mean "not set"; the API
+ * may also send `null` for the same thing. Zero is not a price here, and
+ * null renders identically to zero — the code never needs to distinguish
+ * them.
+ */
 const NO_VALUE = '—';
 
-function price(value: number): string {
-  return value === 0 ? NO_VALUE : String(value);
+function price(value: number | null): string {
+  return value === 0 || value === null ? NO_VALUE : String(value);
 }
 
 function block(order: Order): string {
@@ -79,7 +87,11 @@ function block(order: Order): string {
     `  SL ${price(order.sl)} · TP ${price(order.tp)} · placed ${order.timeSetup}`,
   ];
 
-  if (order.priceStopLimit !== 0) lines.push(`  stop-limit ${order.priceStopLimit}`);
+  // Per US-2.9 AC-4, priceStopLimit deliberately omits its line rather than
+  // rendering an em dash — unlike sl/tp, this line is absent, not dashed.
+  if (order.priceStopLimit !== 0 && order.priceStopLimit !== null) {
+    lines.push(`  stop-limit ${order.priceStopLimit}`);
+  }
   if (order.comment) lines.push(`  comment: ${order.comment}`);
 
   return lines.join('\n');

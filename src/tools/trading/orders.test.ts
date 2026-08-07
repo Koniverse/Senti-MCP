@@ -33,6 +33,12 @@ describe('parseOrders', () => {
 
     expect(() => parseOrders({ orders: [incomplete] })).toThrow(/timeSetup/);
   });
+
+  test('accepts a null sl, tp and priceStopLimit — the live API may send either null or 0 for "not set"', () => {
+    expect(() =>
+      parseOrders({ orders: [{ ...ORDER, sl: null, tp: null, priceStopLimit: null }] }),
+    ).not.toThrow();
+  });
 });
 
 describe('capOrders', () => {
@@ -67,11 +73,23 @@ describe('formatOrders', () => {
     expect(rendered).toContain('stop-limit 2375');
   });
 
+  test('omits the stop-limit line entirely when priceStopLimit is null, same as zero', () => {
+    const rendered = formatOrders([{ ...ORDER, priceStopLimit: null }], []);
+
+    expect(rendered).not.toMatch(/stop-limit/i);
+  });
+
   test('renders an unset stop loss and take profit as em dashes', () => {
     const rendered = formatOrders([{ ...ORDER, sl: 0, tp: 0 }], []);
 
     expect(rendered).toContain('SL — · TP —');
     expect(rendered).not.toContain('SL 0.00');
+  });
+
+  test('renders a null stop loss and take profit as em dashes, same as zero', () => {
+    const rendered = formatOrders([{ ...ORDER, sl: null, tp: null }], []);
+
+    expect(rendered).toContain('SL — · TP —');
   });
 
   test('shows the ticket, which is the handle for cancelling an order', () => {

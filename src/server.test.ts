@@ -85,28 +85,31 @@ describe('MCP server', () => {
     const client = await connect();
 
     const { tools } = await client.listTools();
+    const listAccounts = tools.find((tool) => tool.name === 'list_accounts');
 
-    expect(tools[0]?.description).toMatch(/accountId/);
-    expect(tools[0]?.description).toMatch(/login/);
+    expect(listAccounts?.description).toMatch(/accountId/);
+    expect(listAccounts?.description).toMatch(/login/);
   });
 
   test('takes no arguments', async () => {
     const client = await connect();
 
     const { tools } = await client.listTools();
+    const listAccounts = tools.find((tool) => tool.name === 'list_accounts');
 
     // No `?? {}` — that would pass whether `properties` is `{}` or absent, and
     // the wire genuinely carries `"inputSchema":{"type":"object","properties":{}}`.
-    expect(tools[0]?.inputSchema.properties).toEqual({});
+    expect(listAccounts?.inputSchema.properties).toEqual({});
   });
 
   test('advertises itself as read-only against an open world', async () => {
     const client = await connect();
 
     const { tools } = await client.listTools();
+    const listAccounts = tools.find((tool) => tool.name === 'list_accounts');
 
-    expect(tools[0]?.annotations?.readOnlyHint).toBe(true);
-    expect(tools[0]?.annotations?.openWorldHint).toBe(true);
+    expect(listAccounts?.annotations?.readOnlyHint).toBe(true);
+    expect(listAccounts?.annotations?.openWorldHint).toBe(true);
   });
 
   test('returns a readable summary and matching structured content', async () => {
