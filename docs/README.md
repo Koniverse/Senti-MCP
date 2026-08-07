@@ -15,12 +15,14 @@ docs/
 ├── SETUP.md             ← local dev setup + the env var reference (RULE-11)
 ├── CHANGELOG.md         ← release history (every version)
 ├── CONTEXT.md           ← decision log (append-only, never rewrite — RULE-7)
+├── LESSONS.md           ← retrospective lessons (append-only; created sprint W33)
 ├── superpowers/         ← preserved planning artifacts
 │   ├── specs/           ← design specs from the brainstorming phase
 │   └── plans/           ← implementation plans
 └── sprints/
     ├── STATUS.md        ← AUTO-GENERATED kanban (never hand-edit — RULE-5)
-    ├── sprint-2026-W32.md   ← active sprint
+    ├── sprint-2026-W32.md   ← closed
+    ├── sprint-2026-W33.md   ← most recently closed sprint; W34's file not yet written
     ├── epics/           ← EPIC-N.md
     └── stories/         ← US-X.Y-<slug>.md (canonical AC + Tasks source)
 
@@ -44,14 +46,18 @@ A missing file here is a decision, not an oversight.
 
 | Absent | Why, and what would bring it in |
 |---|---|
-| `PRD.md`, `ARCHITECTURE.md` | Authored today they would describe 16 tools that do not exist. They land when the read-tool roadmap firms up — at which point every story gains `prd_ref` / `arch_ref` in the same commit ([CONTEXT D1](CONTEXT.md)). |
-| `LESSONS.md` | Created with the first real entry. An empty traps file teaches nothing and invites filler. |
+| `PRD.md`, `ARCHITECTURE.md` | Authored today they would describe operations that don't have a shipped tool yet — 11 of the API's 17, as of v0.7.0 (four read tools carried to sprint W34, seven write operations sitting in backlog epic [EPIC-3](sprints/epics/EPIC-3.md)). They land when the read-tool roadmap firms up — at which point every story gains `prd_ref` / `arch_ref` in the same commit ([CONTEXT D1](CONTEXT.md)). |
 | `BRIEF.md` | The [design spec](superpowers/specs/2026-08-05-senti-mcp-server-design.md) already carries the problem statement and scope. |
-| `DEPLOY.md` | Nothing is deployed. v0.1.0 is not published to npm — it runs from a local build wired into an MCP client by absolute path, which [SETUP.md](SETUP.md) §6 covers. It lands when there is a hosted or published artifact to describe. |
+| `DEPLOY.md` | `senti-mcp-server@0.1.0` is published on the public npm registry (`npm view senti-mcp-server` — `gitHead` matches this repo's `v0.1.0` tag commit, `repository` matches this remote). But publishing a stdio MCP package to npm is not the same as operating a hosted service, and `DEPLOY.md` in this framework is a production runbook for the latter — env vars table, deployment steps ([koni-docs template](../.agents/skills/koni-docs/references/templates/setup.md) §6). This project has no service to run one against: no infrastructure, nothing to deploy beyond `npm publish` itself. It lands if that ever changes; a publish alone does not bring it in. |
 | `DESIGN.md` | No UI. This is a stdio MCP server; output formatting lives beside the code that emits it. |
 | `docs/tests/`, `docs/design/` | Owned by `koni-qc`, which is not wired. |
 | `docs/sprints/README.md` | The vendored skill's [`sprint-system.md`](../.agents/skills/koni-docs/references/sprint-system.md) is the live source for the sprint schema; a copy here would drift from it. |
 | Active Context — the `CLAUDE.md` block and `.active-context.md` | Removed, and not to be recreated in either form. It duplicated the sprint file and STATUS.md and went stale between refreshes ([CONTEXT D7](CONTEXT.md)). |
+
+`LESSONS.md` is no longer on this list — it was created with its first real entry
+during sprint W33; see [docs/LESSONS.md](LESSONS.md). An empty traps file teaches
+nothing and invites filler, which is why it waited until there was a real one to
+record.
 
 ---
 
@@ -123,8 +129,11 @@ npx koni-docs --version   # confirm which CLI you actually have
 - [CHANGELOG.md](CHANGELOG.md) — release history
 - [CONTEXT.md](CONTEXT.md) — decision log
 - [sprints/STATUS.md](sprints/STATUS.md) — current kanban (generated)
-- [sprints/sprint-2026-W32.md](sprints/sprint-2026-W32.md) — active sprint
+- [sprints/sprint-2026-W33.md](sprints/sprint-2026-W33.md) — most recently closed
+  sprint; W34's sprint file is not yet written
 - [superpowers/specs/2026-08-05-senti-mcp-server-design.md](superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design spec
+- [superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [superpowers/plans/2026-08-05-senti-mcp-server-v1.md](superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 implementation plan
+- [superpowers/plans/2026-08-06-senti-read-tools-w33.md](superpowers/plans/2026-08-06-senti-read-tools-w33.md) — W33 implementation plan
 - [AGENTS.md](../AGENTS.md) · [CLAUDE.md](../CLAUDE.md) — agent guides
 - [koni-docs SKILL.md](../.agents/skills/koni-docs/SKILL.md) — the framework itself

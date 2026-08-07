@@ -3,7 +3,7 @@ id: EPIC-2
 title: "Read-only Senti Quant access over MCP"
 status: in-progress
 created: 2026-08-05
-updated: 2026-08-05
+updated: 2026-08-07
 ---
 
 ## Goal
@@ -29,10 +29,10 @@ slice that works against the real service is worth more than five tools that hav
 ever seen a stubbed `fetch`. Once the slice holds, the design spec estimates the second
 read tool at roughly thirty lines.
 
-The architectural distinction this epic preserves is **read versus write**. Eight of the
-17 operations are `POST`, and two of those are `positions/close-all` and
-`orders/cancel-all`. A tool an LLM can call that closes every open position is not a
-larger version of a tool that lists accounts; it needs an opt-in switch, an
+The architectural distinction this epic preserves is **read versus write**. The API is
+10 `GET` + 7 `POST`: seven of the 17 operations are `POST`, and two of those are
+`positions/close-all` and `orders/cancel-all`. A tool an LLM can call that closes every open
+position is not a larger version of a tool that lists accounts; it needs an opt-in switch, an
 `Idempotency-Key`, and user confirmation before execution. It gets its own epic and its
 own design spec, not an appendix to this one.
 
@@ -46,12 +46,13 @@ own design spec, not an appendix to this one.
 
 ### Out of scope
 
-- **All eight write operations** — deferred to a future epic with its own design spec.
-  Not registered, and not written "ready to enable". Rationale above and in the
+- **All seven write operations** — deferred to [EPIC-3](EPIC-3.md), which has its own
+  design spec once opened. Not registered, and not written "ready to enable".
+  Rationale above and in the
   [design spec](../../superpowers/specs/2026-08-05-senti-mcp-server-design.md) §Security.
-- **The other 16 read operations** — deferred to US-2.4 and beyond. v1 ships one tool
-  deliberately: replicating a pipe before it is proven multiplies whatever is wrong
-  with it by sixteen.
+- **The other nine read operations** — deferred to US-2.4 and beyond. v1 ships one
+  tool deliberately: replicating a pipe before it is proven multiplies whatever is
+  wrong with it by nine.
 - **Retry and backoff, response caching, npm publishing** — out of scope for v1 per the
   design spec. Each is a decision, not an omission.
 - **Documentation tooling and repo standard** — owned by [EPIC-1](EPIC-1.md).
@@ -85,9 +86,18 @@ most likely to break by copying an earlier one:
 | [US-2.1](../stories/US-2.1-authenticated-senti-api-client.md) | Authenticated Senti API client substrate | P1 | 5 | ✅ done (v0.1.0) | 1–3 |
 | [US-2.2](../stories/US-2.2-list-accounts-tool.md) | `list_accounts` tool over MCP stdio | P1 | 5 | ✅ done (v0.1.0) | 4–5 |
 | [US-2.3](../stories/US-2.3-live-smoke-test-and-readme.md) | Live smoke test and README | P2 | 2 | ✅ done (v0.1.0) | 6 |
+| [US-2.4](../stories/US-2.4-tool-substrate-and-layout.md) | Tool substrate and directory layout | P1 | 5 | ✅ done (v0.2.0) | 1–9 |
+| [US-2.5](../stories/US-2.5-list-brokers-tool.md) | `list_brokers` tool | P1 | 2 | ✅ done (v0.3.0) | 10–11 |
+| [US-2.6](../stories/US-2.6-list-strategies-tool.md) | `list_strategies` tool | P1 | 2 | ✅ done (v0.4.0) | 12–13 |
+| [US-2.7](../stories/US-2.7-list-account-strategies-tool.md) | `list_account_strategies` tool | P1 | 2 | ✅ done (v0.5.0) | 14–15 |
+| [US-2.8](../stories/US-2.8-list-positions-tool.md) | `list_positions` tool | P1 | 2 | ✅ done (v0.6.0) | 16–17 |
+| [US-2.9](../stories/US-2.9-list-pending-orders-tool.md) | `list_pending_orders` tool | P1 | 2 | ✅ done (v0.7.0) | 18–19 |
 
-Growth path: US-2.4 onward add the remaining read operations, one per tool, splitting
-by API tag as they multiply (`trading.ts`, `performance.ts`, …).
+Growth path: US-2.4 through US-2.9 ship in [sprint-2026-W33](../sprint-2026-W33.md),
+splitting `src/` by API tag as the [read-tool expansion design spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
+directs (`tools/brokers/`, `tools/strategies/`, `tools/trading/`, …). The remaining
+four read operations — `get_account_performance`, `get_performance_breakdowns`,
+`get_equity_timeseries`, `list_deals` — carry to sprint W34.
 
 ## Cross-references
 

@@ -256,3 +256,148 @@ story close — with the block gone it is the only in-flight snapshot left.
 
 **Date**: 2026-08-07
 **Version**: 0.1.0
+
+---
+
+## Phase 3 — Read-tool expansion (2026-08-06)
+
+### D8. Replace the flat `src/` layout with `core/` and `tools/<tag>/`
+
+**Context**: [AGENTS.md](../AGENTS.md) described a flat `src/` as deliberate — "the six
+source files below, flat … tools split by API tag when they multiply, not into a
+`tools/` directory." That rule was written when the six files were `index.ts`,
+`config.ts`, `server.ts`, `accounts.ts`, `client.ts`, and `errors.ts`. The
+[read-tool expansion design spec](superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
+puts ten tools behind this server, each with a co-located test file — the layout the
+rule was written for is being outgrown at sixteen files, not six.
+
+**Decision**: `src/` splits into `core/` — infrastructure that must never depend on any
+tool (`client.ts`, `errors.ts`, `tool.ts`, `parse.ts`) — and `tools/<tag>/`, one folder
+per API tag (`accounts/`, `brokers/`, `strategies/`, `performance/`, `trading/`), one
+file per endpoint. `list_accounts` moves from `src/accounts.ts` to
+`src/tools/accounts/list-accounts.ts` as the first tenant. The dependency edge is
+one-way — `core/` never imports from `tools/` — and US-2.4 enforces that by grep
+(`grep -rl "tools/" src/core/` returns nothing), not by review discipline.
+
+**Rationale**: because three things had to be checked before believing the move was
+free, and all three held. `tsconfig.json` already globs recursively
+(`src/**/*.ts`, excluding `src/**/*.test.ts`) and `package.json`'s `files` array
+matches it, so subdirectories need no build-config change. `src/index.ts` cannot
+move regardless of what else does — `bin` points at `dist/index.js` and `rootDir` is
+`src`, so relocating `index.ts` would change the `dist/` layout, break `bin`, and break
+`index.test.ts`, which spawns the built entry point on purpose. `test:smoke` hardcodes
+`src/smoke.test.ts` in `package.json`; leaving that file at the root of `src/` avoids
+having to edit `package.json` in this same commit for no functional reason.
+
+**Alternatives considered**:
+- Keep the flat layout and prefix filenames by tag (`accounts-list.ts`,
+  `brokers-list.ts`, …) — rejected: it does not co-locate a tool with its test file
+  any better than the status quo, and it leaves the `core`/`tools` dependency edge as
+  a naming convention a reviewer has to trust rather than a directory grep can check.
+- Split into `tools/` without carving out `core/` — rejected: infrastructure
+  (the HTTP client, error mapping, tool registration, response parsing) would keep
+  entangling with domain modules the way `accounts.ts` already showed signs of in
+  v0.1.0, exactly the coupling ten tools would multiply.
+
+**Impact**: `src/core/{client,errors,tool,parse}.ts`, each with a co-located test
+file; `src/tools/accounts/list-accounts.ts` (+ test) as the migrated first tenant, with
+no behaviour change to `list_accounts`. [AGENTS.md](../AGENTS.md)'s repo-structure
+section is rewritten to describe the new layout in place of the flat block it
+previously described.
+
+**Date**: 2026-08-06
+**Version**: 0.2.0
+
+---
+
+### D9. `registerReadTool` and `parseOrThrow`, not a descriptor table
+
+**Context**: the [v1 design spec](superpowers/specs/2026-08-05-senti-mcp-server-design.md)
+deferred the question of a data-driven tool registry to "revisit when the repetition is
+real." One tool could not answer that question; ten tools, nine of them still to write
+this quarter, can.
+
+**Decision**: build two small helpers rather than a table. `registerReadTool<Args,
+Structured>(server, spec)` in `core/tool.ts` wraps the mechanical parts of registering a
+tool — the `try`/`catch` around `run`, shaping `{ content, structuredContent }` on
+success and `{ content, isError: true }` on failure, and setting
+`annotations: { readOnlyHint: true, openWorldHint: true }`. `parseOrThrow(schema,
+payload, subject)` in `core/parse.ts` wraps the `safeParse`-or-throw-naming-the-field
+pattern `accounts.ts` already used once, so all ten tools share one implementation
+instead of re-deriving it. Every tool module still writes its own `name`, `title`,
+`description`, `inputSchema`, and `outputSchema` in full.
+
+**Rationale**: because the repetition that turned out to be real was the mechanical
+`try`/`catch` and the `safeParse`-and-throw block — not the descriptions and schemas,
+which are what decide whether a model picks the right tool among ten rather than
+guessing, and which a descriptor table would flatten into inert data, losing exactly
+the review surface that catches a wrong or ambiguous description. The annotations
+becoming constants inside `registerReadTool`, with no field in `ReadToolSpec` that can
+set `readOnlyHint: false`, is deliberate: it turns "do not register a write tool before
+EPIC-3" from a convention a reviewer must remember into something the type signature
+itself refuses to do.
+
+**Alternatives considered**:
+- A descriptor table — an array of `{ name, endpoint, scope, schema, … }` consumed by
+  one generic registration loop — rejected: it would swallow the ten tools' natural-
+  language descriptions into table cells, the opposite of what U-2.4's own design spec
+  warns against, and a bug in the one generic loop would silently affect all ten tools
+  identically rather than surfacing as an isolated diff in one file.
+
+**Impact**: `core/tool.ts` (`registerReadTool`), `core/parse.ts` (`parseOrThrow`), each
+with its own test file. `src/tools/accounts/list-accounts.ts` calls both today; the
+nine remaining read tools this design spec covers reuse both without re-deriving
+either pattern.
+
+**Date**: 2026-08-06
+**Version**: 0.2.0
+
+---
+
+### D10. Tools bind and shape their own payloads
+
+**Context**: the [read-tool expansion design spec](superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)'s
+§Payload policy considered mirroring the Senti API's responses verbatim into
+`content`/`structuredContent` and trusting the host's context window to cope. That
+fails concretely on `get_performance_breakdowns`: a year-long `breakdowns` window is
+roughly 70,000 tokens, which is not a rounding error against a model's context — it is
+a single tool call crowding out everything else in the conversation for one performance
+question.
+
+**Decision**: every tool decides what of the underlying API response actually reaches
+the model, and states in a `notes: string[]` field — carried in `outputSchema` and
+repeated in `content` — what, if anything, it cut. `notes` is an empty array when
+nothing was cut, so its presence in a schema never by itself implies a cut occurred.
+This decision is recorded now, while only `list_accounts` (which cuts nothing) is
+shipped; it is first *implemented* in US-2.8's `list_positions` (a 200-row defensive
+cap) and completed by the three W34 performance tools (`get_performance_breakdowns`
+dropping `perAccount` and the `cumulative*` columns and collapsing `heatmap` to 24
+hourly buckets; `get_equity_timeseries` downsampling `portfolio` to 200 points).
+`list_deals` is the deliberate exception: paginating via `cursor`/`limit` is not
+cutting, so it returns `nextCursor` as data instead of a truncation note.
+
+**Rationale**: because both `content` and `structuredContent` enter the model's
+context, "return it all and let the host cope" is not a neutral default — it is a
+decision to spend tens of thousands of tokens on a question the user thought was
+small, and a model that reads a truncated payload without being told it was truncated
+states a confident, wrong conclusion about real money. Recording the cut in `notes`
+rather than silently applying it is what keeps a shrink from becoming a lie by omission.
+
+**Alternatives considered**:
+- Mirror the API verbatim and trust the host's context window — rejected for the
+  `breakdowns` reason above; it also means every future tool re-derives its own
+  judgement call about what is safe to send, rather than inheriting one policy.
+- A `view`/`granularity` request parameter that shrinks the payload on demand —
+  deferred, not rejected: it opens a new axis (query parameters) this sprint
+  deliberately keeps closed (see the design spec's Decisions taken §2, one tool per
+  endpoint, no `view` parameter collapsing multiple endpoints into one `anyOf` output
+  schema). Revisit once query parameters land with US-2.10.
+
+**Impact**: every tool that can cut anything carries `notes: string[]` in its
+`outputSchema`. `list_positions` and `list_pending_orders` (this sprint) get a 200-row
+cap; the three W34 performance tools get the larger, column- and resolution-level cuts
+above. `list_deals` carries `nextCursor` instead of a `notes` entry for the rows it
+does not return in one page.
+
+**Date**: 2026-08-06
+**Version**: 0.2.0

@@ -1,4 +1,4 @@
-import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
+import { SERVER_NAME, SERVER_VERSION, type Config } from '../config.js';
 import { ApiError } from './errors.js';
 
 /** Single home for the server's outbound fetch policy. */
@@ -6,6 +6,8 @@ const FETCH_TIMEOUT_MS = 15_000;
 const USER_AGENT = `${SERVER_NAME}/${SERVER_VERSION}`;
 
 export type ClientDeps = { fetch?: typeof fetch };
+
+export type QueryParams = Record<string, string | number | undefined>;
 
 export type RequestOptions = {
   signal?: AbortSignal;
@@ -15,12 +17,51 @@ export type RequestOptions = {
    * the caller knows which one it is asking for.
    */
   scope?: string;
+  /** `undefined` values are dropped rather than sent as the string "undefined". */
+  query?: QueryParams;
+  /**
+   * What a 409 means for THIS endpoint, quoted verbatim. The client cannot
+   * infer it: on account-scoped reads a 409 is "terminal offline", and on the
+   * write path it will mean something else entirely. Same reasoning as `scope`.
+   */
+  conflictMeans?: string;
+  /**
+   * What a 404 means for THIS endpoint, quoted verbatim. Same reasoning again:
+   * only the account-scoped paths can say an account is missing. `/brokers`
+   * and `/strategies` take no `accountId`, so account guidance on their 404s
+   * sends the reader to check the one thing that cannot be the cause.
+   */
+  notFoundMeans?: string;
 };
+
+/**
+ * What a 404 means on an account-scoped path. Lives here so the three tools
+ * that build such a path share one wording, but is passed in rather than
+ * assumed — see `notFoundMeans`.
+ */
+export const ACCOUNT_NOT_FOUND =
+  'The account does not exist, is not owned by this API key, or has been unlinked. ' +
+  'If a `login` (the MT5 account number) was passed where an `accountId` was expected, ' +
+  'call list_accounts and use its `id`.';
 
 export type SentiClient = {
   /** Returns the parsed JSON body. Validation belongs to the domain module. */
   get(path: string, options?: RequestOptions): Promise<unknown>;
 };
+
+/** Render a query string, or the empty string when nothing survives. */
+function queryStringOf(query: QueryParams | undefined): string {
+  if (!query) return '';
+
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined) continue;
+    params.set(key, String(value));
+  }
+
+  const rendered = params.toString();
+  return rendered ? `?${rendered}` : '';
+}
 
 /** Pull `{ error: { code, message } }` out of a body that may be anything. */
 function envelopeOf(body: unknown): { code?: string; message?: string } {
@@ -47,8 +88,9 @@ function failureOf(
   status: number,
   headers: Headers,
   body: unknown,
-  scope: string | undefined,
+  options: RequestOptions,
 ): ApiError {
+  const { scope, conflictMeans, notFoundMeans } = options;
   const { code, message } = envelopeOf(body);
   // Each template below ends its own sentence, so an envelope message that
   // already carries a terminator would render as "…Insufficient scope.. The API
@@ -89,9 +131,61 @@ function failureOf(
       return new ApiError(`Senti API rate limit exceeded (429)${budget}${detail}.`, status, code);
     }
 
+    case 404: {
+      const meaning = notFoundMeans
+        ? ` ${notFoundMeans}`
+        : ' Nothing is served at that path. Check that SENTI_API_BASE_URL points at the ' +
+          'environment you mean, and that this API still serves the path.';
+
+      return new ApiError(`Senti API returned 404${detail}.${meaning}`, status, code);
+    }
+
+    case 409: {
+      const meaning = conflictMeans
+        ? ` ${conflictMeans}`
+        : ' The request conflicts with the resource\'s current state.';
+
+      return new ApiError(`Senti API returned 409${detail}.${meaning}`, status, code);
+    }
+
     default:
       return new ApiError(`Senti API request failed: HTTP ${status}${detail}.`, status, code);
   }
+}
+
+/**
+ * What a path segment may contain. Deliberately not a UUID pattern: the
+ * OpenAPI document declares `accountId` as a bare `type: string` with no
+ * `format` and no `pattern`, so hard-coding UUID would take every
+ * account-scoped tool down at once the day Senti issues an id in another
+ * shape — this server's assumption failing, not the API's contract. What this
+ * does reject is everything that makes concatenation dangerous.
+ */
+const PATH_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * The only function permitted to build a path containing a parameter. No tool
+ * concatenates: `accountId` originates from the model, and a value such as
+ * `..%2F..%2Fadmin` escapes `/api/v1/accounts/` under naive concatenation.
+ *
+ * Note that a `login` (the MT5 account number, e.g. `413878201`) passes this
+ * check — it is a legal segment, just the wrong value. What catches that is the
+ * 404 message, and only when the caller passed `ACCOUNT_NOT_FOUND`.
+ */
+export function accountPath(accountId: string, ...rest: string[]): string {
+  const segments = [accountId, ...rest];
+
+  for (const segment of segments) {
+    if (!PATH_SEGMENT.test(segment)) {
+      throw new Error(
+        `Invalid path segment ${JSON.stringify(segment)}: expected 1-64 characters from ` +
+          'A-Z, a-z, 0-9, "_" and "-". Values containing "/", ".", "%" or whitespace are ' +
+          'rejected before they reach a URL. Use the `id` field from list_accounts.',
+      );
+    }
+  }
+
+  return `/api/v1/accounts/${segments.map(encodeURIComponent).join('/')}`;
 }
 
 export function createClient(config: Config, deps: ClientDeps = {}): SentiClient {
@@ -101,7 +195,7 @@ export function createClient(config: Config, deps: ClientDeps = {}): SentiClient
     async get(path: string, options: RequestOptions = {}): Promise<unknown> {
       const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
 
-      const response = await doFetch(`${config.baseUrl}${path}`, {
+      const response = await doFetch(`${config.baseUrl}${path}${queryStringOf(options.query)}`, {
         headers: {
           authorization: `Bearer ${config.apiKey}`,
           accept: 'application/json',
@@ -123,7 +217,7 @@ export function createClient(config: Config, deps: ClientDeps = {}): SentiClient
       }
 
       if (!response.ok) {
-        throw failureOf(response.status, response.headers, body, options.scope);
+        throw failureOf(response.status, response.headers, body, options);
       }
 
       if (body === undefined) {

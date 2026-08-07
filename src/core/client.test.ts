@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
-import { createClient } from './client.js';
+import { ACCOUNT_NOT_FOUND, accountPath, createClient } from './client.js';
 import { ApiError } from './errors.js';
-import { loadConfig } from './config.js';
+import { loadConfig } from '../config.js';
 
 const KEY = 'sq_live_supersecret';
 const config = loadConfig({
@@ -111,8 +111,92 @@ describe('createClient', () => {
     await expect(promise).rejects.toThrow(/not JSON/);
   });
 
+  test('gives 404 the meaning the call site supplied', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('NOT_FOUND', 'Account not found.'), 404));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts/x/positions', {
+      notFoundMeans: ACCOUNT_NOT_FOUND,
+    });
+
+    await expect(promise).rejects.toThrow(/does not exist, is not owned by this API key/);
+    await expect(promise).rejects.toThrow(/list_accounts/);
+    await expect(promise).rejects.toThrow(/login/);
+  });
+
+  test('does not blame the account on a 404 from an endpoint that takes no account', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('NOT_FOUND', 'Not found.'), 404));
+
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/brokers')
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
+
+    expect(message).toContain('404');
+    // The catalogue endpoints take no accountId at all, so account guidance
+    // here sends the reader to check the wrong thing.
+    expect(message).not.toMatch(/account/i);
+    expect(message).not.toContain('list_accounts');
+  });
+
+  test('points a bare 404 at the base URL, the cause it cannot rule out', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('NOT_FOUND', 'Not found.'), 404));
+
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/brokers')
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
+
+    expect(message).toContain('SENTI_API_BASE_URL');
+  });
+
+  test('gives 409 the meaning the call site supplied', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', 'Terminal offline.'), 409));
+
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/accounts/x/positions', {
+        conflictMeans: 'The MT5 terminal for this account is offline.',
+      })
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
+
+    expect(message).toContain('The MT5 terminal for this account is offline.');
+    expect(message).not.toContain('conflicts with the resource');
+  });
+
+  test('falls back to a bare 409 when the call site supplied no meaning', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', 'Conflict.'), 409));
+
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/accounts')
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
+
+    expect(message).toContain('conflicts with the resource\'s current state');
+  });
+
+  test('gives generic guidance on 409 when no meaning was supplied and no envelope message', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', ''), 409));
+
+    const message = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/accounts')
+      .then(
+        () => '',
+        (error: unknown) => (error as Error).message,
+      );
+
+    expect(message).toContain('The request conflicts with the resource\'s current state');
+  });
+
   test('never leaks the API key into an error message', async () => {
-    const statuses = [401, 403, 429, 500, 502];
+    const statuses = [401, 403, 404, 409, 429, 500, 502];
 
     for (const status of statuses) {
       const { fetchImpl } = stub(jsonResponse(envelope('INTERNAL', 'boom'), status));
@@ -214,5 +298,95 @@ describe('createClient', () => {
     } finally {
       timeout.mockRestore();
     }
+  });
+
+  test('appends query parameters and drops undefined ones', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse([]));
+
+    await createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts/a/deals', {
+      query: { limit: 50, entry: 'out', cursor: undefined },
+    });
+
+    expect(calls[0]?.url).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts/a/deals?limit=50&entry=out',
+    );
+  });
+
+  test('omits the question mark entirely when every value is undefined', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse([]));
+
+    await createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts', {
+      query: { from: undefined, to: undefined },
+    });
+
+    expect(calls[0]?.url).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts');
+  });
+
+  test('percent-encodes query values rather than splicing them raw', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse([]));
+
+    await createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts', {
+      query: { reporting: 'US D&x=1' },
+    });
+
+    expect(calls[0]?.url).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts?reporting=US+D%26x%3D1',
+    );
+  });
+
+  test('does not drop zero or empty-string values when filtering undefined', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse([]));
+
+    await createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts', {
+      query: { limit: 0, reporting: '' },
+    });
+
+    expect(calls[0]?.url).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts?limit=0&reporting=',
+    );
+  });
+});
+
+describe('accountPath', () => {
+  test('builds the account-scoped path from validated segments', () => {
+    expect(accountPath('8f2c1b40-3d5e-4a17-9c8b-2e1f0a6d4b93', 'positions')).toBe(
+      '/api/v1/accounts/8f2c1b40-3d5e-4a17-9c8b-2e1f0a6d4b93/positions',
+    );
+  });
+
+  test('supports a bare account path with no trailing segments', () => {
+    expect(accountPath('abc-123')).toBe('/api/v1/accounts/abc-123');
+  });
+
+  test('supports multiple trailing segments', () => {
+    expect(accountPath('abc-123', 'performance', 'breakdowns')).toBe(
+      '/api/v1/accounts/abc-123/performance/breakdowns',
+    );
+  });
+
+  test.each([
+    ['a traversal attempt', '../../admin'],
+    ['a pre-encoded traversal attempt', '..%2F..%2Fadmin'],
+    ['an empty string', ''],
+    ['a value with whitespace', 'abc 123'],
+    ['a value with a slash', 'abc/positions'],
+    ['a value with a dot', 'abc.123'],
+    ['a 65-character value', 'a'.repeat(65)],
+  ])('rejects %s before it reaches a URL', (_label, value) => {
+    expect(() => accountPath(value, 'positions')).toThrow(/Invalid path segment/);
+  });
+
+  test('accepts a 64-character value at the boundary', () => {
+    const id = 'a'.repeat(64);
+
+    expect(accountPath(id)).toBe(`/api/v1/accounts/${id}`);
+  });
+
+  test('validates trailing segments too, not only the accountId', () => {
+    expect(() => accountPath('abc-123', '../secrets')).toThrow(/Invalid path segment/);
+  });
+
+  test('names the id field a caller should have used', () => {
+    expect(() => accountPath('../etc')).toThrow(/list_accounts/);
   });
 });

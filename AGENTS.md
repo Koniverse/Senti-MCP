@@ -17,41 +17,74 @@ Trading. An MCP host cannot call it directly: something has to own the API key, 
 typed tools whose descriptions let a model choose correctly, and turn API errors into
 text a model can act on. This server is that something.
 
-**Current state: v0.1.0 shipped.** Exactly one tool, `list_accounts`, tracked as
-[US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md), proven against the live
-API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md). Read the
-[design spec](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) before
-touching anything under `src/`.
+**Current state: v0.7.0 shipped.** Six tools are registered in `src/server.ts`:
+`list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
+`list_positions`, `list_pending_orders` — covering six of the API's 10 `GET`
+operations. `list_accounts` shipped first, in v0.1.0, tracked as
+[US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md) and proven against the
+live API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md); the
+other five closed out [sprint-2026-W33](docs/sprints/sprint-2026-W33.md) (now closed),
+tracked as [US-2.4](docs/sprints/stories/US-2.4-tool-substrate-and-layout.md) through
+[US-2.9](docs/sprints/stories/US-2.9-list-pending-orders-tool.md). **Four** read
+operations remain — `get_account_performance`, `get_performance_breakdowns`,
+`get_equity_timeseries`, `list_deals` — carried to sprint W34, per the
+[read-tool expansion spec](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
+(EPIC-2 stays `in-progress` until they ship). Read the
+[v1 design spec](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) and the
+expansion spec above before touching anything under `src/`.
 
 ### The read/write split
 
 This is the project's load-bearing architectural boundary. **Only read operations are
-exposed.** Eight of the 17 operations are `POST`, two of them `positions/close-all` and
+exposed.** Seven of the 17 operations are `POST`, two of them `positions/close-all` and
 `orders/cancel-all`. A tool an LLM can call that closes every open position is not a
 bigger version of a tool that lists accounts — it needs an opt-in switch, an
-`Idempotency-Key`, and user confirmation before execution. It gets its own epic and its
-own design spec. Do not register a write tool, and do not add one "ready to enable".
+`Idempotency-Key`, and user confirmation before execution. It gets its own epic
+([EPIC-3](docs/sprints/epics/EPIC-3.md)) and its own design spec. Do not register a
+write tool, and do not add one "ready to enable".
 
 ## Repo structure
 
 ```
-src/                    ← the six source files below, flat: tools split by API tag
-                          when they multiply, not into a tools/ directory
-  config.ts             ← loadConfig(env) → frozen Config; SERVER_NAME/SERVER_VERSION
-  errors.ts             ← ApiError (status + envelope code); describeError flattens
-                          the cause chain, which is what makes fetch failures readable
-  client.ts             ← createClient(config, deps).get(); owns the Authorization
-                          header, the 15s timeout, and status→message mapping
-  accounts.ts           ← AccountSchema (16 fields), parseAccounts, formatAccounts.
-                          Imports no MCP SDK, so it is tested by direct calls
-  server.ts             ← createServer(config, deps); registers list_accounts. The
-                          only file importing the SDK's main entry
+src/
   index.ts              ← #! stdio bootstrap; serveStdio, signal handling. Imports
-                          only the SDK's /stdio subpath
-  *.test.ts             ← one beside each source file, plus index.test.ts (spawns the
-                          built dist/index.js) and smoke.test.ts (opt-in, one live call)
+                          only the SDK's /stdio subpath. MUST stay at root of src/.
+  index.test.ts         ← spawns the built dist/index.js
+  config.ts             ← loadConfig(env) → frozen Config; SERVER_NAME/SERVER_VERSION
+  config.test.ts
+  server.ts             ← createServer(config, deps); registers every read tool. The
+                          only file importing the SDK's main entry
+  server.test.ts
+  smoke.test.ts         ← opt-in, one live call; hardcoded path in package.json
+
+  core/                 ← infrastructure; imports nothing from tools/
+    client.ts           ← createClient(config, deps).get(); owns the Authorization
+                          header, the 15s timeout, status→message mapping, query
+                          parameters, accountPath path builder, and 404/409 branches
+    client.test.ts
+    errors.ts           ← ApiError (status + envelope code); describeError flattens
+                          the cause chain, which is what makes fetch failures readable
+    errors.test.ts
+    tool.ts             ← registerReadTool helper: the try/catch, scope-naming and
+                          success/error shaping every tool shares
+    tool.test.ts
+    parse.ts            ← parseOrThrow helper: turns a zod failure into the
+                          "API may have changed" message every tool throws on
+    parse.test.ts
+
+  tools/                ← one folder per API tag, one file per endpoint
+    accounts/           ← list-accounts.ts — AccountSchema (16 fields), parseAccounts,
+                          formatAccounts. Imports no MCP SDK, so it is tested by direct
+                          calls. Shipped in v0.1.0, relocated here in v0.2.0
+    brokers/            ← list-brokers.ts (v0.3.0)
+    strategies/         ← list-strategies.ts, list-account-strategies.ts (v0.4.0, v0.5.0)
+    trading/            ← positions.ts, orders.ts (v0.6.0, v0.7.0). deals.ts carries to W34
+    performance/        ← not yet present. summary.ts, breakdowns.ts, timeseries.ts carry
+                          to W34
+
 docs/                   ← all documentation (see docs/README.md)
   SETUP.md              ← local dev setup + env var reference
+  LESSONS.md            ← retrospective lessons, append-only
   sprints/              ← epics, stories, active sprint, generated STATUS.md
   superpowers/           ← design specs and implementation plans
 .agents/skills/koni-docs/  ← vendored koni-docs skill (real files, do not edit)
@@ -63,6 +96,18 @@ tsconfig.test.json      ← typecheck-only, no exclude; the only thing that type
                           the tests, since vitest transpiles without checking
 VERSION                 ← bare semver, no `v` prefix
 ```
+
+**Architecture constraints:**
+
+- **`src/index.ts` cannot move.** `bin` points at `dist/index.js` and `rootDir` is
+  `src`, so relocating `index.ts` changes the `dist/` layout, breaks `bin`, and breaks
+  `index.test.ts`, which spawns the built entry point on purpose.
+- **`test:smoke` hardcodes `src/smoke.test.ts`.** Moving that file means editing
+  `package.json` in the same commit.
+- **`tsconfig.json` globs recursively (`src/**/*.ts`, excluding `src/**/*.test.ts`).**
+  Subdirectories need no build change; the glob already reaches them.
+- **The dependency edge is one-way: `core/` never imports from `tools/`.** That is
+  what keeps `core/` testable without constructing a tool.
 
 **Nothing in `index.ts` may write to stdout** — that stream carries the JSON-RPC
 frames. Diagnostics go to stderr. A single stray `console.log` corrupts the protocol,
@@ -76,15 +121,20 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
-- [docs/sprints/sprint-2026-W32.md](docs/sprints/sprint-2026-W32.md) — active sprint
+- [docs/sprints/sprint-2026-W33.md](docs/sprints/sprint-2026-W33.md) — most recently
+  closed sprint (2026-08-10 → 2026-08-16); W34's sprint file is not yet written
+- [docs/LESSONS.md](docs/LESSONS.md) — retrospective lessons, append-only
 - [docs/sprints/epics/](docs/sprints/epics/) — EPIC-1 (foundation), EPIC-2 (read path)
 - [docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design
+- [docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md](docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 plan, task by task
+- [docs/superpowers/plans/2026-08-06-senti-read-tools-w33.md](docs/superpowers/plans/2026-08-06-senti-read-tools-w33.md) — W33 plan, task by task
 - [VERSION](VERSION) — current semver
 
-There is no `PRD.md`, `ARCHITECTURE.md`, `LESSONS.md`, or `DEPLOY.md` yet. Each
-absence is a recorded decision, not an oversight — [docs/README.md](docs/README.md)
-explains which trigger brings each one in.
+There is still no `PRD.md`, `ARCHITECTURE.md`, or `DEPLOY.md`. Each absence is a
+recorded decision, not an oversight — [docs/README.md](docs/README.md) explains which
+trigger brings each one in. `LESSONS.md` is no longer on that list: it was created
+with its first real entry during sprint W33.
 
 ## Koni-Docs
 
@@ -180,7 +230,7 @@ built entry point, because that is the artifact US-2.2 AC-18 is a claim about.
 |---|---|---|---|
 | `SENTI_API_KEY` | yes | — | First-party key, `sq_live_…`. The server exits at startup without it. |
 | `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. Must be absolute `https:` or `http:`, with no query string or fragment. |
-| `SENTI_SMOKE_KEY` | no | — | Test-only. Read from a gitignored `.env.local`; absent means the smoke test skips rather than fails. |
+| `SENTI_SMOKE_KEY` | no | — | Test-only. Read from a gitignored `.env.local` by `npm run test:smoke`. If `.env.local` exists but doesn't set this, the suite skips cleanly; if `.env.local` doesn't exist at all, `node --env-file` fails to start (`node: .env.local: not found`, exit 9) rather than skipping. |
 
 **The key must belong to the same environment `SENTI_API_BASE_URL` points at.** Keys
 are environment-bound and the default base URL is production, so a key issued

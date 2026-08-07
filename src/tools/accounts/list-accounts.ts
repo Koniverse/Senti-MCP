@@ -1,4 +1,8 @@
+import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
+import type { SentiClient } from '../../core/client.js';
+import { parseOrThrow } from '../../core/parse.js';
+import { registerReadTool } from '../../core/tool.js';
 
 const TerminalSchema = z.object({
   assignedPort: z.number().nullable(),
@@ -47,35 +51,8 @@ export const AccountsOutputSchema = z.object({
   accounts: z.array(AccountSchema),
 });
 
-/**
- * Validation is all-or-nothing by choice: one malformed field fails the whole
- * list rather than passing malformed data to the model.
- *
- * The operational consequence is worth naming before this pattern spreads to
- * the API's other 16 endpoints. A single upstream field change — one account in
- * a hundred carrying a newly-nullable value — takes down the entire tool, not
- * just the affected row. That trade is right while a tool returns a handful of
- * records a human is about to act on financially, and it gets progressively
- * worse as the endpoint's list grows. When it stops being right, the fix is
- * per-item partial parsing that keeps the valid rows and reports the rejected
- * ones — not a looser schema, which would reintroduce exactly the silent
- * corruption this guards against.
- */
 export function parseAccounts(payload: unknown): Account[] {
-  const result = z.array(AccountSchema).safeParse(payload);
-
-  if (!result.success) {
-    const issue = result.error.issues[0];
-    const where = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
-
-    throw new Error(
-      `Senti API returned an unexpected shape for the account list at "${where}": ` +
-        `${issue?.message ?? 'unknown issue'}. The API may have changed; ` +
-        'senti-mcp-server needs updating.',
-    );
-  }
-
-  return result.data;
+  return parseOrThrow(z.array(AccountSchema), payload, 'account list');
 }
 
 /** Null numbers render as this, never as `0` or `null`. */
@@ -139,4 +116,27 @@ export function formatAccounts(accounts: Account[]): string {
   const caveat = deleted > 0 ? ` ${deleted} of them soft-deleted.` : '';
 
   return `${accounts.length} linked ${noun}.${caveat}\n\n${blocks}`;
+}
+
+/** The scope `GET /api/v1/accounts` requires, quoted back in the 403 message. */
+const ACCOUNTS_READ = 'accounts:read';
+
+export function registerListAccounts(server: McpServer, client: SentiClient): void {
+  registerReadTool(server, {
+    name: 'list_accounts',
+    title: 'List linked MT5 accounts',
+    description:
+      'List the MT5 trading accounts linked to the configured Senti Quant API key. ' +
+      "Returns each account's id, login, broker, last known balance and equity, sync " +
+      'state, and running strategies. The `id` field is the accountId every other Senti ' +
+      'endpoint takes — pass `id`, not `login`, when a tool asks for an account.',
+    inputSchema: z.object({}),
+    outputSchema: AccountsOutputSchema,
+    run: async (_args, signal) => {
+      const payload = await client.get('/api/v1/accounts', { signal, scope: ACCOUNTS_READ });
+      const accounts = parseAccounts(payload);
+
+      return { text: formatAccounts(accounts), structured: { accounts } };
+    },
+  });
 }

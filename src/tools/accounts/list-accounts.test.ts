@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { type Account, formatAccounts, parseAccounts } from './accounts.js';
+import { type Account, formatAccounts, parseAccounts } from './list-accounts.js';
 
 const base: Account = {
   id: '8f2c1b40-3d5e-4a17-9c8b-2e1f0a6d4b93',

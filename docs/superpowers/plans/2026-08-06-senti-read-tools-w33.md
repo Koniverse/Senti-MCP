@@ -74,7 +74,7 @@ Follow its templates for sprint and story files. This plan supplies the frontmat
 ```yaml
 ---
 id: sprint-2026-W33
-status: active
+status: in-progress
 start: 2026-08-10
 end: 2026-08-16
 goal: "Restructure src/ into core/ + tools/<tag>/, add the read-tool substrate, and ship the first five of the nine unshipped read tools"
@@ -110,7 +110,7 @@ Frontmatter for each — `epic: EPIC-2`, `sprint: sprint-2026-W33`, `assignee: b
 Acceptance criteria, verbatim seeds — expand each into the skill's Given/When/Then form:
 
 **US-2.4**
-1. `src/core/` holds `client.ts`, `errors.ts`, `tool.ts` with their tests; `src/tools/accounts/list-accounts.ts` holds the accounts domain; `npm test`, `npm run typecheck`, `npm run build` all pass after the move with no behaviour change.
+1. `src/core/` holds `client.ts`, `errors.ts`, `tool.ts`, `parse.ts` with their tests; `src/tools/accounts/list-accounts.ts` holds the accounts domain; `npm test`, `npm run typecheck`, `npm run build` all pass after the move with no behaviour change.
 2. `core/` imports nothing from `tools/` — verified by grep.
 3. `client.get` accepts `query`, drops `undefined` entries, and encodes the rest via `URLSearchParams`.
 4. `accountPath` rejects `../`, `..%2F..%2Fadmin`, the empty string, and a 65-character segment; accepts a normal id; applies `encodeURIComponent`.
@@ -121,7 +121,7 @@ Acceptance criteria, verbatim seeds — expand each into the skill's Given/When/
 9. Table-driven tests cover all registered tools for: no key leakage on any error branch, `structuredContent` validating against the tool's own `outputSchema`, and `readOnlyHint: true`.
 10. No file outside `src/server.ts` and `src/index.ts` imports a **runtime value** from `@modelcontextprotocol/*`; `core/tool.ts` and every tool module use `import type` only.
 11. `AGENTS.md` and `EPIC-2` state 10 `GET` + 7 `POST` and nine read operations remaining; `AGENTS.md`'s repo-structure section describes the new layout.
-12. `CONTEXT.md` gains D7 (directory structure), D8 (`registerReadTool`), D9 (payload-shaping policy).
+12. `CONTEXT.md` gains D8 (directory structure), D9 (`registerReadTool`), D10 (payload-shaping policy).
 13. `SETUP.md`, `.env.example`, and `README.md` list all five read scopes.
 14. `EPIC-3.md` exists with `status: planned`, the seven write operations, the guardrails, and no stories.
 
@@ -137,7 +137,12 @@ Acceptance criteria, verbatim seeds — expand each into the skill's Given/When/
 
 - [ ] **Step 4: Create EPIC-3**
 
-`docs/sprints/epics/EPIC-3.md`, `status: planned`, **no stories**. It must list the seven write operations, and record these guardrails as the epic's cross-cutting invariants:
+`docs/sprints/epics/EPIC-3.md`, `status: backlog`, **no stories**. It must list the seven write operations, and record these guardrails as the epic's cross-cutting invariants:
+
+> **Use the enum members the vendored templates document**, not the word that reads
+> best: `epicSchema` allows `backlog | in-progress | done` and `sprintSchema` allows
+> `planned | in-progress | closed`. An epic that has not started is `backlog`, and a
+> sprint being worked is `in-progress`.
 
 - Opt-in by environment variable; write tools are not registered by default.
 - `Idempotency-Key` on `POST /accounts` and `POST …/strategies`, the two operations that accept it.
@@ -630,15 +635,18 @@ git commit -m "feat: give 404 and 409 their own actionable messages"
 
 ---
 
-### Task 6: `core/tool.ts` — `registerReadTool`
+### Task 6: `core/tool.ts` and `core/parse.ts` — the registration and validation helpers
 
 **Files:**
 - Create: `src/core/tool.ts`
 - Test: `src/core/tool.test.ts`
+- Create: `src/core/parse.ts`
+- Test: `src/core/parse.test.ts`
 
 **Interfaces:**
 - Consumes: `describeError` from `src/core/errors.js`.
 - Produces: `registerReadTool<Args, Structured>(server, spec)` and `type ReadToolSpec<Args, Structured>`. Every `register*` function from Task 7 onward calls it.
+- Produces: `parseOrThrow<T>(schema: z.ZodType<T>, payload: unknown, subject: string): T`. Every `parse*` function from Task 7 onward calls it instead of repeating the `safeParse`-and-throw block.
 
 **This signature is verified.** It compiles under `npx tsc --noEmit` and round-trips over `InMemoryTransport` with a non-empty `inputSchema`. Do not "improve" the generics — the SDK constrains `registerTool` to `StandardSchemaWithJSON`, and this form is what satisfies it while still inferring `Args` in `run`.
 
@@ -838,11 +846,117 @@ npx vitest run src/core/tool.test.ts && npm run typecheck
 
 Expected: PASS, 5 tests; typecheck exits 0.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Write the failing test for `parseOrThrow`**
+
+Six `parse*` functions across this sprint would otherwise repeat one identical
+`safeParse`-and-throw block, differing only in a noun. That is the same mechanical
+repetition D9 exists to remove, so it is extracted here rather than copied six times.
+
+Create `src/core/parse.test.ts`:
+
+```ts
+import { describe, expect, test } from 'vitest';
+import * as z from 'zod/v4';
+import { parseOrThrow } from './parse.js';
+
+const Row = z.object({ id: z.string(), size: z.number() });
+
+describe('parseOrThrow', () => {
+  test('returns the parsed value on success', () => {
+    expect(parseOrThrow(Row, { id: 'a', size: 1 }, 'row')).toEqual({ id: 'a', size: 1 });
+  });
+
+  test('strips fields the schema does not declare', () => {
+    expect(parseOrThrow(Row, { id: 'a', size: 1, extra: true }, 'row')).not.toHaveProperty(
+      'extra',
+    );
+  });
+
+  test('names the offending field, the subject, and what to do about it', () => {
+    expect(() => parseOrThrow(Row, { id: 'a' }, 'row list')).toThrow(/size/);
+    expect(() => parseOrThrow(Row, { id: 'a' }, 'row list')).toThrow(/row list/);
+    expect(() => parseOrThrow(Row, { id: 'a' }, 'row list')).toThrow(/unexpected shape/);
+    expect(() => parseOrThrow(Row, { id: 'a' }, 'row list')).toThrow(
+      /senti-mcp-server needs updating/,
+    );
+  });
+
+  test('reports a root-level mismatch as "(root)" rather than an empty path', () => {
+    expect(() => parseOrThrow(z.array(Row), { rows: [] }, 'row list')).toThrow(/\(root\)/);
+  });
+
+  test('joins a nested path with dots', () => {
+    expect(() => parseOrThrow(z.array(Row), [{ id: 'a', size: 'big' }], 'row list')).toThrow(
+      /0\.size/,
+    );
+  });
+});
+```
+
+- [ ] **Step 6: Run to verify it fails**
 
 ```bash
-git add src/core/tool.ts src/core/tool.test.ts docs/sprints/stories/US-2.4-tool-substrate-and-layout.md
-git commit -m "feat: add registerReadTool, the one registration shape for read tools"
+npx vitest run src/core/parse.test.ts
+```
+
+Expected: FAIL — `Cannot find module './parse.js'`.
+
+- [ ] **Step 7: Implement `parseOrThrow`**
+
+Create `src/core/parse.ts`. The message wording is copied verbatim from the existing
+`parseAccounts` so that migrating it in Task 7 changes no assertion:
+
+```ts
+import type * as z from 'zod/v4';
+
+/**
+ * Validate a payload against a schema, or throw an error naming the field that
+ * failed and what a reader should do about it.
+ *
+ * Validation is all-or-nothing by choice: one malformed field fails the whole
+ * response rather than passing malformed data to the model. The operational
+ * cost is real — a single upstream field change takes down a whole tool rather
+ * than one row — and that trade is right while a tool returns records a human
+ * is about to act on financially. When it stops being right, the fix is
+ * per-item partial parsing that keeps the valid rows and reports the rejected
+ * ones, not a looser schema, which would reintroduce exactly the silent
+ * corruption this guards against.
+ *
+ * `subject` names what failed to parse, in the caller's words — "account list",
+ * "position list". It is the only thing that varies between call sites, which
+ * is why they call this rather than each carrying a copy of the block.
+ */
+export function parseOrThrow<T>(schema: z.ZodType<T>, payload: unknown, subject: string): T {
+  const result = schema.safeParse(payload);
+
+  if (!result.success) {
+    const issue = result.error.issues[0];
+    const where = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
+
+    throw new Error(
+      `Senti API returned an unexpected shape for the ${subject} at "${where}": ` +
+        `${issue?.message ?? 'unknown issue'}. The API may have changed; ` +
+        'senti-mcp-server needs updating.',
+    );
+  }
+
+  return result.data;
+}
+```
+
+- [ ] **Step 8: Run to verify it passes**
+
+```bash
+npx vitest run src/core/parse.test.ts && npm run typecheck
+```
+
+Expected: PASS, 5 tests; typecheck exits 0.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/core/tool.ts src/core/tool.test.ts src/core/parse.ts src/core/parse.test.ts docs/sprints/stories/US-2.4-tool-substrate-and-layout.md
+git commit -m "feat: add registerReadTool and parseOrThrow, the two core helpers"
 ```
 
 ---
@@ -886,13 +1000,30 @@ import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { formatAccounts, parseAccounts } from './tools/accounts/list-accounts.js';
 ```
 
-- [ ] **Step 3: Add the registration function to the moved module**
+- [ ] **Step 3: Migrate `parseAccounts` onto `parseOrThrow`**
 
-Append to `src/tools/accounts/list-accounts.ts`, and add the two imports at the top:
+Replace the body of `parseAccounts` in `src/tools/accounts/list-accounts.ts`. The
+`subject` is `'account list'`, which reproduces the current message exactly — so
+`list-accounts.test.ts` must pass unchanged, including its assertions on
+`/lastKnownBalance/`, `/unexpected shape/` and `/senti-mcp-server needs updating/`.
+
+Delete the long comment block above `parseAccounts` — its content now lives on
+`parseOrThrow`, which is where the trade-off it describes is actually made.
+
+```ts
+export function parseAccounts(payload: unknown): Account[] {
+  return parseOrThrow(z.array(AccountSchema), payload, 'account list');
+}
+```
+
+- [ ] **Step 4: Add the registration function to the moved module**
+
+Append to `src/tools/accounts/list-accounts.ts`, and add the three imports at the top:
 
 ```ts
 import type { McpServer } from '@modelcontextprotocol/server';
 import type { SentiClient } from '../../core/client.js';
+import { parseOrThrow } from '../../core/parse.js';
 import { registerReadTool } from '../../core/tool.js';
 ```
 
@@ -921,7 +1052,7 @@ export function registerListAccounts(server: McpServer, client: SentiClient): vo
 }
 ```
 
-- [ ] **Step 4: Shrink `src/server.ts` to wiring**
+- [ ] **Step 5: Shrink `src/server.ts` to wiring**
 
 Replace the whole file:
 
@@ -959,23 +1090,27 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
 }
 ```
 
-- [ ] **Step 5: Run the full suite — every existing assertion must still pass**
+- [ ] **Step 6: Run the full suite — every existing assertion must still pass**
 
 ```bash
 npm test && npm run typecheck
 ```
 
-Expected: PASS. `server.test.ts` is untouched apart from its import, so `list_accounts` behaving identically to 0.1.0 is proven by the tests that were already asserting it.
+Expected: PASS. `server.test.ts` is untouched apart from its import, and
+`list-accounts.test.ts` is untouched entirely — so both the `parseOrThrow` migration and
+`list_accounts` behaving identically to 0.1.0 are proven by assertions that predate this
+task. If any assertion in `list-accounts.test.ts` needed changing, the migration changed
+behaviour and is wrong.
 
-- [ ] **Step 6: Confirm the SDK-import invariant**
+- [ ] **Step 7: Confirm the SDK-import invariant**
 
 ```bash
-grep -rn "@modelcontextprotocol" src/ --include='*.ts' | grep -v '\.test\.ts' | grep -v 'import type'
+grep -rn "^import .*from '@modelcontextprotocol" src/ --include='*.ts' | grep -v '\.test\.ts' | grep -v '^.*:import type'
 ```
 
 Expected: exactly two lines — `src/index.ts` (the `/stdio` subpath) and `src/server.ts` (`McpServer`). `core/tool.ts` and every tool module must appear only under `import type`.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -1009,6 +1144,10 @@ Append to `src/server.test.ts`. `TOOL_CALLS` grows by one entry per tool in ever
 const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
   { name: 'list_accounts' },
 ];
+// NOTE (added after execution): Task 9 extended this type with two further
+// REQUIRED fields — `outputSchema: z.ZodType` and `successBody: unknown` — when
+// AC-9's second clause was generalised into this table. The shape above is what
+// Task 8 shipped; every later task's rows carry all four fields.
 
 const errorStatuses = [401, 403, 404, 409, 429, 500];
 
@@ -1122,11 +1261,11 @@ Find the next number first (RULE-7 is append-only; never edit an existing entry)
 grep -n "^### D[0-9]" docs/CONTEXT.md | tail -1
 ```
 
-Expected: `D6`. Append `D7`, `D8`, `D9` under a new `## Phase 2 — Read-tool expansion (2026-08-06)` heading, each with the repo's Context / Decision / Rationale / Alternatives considered / Impact / Date / Version shape:
+Expected: `D6`. Append `D8`, `D9`, `D10` under a new `## Phase 3 — Read-tool expansion (2026-08-06)` heading, each with the repo's Context / Decision / Rationale / Alternatives considered / Impact / Date / Version shape:
 
-- **D7 — `core/` and `tools/<tag>/` replace the flat layout.** Reverses the AGENTS.md rule written for six source files, now at sixteen. Note the three anchors: recursive tsconfig globs, `src/index.ts` immovable, `test:smoke` hardcodes its path.
-- **D8 — `registerReadTool`, not a descriptor table.** The v1 spec deferred this to "revisit when the repetition is real". It is real, and it is the mechanical `try`/`catch` — not the descriptions and schemas, which are what decide whether a model picks the right tool and which a table would swallow into data. Record that the annotations became constants, which makes the helper a barrier against a write tool landing before EPIC-3.
-- **D9 — tools bound and shape their own payloads.** Record the alternative rejected (mirror the API, trust the host's context window) and why it fails: a year-long `breakdowns` window is roughly 70k tokens. Record that every cut leaves a `notes` trace.
+- **D8 — `core/` and `tools/<tag>/` replace the flat layout.** Reverses the AGENTS.md rule written for six source files, now at sixteen. Note the three anchors: recursive tsconfig globs, `src/index.ts` immovable, `test:smoke` hardcodes its path.
+- **D9 — `registerReadTool`, not a descriptor table.** The v1 spec deferred this to "revisit when the repetition is real". It is real, and it is the mechanical `try`/`catch` — not the descriptions and schemas, which are what decide whether a model picks the right tool and which a table would swallow into data. Record that the annotations became constants, which makes the helper a barrier against a write tool landing before EPIC-3.
+- **D10 — tools bound and shape their own payloads.** Record the alternative rejected (mirror the API, trust the host's context window) and why it fails: a year-long `breakdowns` window is roughly 70k tokens. Record that every cut leaves a `notes` trace.
 
 - [ ] **Step 4: Add the CHANGELOG entry**
 
@@ -1163,8 +1302,8 @@ git add -A
 git commit -m "feat: restructure into core/ and tools/, add the read-tool substrate
 
 Ships 0.2.0. No new tool: this is the shape the remaining nine read tools
-are built into. Records D7 (layout), D8 (registerReadTool over a descriptor
-table) and D9 (payload shaping)."
+are built into. Records D8 (layout), D9 (registerReadTool over a descriptor
+table) and D10 (payload shaping)."
 ```
 
 ---
@@ -1264,6 +1403,7 @@ Create `src/tools/brokers/list-brokers.ts`:
 
 ```ts
 import * as z from 'zod/v4';
+import { parseOrThrow } from '../../core/parse.js';
 
 const AccountTypeSchema = z.object({
   id: z.string(),
@@ -1290,20 +1430,7 @@ export const BrokersOutputSchema = z.object({
 });
 
 export function parseBrokers(payload: unknown): Broker[] {
-  const result = z.array(BrokerSchema).safeParse(payload);
-
-  if (!result.success) {
-    const issue = result.error.issues[0];
-    const where = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
-
-    throw new Error(
-      `Senti API returned an unexpected shape for the broker list at "${where}": ` +
-        `${issue?.message ?? 'unknown issue'}. The API may have changed; ` +
-        'senti-mcp-server needs updating.',
-    );
-  }
-
-  return result.data;
+  return parseOrThrow(z.array(BrokerSchema), payload, 'broker list');
 }
 
 function block(broker: Broker): string {
@@ -1444,11 +1571,22 @@ import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 And extend the table:
 
 ```ts
-const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
-  { name: 'list_accounts' },
-  { name: 'list_brokers' },
+const TOOL_CALLS: {
+  name: string;
+  arguments?: Record<string, unknown>;
+  outputSchema: z.ZodType;
+  successBody: unknown;
+}[] = [
+  { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
+  { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
 ];
 ```
+
+> **`outputSchema` and `successBody` are required row fields**, added in Task 9 when AC-9's
+> second clause was generalised into this table. They are deliberately non-optional, so
+> omitting either is a compile error rather than a silent gap in coverage. `successBody` is
+> the raw HTTP body a stubbed `fetch` returns — the shape the real API sends, so for
+> `list_brokers` that is a **bare array**, not `{ brokers: [...] }`.
 
 Note that the default `okFetch` returns an account array for every path, which `parseBrokers` rejects — so the two description/schema tests above call `connect()` without a fetch only because they never invoke the tool. Tests that *call* `list_brokers` supply their own fetch.
 
@@ -1654,6 +1792,7 @@ Create `src/tools/strategies/list-strategies.ts`:
 
 ```ts
 import * as z from 'zod/v4';
+import { parseOrThrow } from '../../core/parse.js';
 
 const PresetSchema = z.object({
   id: z.string(),
@@ -1687,20 +1826,7 @@ export const StrategiesOutputSchema = z.object({
 });
 
 export function parseStrategies(payload: unknown): Strategy[] {
-  const result = z.array(StrategySchema).safeParse(payload);
-
-  if (!result.success) {
-    const issue = result.error.issues[0];
-    const where = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
-
-    throw new Error(
-      `Senti API returned an unexpected shape for the strategy list at "${where}": ` +
-        `${issue?.message ?? 'unknown issue'}. The API may have changed; ` +
-        'senti-mcp-server needs updating.',
-    );
-  }
-
-  return result.data;
+  return parseOrThrow(z.array(StrategySchema), payload, 'strategy list');
 }
 
 /** A null rating renders as this, never as `0` — no reviews is not a bad score. */
@@ -1791,12 +1917,19 @@ import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
 ```
 
 ```ts
-const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
-  { name: 'list_accounts' },
-  { name: 'list_brokers' },
-  { name: 'list_strategies' },
+const TOOL_CALLS: {
+  name: string;
+  arguments?: Record<string, unknown>;
+  outputSchema: z.ZodType;
+  successBody: unknown;
+}[] = [
+  { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
+  { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
+  { name: 'list_strategies', outputSchema: StrategiesOutputSchema, successBody: [STRATEGY] },
 ];
 ```
+
+> `successBody` is the raw HTTP body, so for `list_strategies` it is a **bare array**.
 
 ```ts
 const STRATEGY = {
@@ -2038,6 +2171,7 @@ Create `src/tools/strategies/list-account-strategies.ts`:
 
 ```ts
 import * as z from 'zod/v4';
+import { parseOrThrow } from '../../core/parse.js';
 
 /**
  * Transcribed from `GET /api/v1/accounts/{accountId}/strategies` in the live
@@ -2066,20 +2200,7 @@ export const AccountStrategiesOutputSchema = z.object({
 });
 
 export function parseAccountStrategies(payload: unknown): AccountStrategy[] {
-  const result = z.array(AccountStrategySchema).safeParse(payload);
-
-  if (!result.success) {
-    const issue = result.error.issues[0];
-    const where = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
-
-    throw new Error(
-      `Senti API returned an unexpected shape for the deployed-strategy list at "${where}": ` +
-        `${issue?.message ?? 'unknown issue'}. The API may have changed; ` +
-        'senti-mcp-server needs updating.',
-    );
-  }
-
-  return result.data;
+  return parseOrThrow(z.array(AccountStrategySchema), payload, 'deployed-strategy list');
 }
 
 function block(deployed: AccountStrategy): string {
@@ -2146,13 +2267,26 @@ import { AccountStrategiesOutputSchema } from './tools/strategies/list-account-s
 ```
 
 ```ts
-const TOOL_CALLS: { name: string; arguments?: Record<string, unknown> }[] = [
-  { name: 'list_accounts' },
-  { name: 'list_brokers' },
-  { name: 'list_strategies' },
-  { name: 'list_account_strategies', arguments: { accountId: 'abc-123' } },
+const TOOL_CALLS: {
+  name: string;
+  arguments?: Record<string, unknown>;
+  outputSchema: z.ZodType;
+  successBody: unknown;
+}[] = [
+  { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
+  { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
+  { name: 'list_strategies', outputSchema: StrategiesOutputSchema, successBody: [STRATEGY] },
+  {
+    name: 'list_account_strategies',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: AccountStrategiesOutputSchema,
+    successBody: [DEPLOYED],
+  },
 ];
 ```
+
+> This is the first row carrying `arguments` — the table's type has allowed it since Task 8
+> precisely so this row would not need a type change. `successBody` is a **bare array** here.
 
 ```ts
 const DEPLOYED = {
@@ -2484,6 +2618,7 @@ Create `src/tools/trading/positions.ts`:
 
 ```ts
 import * as z from 'zod/v4';
+import { parseOrThrow } from '../../core/parse.js';
 
 /**
  * Transcribed from `GET /api/v1/accounts/{accountId}/positions` in the live
@@ -2519,20 +2654,7 @@ export const PositionsOutputSchema = z.object({
 });
 
 export function parsePositions(payload: unknown): Position[] {
-  const result = PositionsResponseSchema.safeParse(payload);
-
-  if (!result.success) {
-    const issue = result.error.issues[0];
-    const where = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
-
-    throw new Error(
-      `Senti API returned an unexpected shape for the position list at "${where}": ` +
-        `${issue?.message ?? 'unknown issue'}. The API may have changed; ` +
-        'senti-mcp-server needs updating.',
-    );
-  }
-
-  return result.data.positions;
+  return parseOrThrow(PositionsResponseSchema, payload, 'position list').positions;
 }
 
 /**
@@ -2641,7 +2763,12 @@ import { PositionsOutputSchema } from './tools/trading/positions.js';
 ```
 
 ```ts
-  { name: 'list_positions', arguments: { accountId: 'abc-123' } },
+  {
+    name: 'list_positions',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: PositionsOutputSchema,
+    successBody: { positions: [POSITION] },
+  },
 ```
 
 ```ts
@@ -2976,6 +3103,7 @@ Create `src/tools/trading/orders.ts`:
 
 ```ts
 import * as z from 'zod/v4';
+import { parseOrThrow } from '../../core/parse.js';
 
 /**
  * Transcribed from `GET /api/v1/accounts/{accountId}/orders` in the live
@@ -3009,20 +3137,7 @@ export const OrdersOutputSchema = z.object({
 });
 
 export function parseOrders(payload: unknown): Order[] {
-  const result = OrdersResponseSchema.safeParse(payload);
-
-  if (!result.success) {
-    const issue = result.error.issues[0];
-    const where = issue && issue.path.length > 0 ? issue.path.join('.') : '(root)';
-
-    throw new Error(
-      `Senti API returned an unexpected shape for the order list at "${where}": ` +
-        `${issue?.message ?? 'unknown issue'}. The API may have changed; ` +
-        'senti-mcp-server needs updating.',
-    );
-  }
-
-  return result.data.orders;
+  return parseOrThrow(OrdersResponseSchema, payload, 'order list').orders;
 }
 
 /** Defensive bound, matching `capPositions`. This endpoint does not paginate. */
@@ -3117,7 +3232,12 @@ import { OrdersOutputSchema } from './tools/trading/orders.js';
 ```
 
 ```ts
-  { name: 'list_pending_orders', arguments: { accountId: 'abc-123' } },
+  {
+    name: 'list_pending_orders',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: OrdersOutputSchema,
+    successBody: { orders: [ORDER] },
+  },
 ```
 
 ```ts
@@ -3370,3 +3490,11 @@ W34 (`get_account_performance`, `list_deals`, `get_performance_breakdowns`, `get
 
 - **What the live payloads actually weigh.** The spec's cut policy is reasoned from the schema, not measured. The extended smoke test is the place to record real sizes before committing to the 200-point downsample and the top-10 symbol cut.
 - **Whether `capPositions`/`capOrders` generalise.** If the two cap helpers turn out identical apart from a noun, W34's first task is extracting one — but only then, on the same "revisit when the repetition is real" principle that produced `registerReadTool` rather than a descriptor table.
+
+  This was ruled on at pre-flight rather than left open. The six-fold repetition of the
+  `safeParse`-and-throw block **was** extracted, as `core/parse.ts`'s `parseOrThrow` —
+  six copies of purely mechanical control flow is exactly the case D9 describes. The
+  two cap helpers were **not**: they are two copies, not six, they return differently
+  shaped objects (`{ positions, notes }` vs `{ orders, notes }`), and a shared
+  `capRows` would have to be generic over the field name — abstracting ahead of the
+  third caller. Revisit in W34 when `list_deals` shows whether a third one exists.
