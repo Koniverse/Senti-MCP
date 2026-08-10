@@ -35,7 +35,7 @@ phase and only this phase.
 |---|---|---|---|---|---|---|
 | US-4.1 | The release contract and `docs/RELEASE.md` | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.1-release-contract-and-runbook.md) |
 | US-4.2 | `npm run release:check` — the pre-tag gate | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.2-release-check-gate.md) |
-| US-4.3 | Backfill the six missing tags and `v0.1.0`'s Release | EPIC-4 | P2 | 2 | ⏸️ review — tags created locally, push held for approval | [link](stories/US-4.3-backfill-tags-and-releases.md) |
+| US-4.3 | Backfill the six missing tags and `v0.1.0`'s Release | EPIC-4 | P2 | 2 | ✅ done | [link](stories/US-4.3-backfill-tags-and-releases.md) |
 | US-4.4 | Verify the tarball before it is published | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.4-tarball-verification.md) |
 | US-4.5 | `.github/workflows/release.yml` — tag-triggered publish | EPIC-4 | P1 | 5 | ⏸️ review — workflow written, never run | [link](stories/US-4.5-release-workflow.md) |
 

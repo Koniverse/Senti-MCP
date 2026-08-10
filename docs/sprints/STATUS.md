@@ -1,19 +1,16 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-10 08:07:35 UTC
+> Last generated: 2026-08-10 08:55:18 UTC
 > Total stories: 19
 
 ## ⏰ Deadlines (0)
 
 _No stories carry an explicit deadline._
 
-## 📋 Backlog (2)
+## 📋 Backlog (0)
 
-| ID | Title | Epic | Pri | Points | Sprint | Assignee |
-|---|---|---|---|---|---|---|
-| US-4.3 | Backfill the six missing tags and v0.1.0's GitHub Release | EPIC-4 | P2 | 2 | sprint-2026-W33 | bluezdot |
-| US-4.5 | .github/workflows/release.yml — tag-triggered publish | EPIC-4 | P1 | 5 | sprint-2026-W33 | bluezdot |
+_No stories_
 
 ## 🟢 Ready (4)
 
@@ -28,11 +25,13 @@ _No stories carry an explicit deadline._
 
 _No stories_
 
-## 👀 Review (0)
+## 👀 Review (1)
 
-_No stories_
+| ID | Title | Epic | Pri | Points | Sprint | Assignee |
+|---|---|---|---|---|---|---|
+| US-4.5 | .github/workflows/release.yml — tag-triggered publish | EPIC-4 | P1 | 5 | sprint-2026-W33 | bluezdot |
 
-## ✅ Done (13)
+## ✅ Done (14)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
@@ -48,6 +47,7 @@ _No stories_
 | US-2.9 | list_pending_orders tool | EPIC-2 | P1 | 2 | sprint-2026-W33 | bluezdot |
 | US-4.1 | The release contract and docs/RELEASE.md | EPIC-4 | P1 | 3 | sprint-2026-W33 | bluezdot |
 | US-4.2 | npm run release:check — the pre-tag gate | EPIC-4 | P1 | 3 | sprint-2026-W33 | bluezdot |
+| US-4.3 | Backfill the six missing tags and v0.1.0's GitHub Release | EPIC-4 | P2 | 2 | sprint-2026-W33 | bluezdot |
 | US-4.4 | Verify the tarball before it is published | EPIC-4 | P1 | 3 | sprint-2026-W33 | bluezdot |
 
 ## 🚫 Blocked (0)
@@ -62,11 +62,11 @@ _No stories_
 
 ## Summary
 
-- 📋 **Backlog**: 2
+- 📋 **Backlog**: 0
 - 🟢 **Ready**: 4
 - 🟡 **In Progress**: 0
-- 👀 **Review**: 0
-- ✅ **Done**: 13
+- 👀 **Review**: 1
+- ✅ **Done**: 14
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 

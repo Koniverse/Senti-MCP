@@ -144,7 +144,7 @@ serve:
 |---|---|---|---|---|
 | [US-4.1](../stories/US-4.1-release-contract-and-runbook.md) | The release contract and `docs/RELEASE.md` | P1 | 3 | ✅ done (no version — ships no runtime code) |
 | [US-4.2](../stories/US-4.2-release-check-gate.md) | `npm run release:check` — the pre-tag gate | P1 | 3 | ✅ done (no version — ships no runtime code) |
-| [US-4.3](../stories/US-4.3-backfill-tags-and-releases.md) | Backfill the six missing tags and `v0.1.0`'s Release | P2 | 2 | ⏸️ review (tags local; push held) |
+| [US-4.3](../stories/US-4.3-backfill-tags-and-releases.md) | Backfill the six missing tags and `v0.1.0`'s Release | P2 | 2 | ✅ done (no version — reconciles history) |
 | [US-4.4](../stories/US-4.4-tarball-verification.md) | Verify the tarball before it is published | P1 | 3 | ✅ done (no version — ships no runtime code) |
 | [US-4.5](../stories/US-4.5-release-workflow.md) | `.github/workflows/release.yml` — tag-triggered publish | P1 | 5 | ⏸️ review (never run; registry config pending) |
 
