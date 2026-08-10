@@ -6,7 +6,17 @@ import path from 'node:path';
 const args = process.argv.slice(2);
 const rootFlag = args.indexOf('--root');
 const root = rootFlag === -1 ? process.cwd() : path.resolve(args[rootFlag + 1]);
-const positional = args.filter((a, i) => !a.startsWith('--') && i !== rootFlag + 1);
+
+/**
+ * `--root`'s value is the only flag argument to skip, and only when the flag is
+ * actually present. Comparing against `rootFlag + 1` unconditionally drops
+ * index 0 when `rootFlag` is -1 — which silently discarded the version argument
+ * in exactly the invocation the workflow uses (`… <version> --ci`, no `--root`),
+ * leaving the gate to check `VERSION` against itself and pass by construction.
+ * Every test passed `--root`, so nothing caught it. See LESSONS 5.
+ */
+const rootValueIndex = rootFlag === -1 ? -1 : rootFlag + 1;
+const positional = args.filter((a, i) => !a.startsWith('--') && i !== rootValueIndex);
 
 const read = (rel) => readFileSync(path.join(root, rel), 'utf8');
 

@@ -135,6 +135,43 @@ async function gate(
   }
 }
 
+/**
+ * The workflow invokes the gate as `npm run release:check -- <version> --ci`, from
+ * the repository root and with no `--root`. Every other case here passes `--root`
+ * to reach a fixture, so this is the one shape CI actually uses and the only one
+ * the rest of the file cannot reach.
+ */
+async function gateInCwd(root: string, ...args: string[]): Promise<{ code: number; output: string }> {
+  try {
+    const { stdout, stderr } = await run(process.execPath, [GATE, ...args], { cwd: root });
+    return { code: 0, output: stdout + stderr };
+  } catch (error) {
+    const e = error as { code?: number; stdout?: string; stderr?: string };
+    return { code: e.code ?? 1, output: (e.stdout ?? '') + (e.stderr ?? '') };
+  }
+}
+
+describe('release:check — argument parsing', () => {
+  test('honours the version argument when --root is absent (the CI invocation)', async () => {
+    const root = await fixture({ versionFile: '1.1.0', pkgVersion: '1.1.0', serverVersion: '1.1.0' });
+    const result = await gateInCwd(root, '9.9.9', '--ci');
+
+    // Checking 9.9.9 against a 1.1.0 tree must fail. A gate that silently
+    // substitutes VERSION for the argument passes its version checks by
+    // construction and validates nothing.
+    expect(result.output).toMatch(/9\.9\.9/);
+    expect(result.code).not.toBe(0);
+  });
+
+  test('still defaults to VERSION when no version argument is given', async () => {
+    const root = await fixture();
+    const result = await gateInCwd(root, '--ci');
+
+    expect(result.code).toBe(0);
+    expect(result.output).toMatch(/1\.1\.0/);
+  });
+});
+
 describe('release:check — version agreement', () => {
   test('names the file and both values when package.json disagrees', async () => {
     const root = await fixture({ pkgVersion: '1.0.1' });

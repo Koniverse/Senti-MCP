@@ -97,10 +97,10 @@ improvisation at release time.
   - [x] Derive the version from the tag ref; pass it to `release:check`
   - [x] Pin every third-party action by commit SHA; grant `id-token: write` only where needed
   - [x] Extract the CHANGELOG section for the release body
-- [ ] **TASK-4.5.3** — Prove it fails (AC: 8)
-  - [ ] Exercise the gate job against a version whose artifacts disagree and confirm the
+- [x] **TASK-4.5.3** — Prove it fails (AC: 8)
+  - [x] Exercise the gate job against a version whose artifacts disagree and confirm the
         workflow stops before publishing
-  - [ ] Record what was run and what happened in §Implementation notes
+  - [x] Record what was run and what happened in §Implementation notes
 - [x] **TASK-4.5.4** — Reconcile with the runbook (AC: 9)
   - [x] Every workflow step has a counterpart in `docs/RELEASE.md`
   - [x] The runbook's procedure ends at confirming `latest` moved, not at the tag push
@@ -211,19 +211,34 @@ against the real [CHANGELOG](../../CHANGELOG.md) — it returns the 38-line `## 
 section, and returns nothing for a version that has no section, which is what the job's
 `[ ! -s release-notes.md ]` branch turns into an error.
 
-**AC-8 is NOT discharged, and AC-4, AC-5 and AC-9 cannot be yet.** No workflow run exists
-(`gh api …/actions/runs` still reports `total_count: 0`), because triggering one means
-pushing a tag and publishing a version — both outside what this session was authorised to
-do. This story therefore closes as `review`, not `done`. What remains, in order:
+**AC-8 discharged 2026-08-10, and it found a defect in [US-4.2](US-4.2-release-check-gate.md).**
+A deliberately-bad `v9.9.9` tag was pushed at `main`. Run `31373355361` failed in 11
+seconds at job 1, and `build`, `verify`, **`publish`** and `announce` were all `skipped` —
+which is the ordering claim this story makes, proven against the real runner. The tag was
+deleted; `origin` is back to nine.
 
-1. **TASK-4.5.1's registry side** — configure npm trusted publishing for
-   `senti-mcp-server`, bound to `Koniverse/Senti-MCP` and workflow filename `release.yml`,
-   **with no environment**. If it turns out not to be configurable, take the `NPM_TOKEN`
-   fallback [CONTEXT D16](../../CONTEXT.md) already names and write the revising CONTEXT
-   entry in the same commit (AC-5).
-2. **AC-8's rehearsal** — prove the gate job fails before publishing, against a tag whose
-   artifacts disagree, and record the run here.
-3. Then `1.1.0` becomes the first release this workflow actually performs.
+**But read which step failed.** It was `The tag must be annotated`, not `release:check` —
+the rehearsal tag was created with a bare `git tag`, so the workflow stopped at its first
+guard and `npm run release:check -- 9.9.9 --ci` never executed. Reconstructing that command
+line by hand is what exposed the bug: with no `--root`, the gate silently discarded the
+version argument and compared `VERSION` against itself, passing every version check by
+construction. Fixed in `scripts/release-check.mjs`, covered by two new tests that run the
+gate the way this workflow does, and recorded as [LESSONS 5](../../LESSONS.md). A red run is
+not proof the thing you care about ran.
+
+**Why this story is still `review`.** Three of its ACs remain unproven against the runner:
+
+- **AC-1** — the gate job has never reached `release:check`. A second rehearsal with an
+  **annotated** `v9.9.9` (`git tag -a v9.9.9 -m rehearsal` on `main`) gets past the two
+  tag guards and fails inside `release:check` on the version mismatch, which is the
+  assertion AC-1 actually makes. That also exercises the fix above in CI.
+- **AC-2, AC-3** — `build` and `verify` have never run on a runner, so "green with no Senti
+  credential in the environment" is a local result, not a CI one.
+- **AC-4, AC-9** — no publish has happened, so OIDC trusted publishing, `--provenance` and
+  `latest` moving are all still unobserved. `1.1.0` is the first release that tests them.
+
+TASK-4.5.1's registry-side configuration is reported done by the maintainer; it is not
+verifiable from a checkout and is first exercised by that publish.
 
 ## Files modified
 

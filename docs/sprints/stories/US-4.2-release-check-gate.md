@@ -184,7 +184,7 @@ makes running it unavoidable.
 one-run requirement) and each printing the value it observed rather than "ok".
 
 **Built test-first.** Each check's failing branch was written as a test, watched fail, then
-implemented — 20 tests in `src/release-check.test.ts`, every one driving the script as a
+implemented — 22 tests in `src/release-check.test.ts`, every one driving the script as a
 CLI against a throwaway git repository under the OS temp directory. Testing it as a
 subprocess rather than importing it is the same choice `src/index.test.ts` makes about
 `dist/index.js`: the contract a maintainer and the workflow both consume is the exit code
@@ -215,6 +215,15 @@ entries**.
   version, or a line that both names a version and claims currency. Four tests pin those
   four cases, including the two that must **not** fire.
 
+**A bug this story shipped, found after the CI rehearsal and fixed here.** The argument
+parser skipped `--root`'s value by comparing the index against `rootFlag + 1`, which is `0`
+when the flag is absent — so `release-check.mjs <version>` with no `--root`, the exact form
+the workflow uses, discarded the version and compared `VERSION` against itself. Every
+version check passed by construction. All 20 tests missed it because every one passes
+`--root` to reach a fixture: the parameter that made the tests possible was the parameter
+that hid the bug. Two tests in `describe('release:check — argument parsing')` now run the
+gate exactly as the workflow spells it. [LESSONS 5](../../LESSONS.md).
+
 **Run against this repository it correctly reports four real problems** — `Unreleased`
 carries content, `v1.0.1` already exists, the tree is dirty mid-work, and HEAD is not on
 `main` — which is the gate working, not a defect.
@@ -226,7 +235,7 @@ prose is right.
 ## Files modified
 
 - `scripts/release-check.mjs` — new, the gate
-- `src/release-check.test.ts` — new, 20 tests over fixture git repositories
+- `src/release-check.test.ts` — new, 22 tests over fixture git repositories
 - `package.json` — `release:check` script
 
 ## Cross-references

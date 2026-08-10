@@ -180,3 +180,53 @@ and announced it.
 documented* — rather than trusting it was right when written — is what
 [entry 2](#2-a-storys-verification-commands-row-is-a-claim-until-it-is-run) already asks
 for, and it paid a second time here by turning up a defect the command was not looking for.
+
+---
+
+## 5. Twenty tests, and none of them ran the invocation CI uses
+
+**Trap**: `scripts/release-check.mjs` accepts `[version] [--root <dir>] [--ci]`. Its
+argument parser read
+
+```js
+const positional = args.filter((a, i) => !a.startsWith('--') && i !== rootFlag + 1);
+```
+
+which is correct when `--root` is present and wrong when it is not: `indexOf` returns
+`-1`, so `rootFlag + 1` is `0`, and the filter discards **index 0 — the version
+argument**. The gate then fell back to reading `VERSION` and compared it against itself.
+Every version check passed by construction, on a script whose entire job is to refuse a
+release when the version strings disagree.
+
+The workflow invokes it as `npm run release:check -- "$version" --ci` — from the
+repository root, with no `--root`. That is precisely the broken path, and it is the only
+path that matters in production.
+
+**Why 20 tests missed it**: every fixture-driven test points the gate at a throwaway
+repository, so every one of them passes `--root`. The parameter that made the tests
+possible was the parameter that hid the bug. Coverage was total over the shape the tests
+could reach and zero over the shape the caller actually uses.
+
+**It also survived a live CI rehearsal.** A deliberately-bad `v9.9.9` tag was pushed and
+the workflow did fail — at the *first* guard, `The tag must be annotated`, because the
+rehearsal tag was lightweight. `release:check` never executed. The run went red, the
+publish job was skipped, and the evidence looked like proof; what it proved was that job
+ordering works, not that the gate does.
+
+**How to avoid**:
+- **Test the caller's invocation, not just the callable.** Add one case that runs the
+  command exactly as the workflow, README or npm script spells it — here, with `cwd` set
+  and no test-only flags. The two cases now in `describe('release:check — argument
+  parsing')` exist only for that.
+- **Treat a test-only parameter as a warning sign.** `--root` exists so tests can reach a
+  fixture. Any argument that only tests pass is an untested branch in the shape everyone
+  else uses.
+- **A red CI run is not proof the thing you care about ran.** Read *which step* failed.
+  Failing earlier than expected looks identical to failing correctly — the same shape as
+  [entry 2](#2-a-storys-verification-commands-row-is-a-claim-until-it-is-run), where a
+  `vitest -t` filter matching nothing also exits 0.
+
+**Pattern**: the bug was found by running `node scripts/release-check.mjs 9.9.9 --ci` by
+hand — reconstructing the workflow's exact command line — while checking why the rehearsal
+had stopped at the annotated-tag guard. Asking "what did the run *not* reach?" is what
+turned a green-looking result into a real defect.

@@ -72,11 +72,21 @@ files are excluded by `!src/**/*.test.ts`.
   its retrospective are left byte-for-byte as written, each scoped to Phase 1. New
   [CONTEXT D21](CONTEXT.md) makes the general rule: a sprint's scope is not frozen at open,
   and only the maintainer opens or closes one.
-- The suite is **16 files / 230 tests, 1 skipped** (was 14 / 197): 20 tests drive
+- The suite is **16 files / 232 tests, 1 skipped** (was 14 / 197): 22 tests drive
   `release:check` as a CLI against throwaway git repositories, 13 cover the pure judgements
   inside `release:verify-pack`.
 
 ### Fixed
+- **`release:check` silently checked the wrong version in the one invocation CI uses.**
+  Its argument parser skipped `--root`'s value by comparing against `rootFlag + 1`, which
+  is `0` when `indexOf` returns `-1` — so with no `--root` it discarded the *version
+  argument* and fell back to reading `VERSION`, comparing it against itself. Every version
+  check passed by construction, on a script whose whole job is refusing a release when the
+  version strings disagree. The workflow calls it exactly that way
+  (`npm run release:check -- "$version" --ci`). All 20 tests missed it because every one
+  passes `--root` to reach a fixture — the parameter that made the tests possible was the
+  parameter that hid the bug. Two tests now run the gate the way the workflow does
+  ([LESSONS 5](LESSONS.md)).
 - **`package-lock.json`'s `version` field had read `0.1.0` since the `0.2.0` release**,
   while `package.json` read `1.0.1` — wrong across nine releases, including the
   publish-readiness pass that went looking for stale artifacts ([CONTEXT D12](CONTEXT.md)).
@@ -96,6 +106,10 @@ files are excluded by `!src/**/*.test.ts`.
   the doubled suite too.
 
 ### Documentation
+- Two further [LESSONS.md](LESSONS.md) entries: **4** — a version string nothing reads drifts
+  silently (`package-lock.json` was eight releases behind); **5** — twenty tests and none of
+  them ran the invocation CI uses, and a red CI run is not proof the thing you care about
+  ran.
 - Two [LESSONS.md](LESSONS.md) entries: **2** — a story's Verification-commands row is a
   claim, and `vitest -t` that matches nothing exits 0 (this discharges the
   [W33 retrospective](sprints/sprint-2026-W33.md)'s third followup); **3** — a gitignored
