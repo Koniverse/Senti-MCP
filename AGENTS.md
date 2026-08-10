@@ -120,6 +120,10 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/README.md](docs/README.md) — **start here.** Doc hub, pre-commit checklist, and
   a table of which files are deliberately absent and what would bring each one in
 - [docs/SETUP.md](docs/SETUP.md) — local dev setup, the env var reference, troubleshooting
+- [docs/RELEASE.md](docs/RELEASE.md) — **how a version is cut and published.** The gate, the
+  tag and Release conventions, the trusted-publisher setup, what each failure means, and the
+  72-hour unpublish window. Not a `DEPLOY.md` — that absence is still recorded
+  ([CONTEXT D18](docs/CONTEXT.md))
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
@@ -128,7 +132,8 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/sprints/sprint-2026-W33.md](docs/sprints/sprint-2026-W33.md) — most recently
   closed sprint (2026-08-10 → 2026-08-16)
 - [docs/LESSONS.md](docs/LESSONS.md) — retrospective lessons, append-only
-- [docs/sprints/epics/](docs/sprints/epics/) — EPIC-1 (foundation), EPIC-2 (read path)
+- [docs/sprints/epics/](docs/sprints/epics/) — EPIC-1 (foundation), EPIC-2 (read path),
+  EPIC-3 (write path, backlog), EPIC-4 (the package release process, backlog)
 - [docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design
 - [docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md](docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 plan, task by task
@@ -231,7 +236,7 @@ that shows it, since the path is gitignored. `vitest.config.ts` scopes collectio
 | Start a story | Flip `status: in-progress`, confirm it is in the sprint scope table |
 | Record a decision | Append the next `D<N>` to [docs/CONTEXT.md](docs/CONTEXT.md) |
 | Add a tool | Read [EPIC-2](docs/sprints/epics/EPIC-2.md) invariants first, then the design spec |
-| Ship a version | Bump [VERSION](VERSION) + add the CHANGELOG entry in the same commit (RULE-1). The version lives in **three** places — `VERSION`, `package.json`, and `SERVER_VERSION` in `src/config.ts`; a test fails if they drift |
+| Ship a version | **Walk [docs/RELEASE.md](docs/RELEASE.md)** — it does not end at the bump. Bump [VERSION](VERSION) + the CHANGELOG entry in the same commit (RULE-1); the version lives in **five** places — `VERSION`, `package.json`, `package-lock.json`, `SERVER_VERSION` in `src/config.ts`, and the git tag. `src/config.test.ts` fails if the first, second and fourth drift; `release:check` covers all five. Then `npm run release:check` and `npm run release:verify-pack` must exit 0, and the annotated `vX.Y.Z` tag push is what publishes |
 | Add an env var | [docs/SETUP.md](docs/SETUP.md) **and** `.env.example`, same commit (RULE-11) |
 | Commit | Walk the checklist in [docs/README.md](docs/README.md) |
 

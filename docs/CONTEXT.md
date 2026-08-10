@@ -592,3 +592,385 @@ now points here. No code changes; nothing ships from this entry alone.
 
 **Date**: 2026-08-10
 **Version**: unreleased
+
+---
+
+## Phase 7 — The package release process (2026-08-10)
+
+The six entries below open [EPIC-4](sprints/epics/EPIC-4.md). They were taken together,
+in one brainstorm, because the release procedure had never been written down anywhere:
+it existed as prose scattered across [D11](#d11-cut-100-from-070-not-071) and
+[D12](#d12-publish-to-npm-as-101-leaving-100-git-only-revision-of-d11) and a handful of
+story Implementation notes, and [sprint-2026-W34](sprints/sprint-2026-W34.md) is about to
+execute it four times in a row ([D14](#d14-the-last-four-read-tools-ship-110--140-not-the-specs-080--0110)).
+
+**The state these six entries respond to**, observed 2026-08-10 and cited throughout:
+**nine** versions have a `## [X.Y.Z]` section in [CHANGELOG.md](CHANGELOG.md) (`0.1.0`
+through `0.7.0`, `1.0.0`, `1.0.1`); **three** have a git tag (`v0.1.0`, `v1.0.0`,
+`v1.0.1`); **two** have a GitHub Release (`v1.0.0`, `v1.0.1` — `v0.1.0` is tagged
+without one); **two** are on npm (`0.1.0`, `1.0.1`, `latest` at `1.0.1`). Four sets, and
+they do not nest.
+
+---
+
+### D15. Publish every version as it lands, rather than batching a sprint
+
+**Context**: `0.2.0` → `0.7.0` were bumped and changelogged inside sprint W33 and then
+never tagged and never published; the sprint's whole output reached the registry once, as
+[`1.0.1`](#d12-publish-to-npm-as-101-leaving-100-git-only-revision-of-d11). W34 opens with
+four more versions — `1.1.0` → `1.4.0` per
+[D14](#d14-the-last-four-read-tools-ship-110--140-not-the-specs-080--0110) — so the
+cadence has to be settled before US-2.10 lands rather than discovered at sprint close.
+
+**Decision**: every version that gets a `## [X.Y.Z]` CHANGELOG section is tagged,
+released on GitHub, and published to npm as part of the same release. W34 therefore
+produces **four** publishes, not one.
+
+**Rationale**: because the premise that made W33's batching reasonable is gone. Nothing
+was published then — `latest` sat at `0.1.0`, and no consumer could observe an
+intermediate version, so `0.4.0` existing only in a changelog cost nobody anything. Since
+`1.0.1` the package is public and `npx -y senti-mcp-server` resolves to `latest`, so
+batching now means publishing a document that describes tools a reader cannot install,
+for as long as the sprint runs. Publishing per version also makes "every changelogged
+version is on the registry" a property the release path can *check*
+([D16](#d16-release-by-tag-triggered-github-actions-with-oidc-trusted-publishing)), which
+is the only form of this rule that has ever held — the pre-commit checklist has carried
+`VERSION` and `CHANGELOG` since `0.1.0` and still lost six tags.
+
+**Alternatives considered**:
+- **Batch the sprint and publish only at close** — rejected: it reproduces exactly the
+  drift this epic exists to end, and it is the practice that produced the six untagged
+  versions. Its one real benefit — a shaping bug in `1.3.0` gets caught before anything
+  is public — is bought more cheaply by verifying the tarball before publishing
+  ([D20](#d20-no-next-dist-tag-verify-the-tarball-before-publishing-instead)).
+- **Land US-2.10 → US-2.13 under `## [Unreleased]` and cut one `1.1.0` at sprint close**
+  — rejected: it contradicts D14, which already decided the four ship as four additive
+  minors, and it discards the ability to bisect a regression to one tool.
+
+**Impact**: four irreversible publishes in W34 instead of one. npm forbids republishing a
+version forever and permits unpublish only within 72 hours, which is what every gate in
+[EPIC-4](sprints/epics/EPIC-4.md) is defending against.
+
+**Date**: 2026-08-10
+**Version**: unreleased
+
+---
+
+### D16. Release by tag-triggered GitHub Actions, with OIDC trusted publishing
+
+**Context**: this repo has no `.github/` directory at all, and
+`gh api repos/Koniverse/Senti-MCP/actions/runs` reports `total_count: 0` — no workflow has
+ever run here. Every release so far was typed by hand, and
+[D12](#d12-publish-to-npm-as-101-leaving-100-git-only-revision-of-d11) records what the
+manual path nearly cost: `npm pack --dry-run` for the `1.0.0` tarball listed
+`dist/client.js`, `dist/accounts.js` and `dist/errors.js`, outputs of sources deleted in
+the `0.2.0` restructure, and the README inside that tarball stated the package lacked five
+of its six tools. Three facts make automation available now: `prepublishOnly` is
+**hermetic** (`npm test` is 196 passed / 1 skipped with neither `SENTI_API_KEY` nor
+`SENTI_SMOKE_KEY` in the environment, so CI needs no Senti credential); the repository is
+public with Actions enabled; and npm is actively restricting tokens that bypass 2FA for
+direct publishing, which it prints on every authenticated command.
+
+**Decision**: `.github/workflows/release.yml`, triggered `on: push` of a `v*` tag.
+
+1. **The gate runs first** and fails the workflow before anything is built. For tag
+   `vX.Y.Z` it asserts: `VERSION`, `package.json`'s `version` and `src/config.ts`'s
+   `SERVER_VERSION` all equal `X.Y.Z`; a `## [X.Y.Z]` section exists in
+   [docs/CHANGELOG.md](CHANGELOG.md); `## [Unreleased]` carries nothing belonging to
+   `X.Y.Z`; `README.md` carries no version-bearing claim contradicting what ships; and the
+   tag is annotated and reachable from `main`.
+2. Then `npm run typecheck && npm test && npm run build`.
+3. Then `npm publish --provenance` via **OIDC trusted publishing** — no `NPM_TOKEN` is
+   stored anywhere.
+4. Then `gh release create` from that version's CHANGELOG section.
+
+Third-party actions are pinned by commit SHA; the job requests `id-token: write` and
+nothing broader.
+
+**Rationale**: because the failure this repo has actually had is not a bad build — it is
+documented state and real state disagreeing, and a human reading a checklist is precisely
+the mechanism that already failed six times. A gate that refuses the release is the only
+version of this rule that cannot be forgotten. OIDC rather than a stored `NPM_TOKEN`
+because a long-lived credential with publish rights to a package that has exactly one
+maintainer (`npm view senti-mcp-server maintainers` → `bluezdot`) is the highest-value
+secret this repo could hold, and npm is deprecating that path anyway; `--provenance` then
+comes free, since the repository is public and the runner is GitHub-hosted.
+
+**Alternatives considered**:
+- **An `npm run release` local script** — rejected: the gate only runs when someone
+  remembers to invoke the script instead of typing `npm publish`, it cannot emit
+  `--provenance`, and it publishes under whatever credential is in `~/.npmrc` — which on
+  the machine this decision was taken on is none (`npm whoami` → `E401`).
+- **A documented manual runbook and nothing else** — rejected: [docs/README.md](README.md)
+  has had a pre-commit checklist since `0.1.0`, it lists `VERSION` and `CHANGELOG`, and
+  the six untagged versions happened anyway. A runbook is still written
+  ([D18](#d18-the-release-runbook-is-docsreleasemd-deploymd-stays-absent)) — it is just
+  not the enforcement.
+- **A stored `NPM_TOKEN` secret** — not rejected, held as the **fallback**: if trusted
+  publishing turns out not to be configurable for this package, the workflow uses a
+  repository secret and drops `--provenance`. Named explicitly in
+  [US-4.5](sprints/stories/US-4.5-release-workflow.md) so the fallback is a decision and
+  not an improvisation at release time.
+
+**Impact**: this repo's first workflow, and its first is one that holds publish rights.
+`.github/workflows/release.yml` and a one-time trusted-publisher configuration on
+npmjs.com bound to this repository and that workflow filename — an out-of-band step owned
+by the package's sole maintainer.
+
+**Date**: 2026-08-10
+**Version**: unreleased
+
+---
+
+### D17. Backfill six tags for `0.2.0` → `0.7.0`, and `v0.1.0`'s missing GitHub Release
+
+**Context**: [CHANGELOG.md](CHANGELOG.md)'s own header names the join keys — *"The
+`## [X.Y.Z]` anchor plus the git tag are the join keys — `git log --grep '0.1.0'` finds
+the commit."* For six of nine versions there is no tag, so the fallback is all that is
+left, and the fallback is unreliable exactly there: `git log --grep '0.6.0'` returns
+**eight** commits, because `engines.node` is `>=20.6.0`
+([D5](#d5-raise-the-supported-node-floor-to-2060)) and every document mentioning the Node
+floor matches. The real `0.6.0` release commit sits fifth in that list.
+
+**Decision**: create six annotated tags at the commits that introduced each version —
+`e21be3f` (`0.2.0`), `62139f4` (`0.3.0`), `fef1f40` (`0.4.0`), `548acb3` (`0.5.0`),
+`b46b5b5` (`0.6.0`), `8c879ea` (`0.7.0`) — messaged in the convention the three existing
+tags already use (`senti-mcp-server vX.Y.Z`). Create the missing GitHub Release for
+`v0.1.0` from its CHANGELOG section. **No GitHub Releases for the six, and none of the
+six is ever published to npm.**
+
+**Rationale**: because 9-of-9 tags turns *every changelogged version is tagged* into
+something [D16](#d16-release-by-tag-triggered-github-actions-with-oidc-trusted-publishing)'s
+gate can assert, and a rule with one historical exception cannot be asserted at all.
+Tagging an unpublished version claims nothing false: `v1.0.0` is tagged and deliberately
+unpublished in perpetuity per
+[D12](#d12-publish-to-npm-as-101-leaving-100-git-only-revision-of-d11), so
+tagged-but-unpublished is already this repository's accepted state. A GitHub Release is
+different in kind — it is an announcement — and six of them created on 2026-08-10 would
+announce versions from 2026-08-06 and 2026-08-07 that nobody can install and that no
+CHANGELOG entry ever claimed were released. `v0.1.0` is the opposite case: it is tagged,
+published, and describes itself as a release, and only the announcement is missing.
+
+**Consequence to accept**: an annotated tag records the tagger's date, so the six objects
+will carry 2026-08-10 against commits from 2026-08-06/07, and
+`git tag --sort=creatordate` will order them after `v1.0.1`. `--sort=v:refname` and
+`--sort=committerdate` both order correctly; those are the sorts to use, and
+`docs/RELEASE.md` says so once
+[D18](#d18-the-release-runbook-is-docsreleasemd-deploymd-stays-absent)'s file exists.
+
+**Alternatives considered**:
+- **Backfill nothing and amend the CHANGELOG header's join-key claim** — rejected: it
+  leaves `git log --grep '0.6.0'` at eight hits with no tag to fall back from, and it
+  permanently forecloses the mechanical check above.
+- **Six tags and six GitHub Releases** — rejected for the announcement reason above.
+- **Publish `0.2.0` → `0.7.0` to npm** — rejected outright: six new registry versions,
+  each permanent, created to tidy up a records problem. That is fresh drift bought to
+  settle old drift.
+
+**Impact**: [US-4.3](sprints/stories/US-4.3-backfill-tags-and-releases.md). Tags go 3 → 9,
+GitHub Releases 2 → 3, npm versions unchanged at 2.
+
+**Date**: 2026-08-10
+**Version**: unreleased
+
+---
+
+### D18. The release runbook is `docs/RELEASE.md`; `DEPLOY.md` stays absent
+
+**Context**: [docs/README.md](README.md)'s absent-file table records why there is no
+`DEPLOY.md`: *"publishing a stdio MCP package to npm is not the same as operating a hosted
+service, and `DEPLOY.md` in this framework is a production runbook for the latter … This
+project has no service to run one against: no infrastructure, nothing to deploy beyond
+`npm publish` itself. It lands if that ever changes; a publish alone does not bring it
+in."* That reasoning is unchanged and still correct — and a release procedure still needs
+somewhere to live.
+
+**Decision**: a new `docs/RELEASE.md`. `DEPLOY.md`'s row stays in the absent-file table
+unretracted and gains a pointer: the publish procedure lives in `RELEASE.md`; `DEPLOY.md`
+remains absent because there is still no service.
+
+**Rationale**: because they are two different documents with two different audiences.
+`RELEASE.md` answers *how is a version of this package cut and shipped* — the gate, the
+tag and Release conventions, the trusted-publisher setup, what to do when the gate fails,
+and the 72-hour unpublish window. `DEPLOY.md` answers *how is a running service operated*
+— an environment table, deployment steps, rollback of a deployment. Naming the new file
+`DEPLOY.md` would make an already-recorded decision false while changing nothing about the
+project, which is the kind of quiet contradiction
+[D12](#d12-publish-to-npm-as-101-leaving-100-git-only-revision-of-d11) paid a patch version
+to avoid.
+
+**Alternatives considered**:
+- **A `## Releasing` section in [docs/README.md](README.md)** — rejected: that file is the
+  documentation *hub*, and its job is saying what lives where. It is already ~140 lines and
+  the runbook roughly doubles it with operational rather than navigational content.
+- **A `## Releasing` section in [docs/SETUP.md](SETUP.md)** — rejected: SETUP.md's reader
+  is someone getting the project running for the first time; the runbook's reader is the
+  one person who ships. Merging them makes both harder to scan.
+- **Create `DEPLOY.md`** — rejected per the rationale above.
+
+**Impact**: `docs/RELEASE.md` is created by
+[US-4.1](sprints/stories/US-4.1-release-contract-and-runbook.md). It is not a koni-docs
+standard filename, which is why this entry exists — a future reader finding a non-template
+file in `docs/` is owed the reason. [docs/README.md](README.md)'s tree and absent-file
+table, [AGENTS.md](../AGENTS.md)'s documentation map, and the pre-commit checklist all
+gain rows for it.
+
+**Date**: 2026-08-10
+**Version**: unreleased
+
+---
+
+### D19. Retire the `— vX.Y.Z` CHANGELOG heading suffix
+
+**Context**: three of the nine release headings in [CHANGELOG.md](CHANGELOG.md) end with a
+trailing version — `## [1.0.1] … — v1.0.1`, `## [1.0.0] … — v1.0.0`,
+`## [0.1.0] … — v0.1.0` — and they are **exactly** the three tagged versions. The
+correlation is 9/9 with no exception: the six untagged versions carry a descriptive suffix
+in the same slot and no version. Nothing anywhere documents this, and no reader could
+recover the rule from the file.
+
+**Decision**: new CHANGELOG entries do not carry the suffix. The nine existing headings are
+left byte-for-byte unchanged.
+
+**Rationale**: because after [D17](#d17-backfill-six-tags-for-020--070-and-v010s-missing-github-release)
+the suffix cannot mean what it meant. Every changelogged version is tagged, so a marker for
+tagged-ness would appear on every heading and distinguish nothing — while still restating
+the `## [X.Y.Z]` anchor that opens the same line. Where a machine needs to know whether a
+version is tagged, [D16](#d16-release-by-tag-triggered-github-actions-with-oidc-trusted-publishing)'s
+gate asks `git`, which cannot disagree with itself the way two encodings of one fact can.
+The existing headings stay as written on the principle D12 applied when it refused to
+rewrite the `1.0.0` entry: a shipped CHANGELOG line is a claim about the world at a
+version, and this entry is where the amendment belongs.
+
+**Alternatives considered**:
+- **Promote it to a documented convention and let the gate assert it** — rejected: it is a
+  string check standing in for a `git tag` check, and the two can disagree.
+- **Repurpose the slot as a link to the GitHub Release** — rejected, though it was the one
+  option that would have made the slot carry information the anchor does not. It writes a
+  forward reference at commit time to a Release the workflow has not created yet, and it
+  adds nine hand-maintained URLs to defend a path the gate already proves exists.
+- **Rewrite the three existing headings for uniformity** — rejected: append-only in the
+  same spirit as RULE-7, which governs this file.
+
+**Impact**: [docs/README.md](README.md) §Conventions records the retirement and what the
+suffix used to mean, so the three surviving instances are legible rather than looking like
+inconsistency. [US-4.1](sprints/stories/US-4.1-release-contract-and-runbook.md).
+
+**Date**: 2026-08-10
+**Version**: unreleased
+
+---
+
+### D20. No `next` dist-tag; verify the tarball before publishing instead
+
+**Context**: npm forbids republishing a version forever and permits unpublish only within
+72 hours, so a publish is close to irreversible. The documented install path is
+`npx -y senti-mcp-server` inside an MCP host configuration, which resolves to `latest` —
+so `latest` is the entire blast radius of a bad publish, and
+[D15](#d15-publish-every-version-as-it-lands-rather-than-batching-a-sprint) multiplies W34's
+exposure by four. A `next` dist-tag is the standard answer, and it was worth asking whether
+it earns its place here.
+
+**Decision**: no pre-release channel. `latest` stays the only dist-tag. Instead the release
+path verifies the artifact *before* the irreversible act: `npm pack`, install the resulting
+tarball into a clean directory, spawn the installed binary, and assert `tools/list` returns
+the tools the release claims.
+
+**Rationale**: because a channel's value is proportional to the number of people who
+install from it, and this package has no identifiable pre-release consumer. An `rc` nobody
+installs teaches nothing and still consumes a permanent version number. The risk a `next`
+channel would mitigate is a broken artifact reaching users, and verification addresses that
+risk strictly earlier — before the publish rather than after it. The gap it closes is
+specific and evidenced: `src/index.test.ts` already spawns `dist/index.js`, so the built
+entry point is covered; what has never been covered is the packaging step *between*
+`dist/` and the registry, which is exactly where
+[D12](#d12-publish-to-npm-as-101-leaving-100-git-only-revision-of-d11)'s defect lived —
+`npm pack --dry-run` listing three dead files for the `1.0.0` tarball. The current tarball
+is 42 files and contains no `docs/` at all, so `README.md` is the only prose that ships and
+the only prose a verification step needs to check.
+
+**Alternatives considered**:
+- **Publish to `next`, verify the published artifact, then promote with
+  `npm dist-tag add … latest`** — rejected for now, **not rejected in principle**. It is
+  the only mechanism that keeps `latest` off an unverified version, and if a release ever
+  does reach `latest` broken, this is the entry to revise. It is not adopted today because
+  its entire value sits in the verification step, and running that same verification before
+  publishing achieves it with one fewer irreversible act.
+- **`next` for the payload-shaping releases only (`1.3.0`, `1.4.0`)** — rejected: two
+  release procedures instead of one, and deciding which future release qualifies is a
+  judgement call made at the worst possible moment.
+
+**Trigger to revisit**: a second consumer who wants to try a release early, or any version
+reaching `latest` broken.
+
+**Impact**: [US-4.4](sprints/stories/US-4.4-tarball-verification.md) builds the check;
+[US-4.5](sprints/stories/US-4.5-release-workflow.md) runs it in the workflow before the
+publish step. No `next` tag is ever created, and
+`docs/RELEASE.md` records the trigger above so the absence reads as a decision.
+
+**Date**: 2026-08-10
+**Version**: unreleased
+
+---
+
+## Phase 8 — Sprint lifecycle (2026-08-10)
+
+### D21. A sprint's scope stays open; only the maintainer opens or closes one
+
+**Context**: [EPIC-4](sprints/epics/EPIC-4.md) was written on 2026-08-10 with no sprint, and
+its §Still open left the assignment as a later decision. When the decision came due, the
+sprint corpus offered no good answer: [sprint-2026-W33](sprints/sprint-2026-W33.md) covers
+2026-08-10 → 2026-08-16 — the current week — but had already been flipped `closed` on
+2026-08-07 when its six read-tool stories finished ahead of the window;
+[sprint-2026-W34](sprints/sprint-2026-W34.md) is `planned` for 08-17 and committed to 11
+points of [EPIC-2](sprints/epics/EPIC-2.md) work. Neither could take new work without
+either falsifying a written retrospective or overloading a sprint that was deliberately
+sized.
+
+**Decision**: two rules, stated generally rather than as a one-off.
+
+1. **A sprint's scope is not frozen when it opens.** Epics and stories that arise during
+   the week join the running sprint. A sprint file is a live planning surface for its
+   window, not a plan agreed in advance and then defended.
+2. **Only the maintainer opens or closes a sprint.** No agent flips a sprint's `status:`,
+   creates a sprint file, or proposes a new sprint id on its own initiative. When new work
+   needs a home, it goes into the current sprint — reopening it if that is what it takes.
+
+Applied immediately: `sprint-2026-W33` returns to `status: active` and gains a **Phase 2**
+scope section carrying EPIC-4's five stories. Its window had not elapsed, so nothing about
+the dates is fictional.
+
+**Rationale**: because the alternative on offer was a new sprint id (`sprint-2026-W33b`)
+invented to avoid touching a `closed` flag — ceremony that would have split one calendar
+week across two sprint files and left a reader asking which one was real. The premise
+underneath is that this repo has one maintainer working one week at a time, and for that
+shape a sprint is a container for what actually happened in a window, not a contract
+negotiated before it. Reserving the open/close transitions to the maintainer follows from
+the same place: the flag means *the maintainer considers this window's work settled*, which
+is not a judgement an agent is in a position to make.
+
+**What is protected, and how**: a closed phase's record is never rewritten to accommodate a
+later one. W33's original scope table survives verbatim under a `### Phase 1` heading with
+its own "6 stories / 15 points — all delivered" total; its retrospective is left byte-for-
+byte as written and gains only a scope note saying it measures Phase 1; Phase 2 gets its
+own scope table, its own total, and its own retrospective section. Same principle
+[D1](#d1-adopt-koni-docs-as-this-repos-documentation-framework),
+[D5](#d5-raise-the-supported-node-floor-to-2060) and
+[D19](#d19-retire-the--vxyz-changelog-heading-suffix) apply to planning artifacts: amend
+alongside, never overwrite.
+
+**Alternatives considered**:
+- **A new sprint `sprint-2026-W33b` over the same window** — rejected by the maintainer:
+  it keeps the `closed` flag pristine at the cost of two sprint files describing one week,
+  and it is a new id invented for a bookkeeping reason rather than a scheduling one.
+- **Add EPIC-4 to W34** — rejected: W34 was sized at 11 points deliberately, and the
+  release process has to be settled *before* W34's first release, not during it.
+- **Implement with `sprint:` left empty** — rejected: it ships code from stories whose own
+  frontmatter says they never started, which is what RULE-10 exists to prevent.
+
+**Impact**: `sprint-2026-W33` is `active` with 11 stories / 31 points across two phases.
+This entry overrides any koni-docs guidance treating `closed` as terminal, and it is the
+standing rule for every future sprint in this repo, not a description of this one.
+
+**Date**: 2026-08-10
+**Version**: unreleased

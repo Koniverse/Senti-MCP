@@ -20,6 +20,8 @@
     "build": "rm -rf dist && tsc && chmod +x dist/index.js",
     "dev": "tsx src/index.ts",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "release:check": "node scripts/release-check.mjs",
+    "release:verify-pack": "node scripts/release-verify-pack.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:smoke": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/smoke.test.ts",

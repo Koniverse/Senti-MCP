@@ -1,0 +1,176 @@
+# The release path for senti-mcp-server. See docs/RELEASE.md for the human
+# procedure this executes, and CONTEXT D16 for why it is shaped this way.
+#
+# Push an annotated vX.Y.Z tag and this runs: gate -> build -> verify -> publish
+# -> announce. The gate runs FIRST and fails the whole workflow before anything
+# is built, because npm forbids republishing a version number forever and allows
+# unpublish only within 72 hours. Everything here exists to be ahead of that.
+#
+# Third-party actions are pinned by commit SHA, not by tag: this workflow holds
+# publish rights to a package with a single maintainer, and a mutable tag on a
+# third-party action is a write path into that. The repository does not enforce
+# SHA pinning (`sha_pinning_required: false`), so this is discipline, not policy.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Least privilege by default; jobs opt in to what they need.
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: gate — artifacts must agree
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          # release:check reads git tags and branch state, so it needs history,
+          # not the default shallow single-commit fetch.
+          fetch-depth: 0
+
+      - name: Derive the version from the tag
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $version from tag $GITHUB_REF_NAME"
+
+      - name: The tag must be annotated
+        run: |
+          kind=$(git cat-file -t "$GITHUB_REF_NAME")
+          if [ "$kind" != "tag" ]; then
+            echo "::error::$GITHUB_REF_NAME is a $kind, not an annotated tag. See docs/RELEASE.md §4."
+            exit 1
+          fi
+
+      - name: The tag must be reachable from main
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_REF_NAME^{commit}" origin/main; then
+            echo "::error::$GITHUB_REF_NAME is not on main. A tag is a claim about a reviewed commit."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 20.6.0
+          cache: npm
+
+      - run: npm ci
+
+      # release:check refuses to run on a detached HEAD or with the release tag
+      # already present, both of which are normal in a tag-triggered checkout.
+      # --ci tells it those two facts are supplied by the workflow above instead.
+      - name: release:check
+        run: npm run release:check -- "${{ steps.version.outputs.version }}" --ci
+
+  build:
+    name: build — typecheck, test, compile
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 20.6.0
+          cache: npm
+      - run: npm ci
+      # No SENTI_API_KEY and no SENTI_SMOKE_KEY are set, deliberately. The suite
+      # is hermetic — the smoke test skips — and a release path that needed a
+      # live Senti credential is one CI could not run.
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  verify:
+    name: verify — the tarball installs and serves
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 20.6.0
+          cache: npm
+      - run: npm ci
+      # Packs, installs into a clean directory, spawns the installed binary and
+      # compares tools/list against both the build and the packaged README's
+      # tool table. This is the check adopted instead of a `next` dist-tag
+      # (CONTEXT D20) — same protection, one irreversible act earlier.
+      - run: npm run release:verify-pack
+
+  publish:
+    name: publish — npm, with provenance
+    needs: [gate, verify]
+    runs-on: ubuntu-latest
+    # No `environment:` on purpose. The OIDC claim carries the environment name
+    # when one is set, and npm's trusted-publisher configuration must match it
+    # exactly. Configure the publisher against repository + workflow filename
+    # only; adding an environment here without adding it there fails the publish
+    # with an authentication error that reads like a credential problem.
+    permissions:
+      contents: read
+      # OIDC trusted publishing. No NPM_TOKEN is stored in this repository:
+      # a long-lived credential with publish rights to a single-maintainer
+      # package is the highest-value secret this repo could hold, and npm is
+      # restricting 2FA-bypassing tokens for direct publishing anyway.
+      id-token: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 20.6.0
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      # npm 11.5.1+ is required for OIDC trusted publishing.
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+
+      # prepublishOnly (typecheck && test && build) runs again here. That is
+      # redundant with the build job on purpose: it is what protects a publish
+      # invoked any other way.
+      - run: npm publish --provenance --access public
+
+  announce:
+    name: announce — GitHub Release from the CHANGELOG
+    needs: [gate, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Extract this version's CHANGELOG section
+        env:
+          VERSION: ${{ needs.gate.outputs.version }}
+        run: |
+          awk -v v="## [$VERSION]" '
+            index($0, v) == 1 { found = 1; print; next }
+            found && /^## \[/    { exit }
+            found                { print }
+          ' docs/CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::No ## [$VERSION] section found in docs/CHANGELOG.md"
+            exit 1
+          fi
+          cat release-notes.md
+
+      # A Release is only ever created after a successful publish — `needs:
+      # publish` is what guarantees this repo never announces a release that
+      # does not exist on the registry.
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --notes-file release-notes.md --title "$GITHUB_REF_NAME"

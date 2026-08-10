@@ -69,7 +69,11 @@ own design spec, not an appendix to this one.
   remaining four are in scope for this epic and out of scope only for the releases so
   far — see §Remaining work.
 - **Retry and backoff, response caching, npm publishing** — out of scope for v1 per the
-  design spec. Each is a decision, not an omission.
+  design spec. Each is a decision, not an omission. **npm publishing has since found its
+  home**: the release procedure — cadence, tagging, publishing, and the CI that runs it —
+  is owned by [EPIC-4](EPIC-4.md) ([CONTEXT D15–D20](../../CONTEXT.md)). This epic's
+  stories still bump `VERSION` and write their CHANGELOG section; what happens after that
+  is EPIC-4's.
 - **Documentation tooling and repo standard** — owned by [EPIC-1](EPIC-1.md).
 
 ## Cross-cutting invariants
