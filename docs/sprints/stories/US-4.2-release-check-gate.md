@@ -2,10 +2,10 @@
 id: US-4.2
 title: "npm run release:check — the pre-tag gate"
 epic: EPIC-4
-status: backlog
+status: done
 priority: P1
 points: 3
-sprint:
+sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
 updated: 2026-08-10
@@ -83,27 +83,27 @@ makes running it unavoidable.
 
 ## Tasks
 
-- [ ] **TASK-4.2.1** — Decide the shape before writing it (AC: 1, 9)
-  - [ ] A Node script under `scripts/`, run by an npm script — not a shell one-liner in
+- [x] **TASK-4.2.1** — Decide the shape before writing it (AC: 1, 9)
+  - [x] A Node script under `scripts/`, run by an npm script — not a shell one-liner in
         `package.json`, because AC-9 requires it to be importable and testable
-  - [ ] Confirm it needs no dependency beyond what is already installed; the repo's only
+  - [x] Confirm it needs no dependency beyond what is already installed; the repo's only
         runtime deps are the MCP SDK and zod, and a release gate should not add either
-- [ ] **TASK-4.2.2** — Implement the version-agreement checks (AC: 1, 2, 7)
-  - [ ] `VERSION`, `package.json`, `src/config.ts`'s `SERVER_VERSION`, and the argument
-  - [ ] Default the argument to `VERSION`'s contents, and print the resolved version first
-- [ ] **TASK-4.2.3** — Implement the CHANGELOG checks (AC: 3, 4)
-  - [ ] `## [X.Y.Z]` section present
-  - [ ] `## [Unreleased]` empty of release content — define "empty" against the current
+- [x] **TASK-4.2.2** — Implement the version-agreement checks (AC: 1, 2, 7)
+  - [x] `VERSION`, `package.json`, `src/config.ts`'s `SERVER_VERSION`, and the argument
+  - [x] Default the argument to `VERSION`'s contents, and print the resolved version first
+- [x] **TASK-4.2.3** — Implement the CHANGELOG checks (AC: 3, 4)
+  - [x] `## [X.Y.Z]` section present
+  - [x] `## [Unreleased]` empty of release content — define "empty" against the current
         placeholder wording and record the definition in the failure message
-- [ ] **TASK-4.2.4** — Implement the README, tag and tree checks (AC: 5, 6, 8)
-  - [ ] Scan `README.md` for version-bearing claims; quote the line on failure
-  - [ ] `git rev-parse -q --verify refs/tags/vX.Y.Z` and `git ls-remote --tags origin`
-  - [ ] `git status --porcelain` empty; `git rev-parse --abbrev-ref HEAD` is `main`
-- [ ] **TASK-4.2.5** — Test both branches of every check (AC: 9)
-  - [ ] Fixture-driven, one passing and one failing case per check
-  - [ ] Confirm the suite count moves as expected and every new test can be made to fail —
+- [x] **TASK-4.2.4** — Implement the README, tag and tree checks (AC: 5, 6, 8)
+  - [x] Scan `README.md` for version-bearing claims; quote the line on failure
+  - [x] `git rev-parse -q --verify refs/tags/vX.Y.Z` and `git ls-remote --tags origin`
+  - [x] `git status --porcelain` empty; `git rev-parse --abbrev-ref HEAD` is `main`
+- [x] **TASK-4.2.5** — Test both branches of every check (AC: 9)
+  - [x] Fixture-driven, one passing and one failing case per check
+  - [x] Confirm the suite count moves as expected and every new test can be made to fail —
         a `vitest -t` filter matching nothing exits `0` ([LESSONS 2](../../LESSONS.md))
-- [ ] **TASK-4.2.6** — Add the `release:check` npm script and document it in
+- [x] **TASK-4.2.6** — Add the `release:check` npm script and document it in
   `docs/RELEASE.md`'s procedure (AC: 1)
 
 ## Dev notes
@@ -180,11 +180,54 @@ makes running it unavoidable.
 
 ## Implementation notes
 
-<!-- Filled during implementation. -->
+`scripts/release-check.mjs`, eight checks, all reported in one run (AC-1, AC-9's
+one-run requirement) and each printing the value it observed rather than "ok".
+
+**Built test-first.** Each check's failing branch was written as a test, watched fail, then
+implemented — 20 tests in `src/release-check.test.ts`, every one driving the script as a
+CLI against a throwaway git repository under the OS temp directory. Testing it as a
+subprocess rather than importing it is the same choice `src/index.test.ts` makes about
+`dist/index.js`: the contract a maintainer and the workflow both consume is the exit code
+and the message.
+
+**Where the files live, and why it is not obvious.** The script is in `scripts/`, not
+`src/`, because `files` in `package.json` ships `dist` and non-test `src` — putting it in
+`src/` would add it to the tarball and move the 42-file count that
+[CONTEXT D13](../../CONTEXT.md), [EPIC-4](../epics/EPIC-4.md) and this story all quote.
+Its test is in `src/` because `vitest.config.ts` scopes collection to `src/**/*.test.ts`
+and widening that allowlist is what [CONTEXT D13](../../CONTEXT.md) exists to prevent. So
+the pair is split on purpose; `npm pack --dry-run` confirms the tarball is still **42
+entries**.
+
+**Two things the plan did not anticipate.**
+
+- **The `--ci` flag exists because writing the workflow demanded it.** A tag-triggered run
+  checks out a detached HEAD at a tag that already exists — it is what started the run — so
+  the "tag is free" and "branch is main" checks would fail every CI release. `--ci` skips
+  exactly those two, **prints that it skipped them and why**, and keeps every artifact
+  check. The workflow asserts stronger equivalents itself: the tag is annotated, and it is
+  an ancestor of `origin/main`.
+- **The README check needed a real corpus to design against.** Reading `README.md` first
+  showed three shapes of version string: the Node floor (`20.6.0`, `20.3.0` — must never
+  fire), a historical claim (`0.1.0`, "published before the other five existed" — stays
+  true across releases, must never fire), and two live claims (`1.0.1` "as of this release",
+  and a `senti-mcp-server@1.0.1` pin — must fire). The check flags a pin naming another
+  version, or a line that both names a version and claims currency. Four tests pin those
+  four cases, including the two that must **not** fire.
+
+**Run against this repository it correctly reports four real problems** — `Unreleased`
+carries content, `v1.0.1` already exists, the tree is dirty mid-work, and HEAD is not on
+`main` — which is the gate working, not a defect.
+
+**Its stated limit, repeated here because it is load-bearing:** the README check catches a
+*contradictory* version claim, never an inaccurate description. It cannot tell you the
+prose is right.
 
 ## Files modified
 
-<!-- Filled during implementation. -->
+- `scripts/release-check.mjs` — new, the gate
+- `src/release-check.test.ts` — new, 20 tests over fixture git repositories
+- `package.json` — `release:check` script
 
 ## Cross-references
 

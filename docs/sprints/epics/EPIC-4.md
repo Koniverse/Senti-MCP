@@ -1,7 +1,7 @@
 ---
 id: EPIC-4
 title: "The package release process"
-status: backlog
+status: in-progress
 created: 2026-08-10
 updated: 2026-08-10
 ---
@@ -112,11 +112,12 @@ serve:
   permits unpublish only within 72 hours. Every gate in this epic is a response to that
   single sentence, and any proposal that moves a check to *after* the publish has to
   justify itself against it.
-- **The version string agrees in four places, not three.** `VERSION`, `package.json`'s
+- **The version string agrees in five places, not three.** `VERSION`, `package.json`'s
   `version`, and `src/config.ts`'s `SERVER_VERSION` are asserted equal by
   `src/config.test.ts` — koni-docs checks only the first two, and the third is this repo's
-  own guard. The fourth is the **git tag being pushed**, and nothing checks it today
-  because nothing could: the tag does not exist when the test suite runs.
+  own guard. The fourth is `package-lock.json`, which nothing was watching at all and which
+  read `0.1.0` for eight releases ([LESSONS 4](../../LESSONS.md)). The fifth is the **git
+  tag being pushed**, which nothing could check: it does not exist when the test suite runs.
   [US-4.2](../stories/US-4.2-release-check-gate.md) is where the fourth is checked.
 - **`README.md` is the npm package page.** `npm pack --dry-run` reports 42 files carrying
   `LICENSE`, `README.md`, `package.json`, `dist/` and non-test `src/` — and **no `docs/`
@@ -141,11 +142,11 @@ serve:
 
 | US | Title | Pri | Points | Status |
 |---|---|---|---|---|
-| [US-4.1](../stories/US-4.1-release-contract-and-runbook.md) | The release contract and `docs/RELEASE.md` | P1 | 3 | 📋 backlog |
-| [US-4.2](../stories/US-4.2-release-check-gate.md) | `npm run release:check` — the pre-tag gate | P1 | 3 | 📋 backlog |
-| [US-4.3](../stories/US-4.3-backfill-tags-and-releases.md) | Backfill the six missing tags and `v0.1.0`'s Release | P2 | 2 | 📋 backlog |
-| [US-4.4](../stories/US-4.4-tarball-verification.md) | Verify the tarball before it is published | P1 | 3 | 📋 backlog |
-| [US-4.5](../stories/US-4.5-release-workflow.md) | `.github/workflows/release.yml` — tag-triggered publish | P1 | 5 | 📋 backlog |
+| [US-4.1](../stories/US-4.1-release-contract-and-runbook.md) | The release contract and `docs/RELEASE.md` | P1 | 3 | ✅ done (no version — ships no runtime code) |
+| [US-4.2](../stories/US-4.2-release-check-gate.md) | `npm run release:check` — the pre-tag gate | P1 | 3 | ✅ done (no version — ships no runtime code) |
+| [US-4.3](../stories/US-4.3-backfill-tags-and-releases.md) | Backfill the six missing tags and `v0.1.0`'s Release | P2 | 2 | ⏸️ review (tags local; push held) |
+| [US-4.4](../stories/US-4.4-tarball-verification.md) | Verify the tarball before it is published | P1 | 3 | ✅ done (no version — ships no runtime code) |
+| [US-4.5](../stories/US-4.5-release-workflow.md) | `.github/workflows/release.yml` — tag-triggered publish | P1 | 5 | ⏸️ review (never run; registry config pending) |
 
 **Sixteen points.** None is assigned to a sprint — see §Still open.
 
@@ -161,11 +162,12 @@ against prose scattered across a decision log.
 
 ## Still open
 
-- **Which sprint takes EPIC-4**, and therefore whether W34's `1.1.0` → `1.4.0` ship under
-  US-4.1's manual runbook or US-4.5's workflow. *Waiting on*: sprint planning.
-  [sprint-2026-W34](../sprint-2026-W34.md) is committed to 11 points of
-  [EPIC-2](EPIC-2.md) work and this epic adds nothing to it; the two are being written in
-  the same week and are not being scheduled in the same one.
+- ~~**Which sprint takes EPIC-4.**~~ **Settled 2026-08-10**:
+  [sprint-2026-W33](../sprint-2026-W33.md), which reopened to carry this epic as its
+  **Phase 2** — its window (08-10 → 08-16) had not elapsed, and this repo's rule is that a
+  sprint's scope is not frozen at open ([CONTEXT D21](../../CONTEXT.md)).
+  [sprint-2026-W34](../sprint-2026-W34.md) keeps its committed 11 points untouched, so
+  `1.1.0` → `1.4.0` ship under US-4.5's workflow rather than by hand.
 - **Whether npm trusted publishing is configurable for this package.** It requires a
   one-time configuration on npmjs.com bound to this repository and the workflow filename,
   which cannot be verified from a checkout. It is a *task*, not a blocker:

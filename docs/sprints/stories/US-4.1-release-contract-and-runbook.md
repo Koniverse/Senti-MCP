@@ -2,10 +2,10 @@
 id: US-4.1
 title: "The release contract and docs/RELEASE.md"
 epic: EPIC-4
-status: backlog
+status: done
 priority: P1
 points: 3
-sprint:
+sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
 updated: 2026-08-10
@@ -88,31 +88,31 @@ what this repo already has, and it lost six tags.
 
 ## Tasks
 
-- [ ] **TASK-4.1.1** — Write `docs/RELEASE.md` (AC: 1, 2, 3, 4)
-  - [ ] §What a release is — the four-artifact contract and [CONTEXT D15](../../CONTEXT.md)
-  - [ ] §Procedure — ordered steps: decide the version and record why; bump `VERSION`,
+- [x] **TASK-4.1.1** — Write `docs/RELEASE.md` (AC: 1, 2, 3, 4)
+  - [x] §What a release is — the four-artifact contract and [CONTEXT D15](../../CONTEXT.md)
+  - [x] §Procedure — ordered steps: decide the version and record why; bump `VERSION`,
         `package.json` and `src/config.ts` together; write the CHANGELOG section; run the
         gate; annotate and push the tag; confirm the workflow published; confirm `latest`
-  - [ ] §Conventions — tag message form, tag sort order, CHANGELOG heading form without the
+  - [x] §Conventions — tag message form, tag sort order, CHANGELOG heading form without the
         retired suffix
-  - [ ] §When it goes wrong — the 72-hour window, why the next patch is the only remedy,
+  - [x] §When it goes wrong — the 72-hour window, why the next patch is the only remedy,
         and what a failed gate means at each check
-  - [ ] §What is deliberately absent — no `next` dist-tag and the trigger that would bring
+  - [x] §What is deliberately absent — no `next` dist-tag and the trigger that would bring
         one in ([CONTEXT D20](../../CONTEXT.md)); no `DEPLOY.md`
         ([CONTEXT D18](../../CONTEXT.md))
-  - [ ] Run every command in the file against the working tree before the story closes;
+  - [x] Run every command in the file against the working tree before the story closes;
         a drafted command is a claim ([LESSONS 2](../../LESSONS.md))
-- [ ] **TASK-4.1.2** — Wire `RELEASE.md` into [docs/README.md](../../README.md) (AC: 5, 7)
-  - [ ] `docs/` tree gains the `RELEASE.md` line; Cross-references gains its link
-  - [ ] Pre-commit checklist gains the release item
-  - [ ] `DEPLOY.md` absent-row gains the pointer, with its existing reasoning intact
-  - [ ] §Conventions records the retired `— vX.Y.Z` suffix and what it used to mean
-- [ ] **TASK-4.1.3** — Update [AGENTS.md](../../../AGENTS.md) (AC: 6)
-  - [ ] §Documentation gains `RELEASE.md`. The epics line already names all four — it was
+- [x] **TASK-4.1.2** — Wire `RELEASE.md` into [docs/README.md](../../README.md) (AC: 5, 7)
+  - [x] `docs/` tree gains the `RELEASE.md` line; Cross-references gains its link
+  - [x] Pre-commit checklist gains the release item
+  - [x] `DEPLOY.md` absent-row gains the pointer, with its existing reasoning intact
+  - [x] §Conventions records the retired `— vX.Y.Z` suffix and what it used to mean
+- [x] **TASK-4.1.3** — Update [AGENTS.md](../../../AGENTS.md) (AC: 6)
+  - [x] §Documentation gains `RELEASE.md`. The epics line already names all four — it was
         corrected in the commit that opened this epic
-  - [ ] Quick reference "Ship a version" row points at `RELEASE.md`
-- [ ] **TASK-4.1.4** — Confirm nothing was rewritten (AC: 7)
-  - [ ] `git diff docs/CHANGELOG.md` shows only an `## [Unreleased]` addition — no existing
+  - [x] Quick reference "Ship a version" row points at `RELEASE.md`
+- [x] **TASK-4.1.4** — Confirm nothing was rewritten (AC: 7)
+  - [x] `git diff docs/CHANGELOG.md` shows only an `## [Unreleased]` addition — no existing
         heading changed
 
 ## Dev notes
@@ -192,11 +192,39 @@ what this repo already has, and it lost six tags.
 
 ## Implementation notes
 
-<!-- Filled during implementation. -->
+`docs/RELEASE.md` shipped at 7 sections: what a release is (the four-artifact contract),
+before-you-start, the eight-step procedure, conventions, what the workflow does, what each
+failure means, and what is deliberately absent.
+
+**Every command in it was run before this story closed** (AC-1), which is the row
+[LESSONS 2](../../LESSONS.md) exists for. Two were corrected by running them:
+
+- The tag-sort warning in §4 was written from [CONTEXT D17](../../CONTEXT.md)'s prediction
+  and then *confirmed empirically* once [US-4.3](US-4.3-backfill-tags-and-releases.md)
+  created the tags: `git tag -l --sort=creatordate` really does return
+  `v0.1.0 v1.0.0 v1.0.1 v0.2.0 … v0.7.0`, with the six backfilled tags last.
+  `--sort=v:refname` orders correctly. The file states both, with the wrong one marked.
+- §5's `environment:` guidance came out of writing the workflow, not out of the plan: an
+  `environment:` on the publish job puts the environment name into the OIDC claim, and
+  npm's trusted-publisher configuration has to match it exactly. The workflow deliberately
+  sets none, and RELEASE.md and the workflow comment both say why.
+
+**One thing this story changed about its own plan.** TASK-4.1.3 originally also covered
+adding EPIC-3 and EPIC-4 to `AGENTS.md`'s epic list; that landed earlier, in the commit
+that opened the epic, so the task was narrowed to `RELEASE.md` and the Quick-reference row
+rather than left to describe work already done.
+
+`git diff --stat docs/CHANGELOG.md` confirms additions only — no shipped heading was
+edited (AC-7), and the three headings carrying `— vX.Y.Z` are untouched.
 
 ## Files modified
 
-<!-- Filled during implementation. -->
+- `docs/RELEASE.md` — new, the runbook
+- `docs/README.md` — `RELEASE.md` in the tree and Cross-references; a release item on the
+  pre-commit checklist; the `DEPLOY.md` absent-row gains a pointer with its reasoning
+  intact; §Conventions records the retired `— vX.Y.Z` heading suffix and what it meant
+- `AGENTS.md` — `docs/RELEASE.md` in §Documentation; the "Ship a version" Quick-reference
+  row no longer ends at `VERSION` + CHANGELOG
 
 ## Cross-references
 

@@ -143,3 +143,40 @@ against code you are not editing.
 `git branch -d feat/read-tools-w33` took `npm test` from 394 tests to 197, matching
 `npx vitest run --exclude '**/.claude/**'` exactly — which is how the duplication was
 confirmed as the cause before anything was deleted.
+
+---
+
+## 4. A version string that nothing reads drifts silently — `package-lock.json` was eight releases behind
+
+**Trap**: `package-lock.json`'s top-level `version` field read `0.1.0` from the `0.2.0`
+release until 2026-08-10, while `package.json` read `1.0.1`. Nine releases went out over
+that span and nothing noticed, including a publish-readiness pass
+([CONTEXT D12](CONTEXT.md)) that specifically went looking for stale artifacts. It was
+found by accident, running `npm version 1.0.1 --allow-same-version` to check that a
+command written into [RELEASE.md](RELEASE.md) actually worked — the no-op bump rewrote the
+lock file and produced a two-line diff nobody expected.
+
+**Why**: the repo has a real guard for the version string —
+`src/config.test.ts` asserts `VERSION`, `package.json` and `SERVER_VERSION` agree, which
+is more than koni-docs checks — and the lock file simply was not in the list. It could
+not be: it was never *written* by the process. Bumps were done by editing `package.json`
+directly rather than by `npm version`, which is the one command that keeps the lock in
+step. And the field is informational at install time, so nothing downstream ever failed
+and announced it.
+
+**How to avoid**:
+- **Enumerate every file the version appears in, then check them all in one place.**
+  `npm run release:check` now verifies five: `VERSION`, `package.json`,
+  `package-lock.json`, `src/config.ts`'s `SERVER_VERSION`, and the tag being pushed. A
+  count that lives in prose ("the version lives in three places") is a claim that goes
+  stale the moment a fourth appears.
+- **Use `npm version --no-git-tag-version` to bump rather than editing `package.json`.**
+  It updates the lock file in the same step. [RELEASE.md](RELEASE.md) §3 Step 2 says so.
+- **Suspect the artifacts that nothing consumes.** A field whose wrongness cannot break a
+  build is exactly the field that stays wrong the longest — the same shape as entry 3,
+  where a green suite was what hid the duplication.
+
+**Pattern**: the discovery method generalizes. Running a documented command *because it is
+documented* — rather than trusting it was right when written — is what
+[entry 2](#2-a-storys-verification-commands-row-is-a-claim-until-it-is-run) already asks
+for, and it paid a second time here by turning up a defect the command was not looking for.

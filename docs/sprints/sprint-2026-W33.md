@@ -1,12 +1,21 @@
 ---
 id: sprint-2026-W33
-status: closed
+status: active
 start: 2026-08-10
 end: 2026-08-16
-goal: "Restructure src/ into core/ + tools/<tag>/, add the read-tool substrate, and ship the first five of the nine unshipped read tools"
+goal: "Ship the read-tool substrate and five read tools (delivered), then settle and build this repo's package release process"
 ---
 
+> **This sprint was reopened on 2026-08-10 after its read-tool phase closed.** Its window
+> (08-10 → 08-16) had not elapsed, [EPIC-4](epics/EPIC-4.md) arrived mid-week, and this
+> repo's rule is that a sprint's scope is not frozen at open — work that arises during the
+> week joins the running sprint rather than waiting for the next one
+> ([CONTEXT D21](../CONTEXT.md)). Everything below the §Phase 1 heading is the record of
+> the phase that already closed and is **not** rewritten; Phase 2 is appended beside it.
+
 ## Sprint scope
+
+### Phase 1 — Read-tool substrate and five tools (closed 2026-08-07)
 
 | US | Title | Epic | Pri | Points | Status | Story file |
 |---|---|---|---|---|---|---|
@@ -17,7 +26,25 @@ goal: "Restructure src/ into core/ + tools/<tag>/, add the read-tool substrate, 
 | US-2.8 | `list_positions` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.8-list-positions-tool.md) |
 | US-2.9 | `list_pending_orders` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.9-list-pending-orders-tool.md) |
 
-**Total: 6 stories / 15 points.**
+**Phase 1: 6 stories / 15 points — all delivered.** The §Retrospective below measures this
+phase and only this phase.
+
+### Phase 2 — The package release process (added 2026-08-10)
+
+| US | Title | Epic | Pri | Points | Status | Story file |
+|---|---|---|---|---|---|---|
+| US-4.1 | The release contract and `docs/RELEASE.md` | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.1-release-contract-and-runbook.md) |
+| US-4.2 | `npm run release:check` — the pre-tag gate | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.2-release-check-gate.md) |
+| US-4.3 | Backfill the six missing tags and `v0.1.0`'s Release | EPIC-4 | P2 | 2 | ⏸️ review — tags created locally, push held for approval | [link](stories/US-4.3-backfill-tags-and-releases.md) |
+| US-4.4 | Verify the tarball before it is published | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.4-tarball-verification.md) |
+| US-4.5 | `.github/workflows/release.yml` — tag-triggered publish | EPIC-4 | P1 | 5 | ⏸️ review — workflow written, never run | [link](stories/US-4.5-release-workflow.md) |
+
+**Phase 2: 5 stories / 16 points.** **Sprint total: 11 stories / 31 points.**
+
+Phase 2 exists because [sprint-2026-W34](sprint-2026-W34.md) ships `1.1.0` → `1.4.0`
+([CONTEXT D14](../CONTEXT.md)) against a release procedure that was never written down, and
+the procedure has to be settled before the first of those lands. W34's committed 11 points
+are untouched.
 
 > AC and Tasks live inside each story file. This table is a planning surface only.
 
@@ -87,6 +114,10 @@ every later story consumes what it substrates.
   case; US-2.9 reuses the pattern US-2.8 establishes rather than re-deriving it.
 
 ## Retrospective
+
+> **Scope of this retrospective: Phase 1 only.** It was written when the read-tool phase
+> closed on 2026-08-07 and is left exactly as written. Phase 2 (EPIC-4) joined this sprint
+> on 2026-08-10 and gets its own section at the end of the file when it closes.
 
 All six stories closed: US-2.4 (substrate, v0.2.0) through US-2.9 (`list_pending_orders`,
 v0.7.0). 179 tests total (178 passed, 1 skipped — the smoke test, opt-in and gated on a
@@ -173,11 +204,18 @@ live key), `npm run typecheck` and `npm run build` clean at close.
   whatever checklist a story's closure follows**, so the three-time recurrence above
   does not become a fourth.
 
+## Phase 2 retrospective — the package release process
+
+<!-- Filled when Phase 2 closes. Phase 1's retrospective above is not touched. -->
+
 ## Cross-references
 
-- [EPIC-2](epics/EPIC-2.md) · [EPIC-3](epics/EPIC-3.md)
+- [EPIC-2](epics/EPIC-2.md) · [EPIC-3](epics/EPIC-3.md) · [EPIC-4](epics/EPIC-4.md) — Phase 2's epic
 - [STATUS.md](STATUS.md) — generated kanban
 - [CONTEXT D6](../CONTEXT.md) — the most recent decision as this sprint opens
+- [CONTEXT D21](../CONTEXT.md) — why this sprint reopened rather than deferring EPIC-4
+- [CONTEXT D15–D20](../CONTEXT.md) — the six decisions Phase 2 implements
 - [read-tool expansion design spec](../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
 - [read-tools-w33 implementation plan](../superpowers/plans/2026-08-06-senti-read-tools-w33.md)
 - [sprint-2026-W32](sprint-2026-W32.md) — prior sprint
+- [sprint-2026-W34](sprint-2026-W34.md) — next sprint; its 11 committed points are unaffected by Phase 2

@@ -910,3 +910,67 @@ publish step. No `next` tag is ever created, and
 
 **Date**: 2026-08-10
 **Version**: unreleased
+
+---
+
+## Phase 8 — Sprint lifecycle (2026-08-10)
+
+### D21. A sprint's scope stays open; only the maintainer opens or closes one
+
+**Context**: [EPIC-4](sprints/epics/EPIC-4.md) was written on 2026-08-10 with no sprint, and
+its §Still open left the assignment as a later decision. When the decision came due, the
+sprint corpus offered no good answer: [sprint-2026-W33](sprints/sprint-2026-W33.md) covers
+2026-08-10 → 2026-08-16 — the current week — but had already been flipped `closed` on
+2026-08-07 when its six read-tool stories finished ahead of the window;
+[sprint-2026-W34](sprints/sprint-2026-W34.md) is `planned` for 08-17 and committed to 11
+points of [EPIC-2](sprints/epics/EPIC-2.md) work. Neither could take new work without
+either falsifying a written retrospective or overloading a sprint that was deliberately
+sized.
+
+**Decision**: two rules, stated generally rather than as a one-off.
+
+1. **A sprint's scope is not frozen when it opens.** Epics and stories that arise during
+   the week join the running sprint. A sprint file is a live planning surface for its
+   window, not a plan agreed in advance and then defended.
+2. **Only the maintainer opens or closes a sprint.** No agent flips a sprint's `status:`,
+   creates a sprint file, or proposes a new sprint id on its own initiative. When new work
+   needs a home, it goes into the current sprint — reopening it if that is what it takes.
+
+Applied immediately: `sprint-2026-W33` returns to `status: active` and gains a **Phase 2**
+scope section carrying EPIC-4's five stories. Its window had not elapsed, so nothing about
+the dates is fictional.
+
+**Rationale**: because the alternative on offer was a new sprint id (`sprint-2026-W33b`)
+invented to avoid touching a `closed` flag — ceremony that would have split one calendar
+week across two sprint files and left a reader asking which one was real. The premise
+underneath is that this repo has one maintainer working one week at a time, and for that
+shape a sprint is a container for what actually happened in a window, not a contract
+negotiated before it. Reserving the open/close transitions to the maintainer follows from
+the same place: the flag means *the maintainer considers this window's work settled*, which
+is not a judgement an agent is in a position to make.
+
+**What is protected, and how**: a closed phase's record is never rewritten to accommodate a
+later one. W33's original scope table survives verbatim under a `### Phase 1` heading with
+its own "6 stories / 15 points — all delivered" total; its retrospective is left byte-for-
+byte as written and gains only a scope note saying it measures Phase 1; Phase 2 gets its
+own scope table, its own total, and its own retrospective section. Same principle
+[D1](#d1-adopt-koni-docs-as-this-repos-documentation-framework),
+[D5](#d5-raise-the-supported-node-floor-to-2060) and
+[D19](#d19-retire-the--vxyz-changelog-heading-suffix) apply to planning artifacts: amend
+alongside, never overwrite.
+
+**Alternatives considered**:
+- **A new sprint `sprint-2026-W33b` over the same window** — rejected by the maintainer:
+  it keeps the `closed` flag pristine at the cost of two sprint files describing one week,
+  and it is a new id invented for a bookkeeping reason rather than a scheduling one.
+- **Add EPIC-4 to W34** — rejected: W34 was sized at 11 points deliberately, and the
+  release process has to be settled *before* W34's first release, not during it.
+- **Implement with `sprint:` left empty** — rejected: it ships code from stories whose own
+  frontmatter says they never started, which is what RULE-10 exists to prevent.
+
+**Impact**: `sprint-2026-W33` is `active` with 11 stories / 31 points across two phases.
+This entry overrides any koni-docs guidance treating `closed` as terminal, and it is the
+standing rule for every future sprint in this repo, not a description of this one.
+
+**Date**: 2026-08-10
+**Version**: unreleased

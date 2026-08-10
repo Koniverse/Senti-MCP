@@ -5,7 +5,7 @@ epic: EPIC-4
 status: backlog
 priority: P2
 points: 2
-sprint:
+sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
 updated: 2026-08-10
@@ -83,14 +83,14 @@ nothing and nothing depends on it.
 
 ## Tasks
 
-- [ ] **TASK-4.3.1** — Verify each of the six commits independently (AC: 1)
-  - [ ] `git show <sha>:VERSION` returns the expected version for all six
-  - [ ] `git show <sha>:package.json` and `git show <sha>:src/config.ts` agree — if any
+- [x] **TASK-4.3.1** — Verify each of the six commits independently (AC: 1)
+  - [x] `git show <sha>:VERSION` returns the expected version for all six
+  - [x] `git show <sha>:package.json` and `git show <sha>:src/config.ts` agree — if any
         commit predates the three-way lockstep, record it in §Implementation notes rather
         than silently tagging it
-- [ ] **TASK-4.3.2** — Create the six annotated tags locally (AC: 2)
-  - [ ] Read the message form off `git for-each-ref refs/tags` before writing new ones
-  - [ ] Confirm each is an annotated tag object, not a lightweight ref
+- [x] **TASK-4.3.2** — Create the six annotated tags locally (AC: 2)
+  - [x] Read the message form off `git for-each-ref refs/tags` before writing new ones
+  - [x] Confirm each is an annotated tag object, not a lightweight ref
 - [ ] **TASK-4.3.3** — Push the tags and confirm (AC: 3, 7)
   - [ ] Push; then diff `git tag -l` against the CHANGELOG headings and confirm both sets
         are nine
@@ -98,10 +98,10 @@ nothing and nothing depends on it.
 - [ ] **TASK-4.3.4** — Create `v0.1.0`'s GitHub Release (AC: 4, 5)
   - [ ] Body is the `## [0.1.0]` CHANGELOG section
   - [ ] Confirm `gh release list` shows exactly three, and that none of the six appears
-- [ ] **TASK-4.3.5** — Confirm the registry is untouched, and record the sort consequence
+- [x] **TASK-4.3.5** — Confirm the registry is untouched, and record the sort consequence
   (AC: 5, 6)
-  - [ ] `npm view senti-mcp-server versions` unchanged
-  - [ ] The tag-sort note lands in `docs/RELEASE.md` — coordinate with
+  - [x] `npm view senti-mcp-server versions` unchanged
+  - [x] The tag-sort note lands in `docs/RELEASE.md` — coordinate with
         [US-4.1](US-4.1-release-contract-and-runbook.md) if that file does not exist yet
 
 ## Dev notes
@@ -170,11 +170,45 @@ nothing and nothing depends on it.
 
 ## Implementation notes
 
-<!-- Filled during implementation. -->
+**Six annotated tags created locally. Nothing pushed, nothing published, no GitHub Release
+created** — the push and the `v0.1.0` Release are held for explicit maintainer approval,
+which is where this story stops by agreement. `git ls-remote --tags origin` still lists
+three; `npm view senti-mcp-server versions` still returns `0.1.0, 1.0.1`.
+
+**AC-1 verified before tagging, and it caught more than the plan asked for.** Each commit
+was confirmed with `git show <sha>:VERSION`, and `package.json` and `src/config.ts` were
+checked at the same commits: all six carry the version in **all three** places, so none
+predates the three-way lockstep. The table in §Background is now a result rather than a
+finding.
+
+**The placement convention was verified rather than assumed.** `v1.0.0` → `c1eb6e0` and
+`v1.0.1` → `51e0e0b` both point at the commit that *introduced* the version, which is what
+AC-1 specifies. (`v0.1.0` → `0ffb7d3` does not — it points at a later commit while `VERSION`
+was still `0.1.0`. It is the first release and predates the convention; it is left alone.)
+
+**AC-3 holds exactly:** `git tag -l` and the `## [X.Y.Z]` headings in
+[docs/CHANGELOG.md](../../CHANGELOG.md) are now the same nine-element set, `diff` clean. The
+invariant *every changelogged version is tagged* has no exception left.
+
+**AC-6's consequence is now measured, not predicted:**
+
+```
+--sort=creatordate  v0.1.0 v1.0.0 v1.0.1 v0.2.0 v0.3.0 v0.4.0 v0.5.0 v0.6.0 v0.7.0
+--sort=v:refname    v0.1.0 v0.2.0 v0.3.0 v0.4.0 v0.5.0 v0.6.0 v0.7.0 v1.0.0 v1.0.1
+```
+
+[docs/RELEASE.md](../../RELEASE.md) §4 carries both lines with the wrong one marked.
+
+**What remains for the maintainer**, in order:
+
+```bash
+git push origin v0.2.0 v0.3.0 v0.4.0 v0.5.0 v0.6.0 v0.7.0
+gh release create v0.1.0 --title "v0.1.0 — First release" --notes-file <(...)   # §0.1.0 CHANGELOG section
+```
 
 ## Files modified
 
-<!-- Filled during implementation. -->
+No files. Six local tag objects: `v0.2.0` `v0.3.0` `v0.4.0` `v0.5.0` `v0.6.0` `v0.7.0`.
 
 ## Cross-references
 

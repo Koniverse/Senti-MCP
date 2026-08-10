@@ -15,9 +15,74 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing publishable — `VERSION` deliberately does not move. `files` in `package.json`
 allowlists `dist` and non-test `src`, so none of the below reaches the tarball
-(`npm pack --dry-run`: 42 files, unchanged).
+(`npm pack --dry-run`: 42 files, unchanged) — the two new scripts live in `scripts/`
+and the workflow in `.github/`, neither of which is in `files`, and the two new test
+files are excluded by `!src/**/*.test.ts`.
+
+### Added
+- **`npm run release:check` — the gate a release has to pass** (`scripts/release-check.mjs`).
+  Eight checks, all reported in one run with the value each observed: the five version
+  strings agree (`VERSION`, `package.json`, `package-lock.json`, `src/config.ts`'s
+  `SERVER_VERSION`, and the tag about to be pushed — `src/config.test.ts` covers three of
+  them on every commit, the lock file was covered by nothing, and the tag cannot exist when
+  vitest runs); [CHANGELOG.md](CHANGELOG.md) has a `## [X.Y.Z]`
+  section; `## [Unreleased]` no longer carries it; `README.md` — the only prose in the
+  42-file tarball — names no contradicting version; the tag is free; the tree is clean; and
+  `HEAD` is on `main`. A `--ci` flag skips the two local-only preconditions a tag-triggered
+  checkout cannot satisfy, prints that it skipped them, and keeps every artifact check
+  ([CONTEXT D16](CONTEXT.md)).
+- **`npm run release:verify-pack` — the tarball is proven before it is published**
+  (`scripts/release-verify-pack.mjs`). Packs, installs into a clean directory with no access
+  to this repo's `node_modules`, spawns the installed binary through its `bin` name, and
+  compares `tools/list` against both the build **and the packaged README's tool table** —
+  the independent claim, since build and tarball share a source and a deleted tool vanishes
+  from both. `src/index.test.ts` covers `dist/index.js`; this covers the packaging step
+  between `dist/` and the registry, where [CONTEXT D12](CONTEXT.md)'s dead-`dist/` defect
+  lived. Adopted instead of a `next` dist-tag, because it protects the same failure one
+  irreversible act earlier ([CONTEXT D20](CONTEXT.md)).
+- **`.github/workflows/release.yml` — this repository's first workflow.** Pushing an
+  annotated `vX.Y.Z` tag runs gate → build → verify → publish → announce. The gate fails the
+  workflow before anything is built; the build runs with no Senti credential in the
+  environment; `npm publish --provenance` authenticates by OIDC trusted publishing with no
+  `NPM_TOKEN` stored anywhere; and a GitHub Release carrying that version's CHANGELOG
+  section is created only after a successful publish. Every third-party action is pinned to
+  a 40-character commit SHA ([CONTEXT D16](CONTEXT.md)).
+- **[docs/RELEASE.md](RELEASE.md)** — the runbook this repo never had: the four-artifact
+  contract, the ordered procedure, the tag-message and tag-sort conventions, what each gate
+  failure means, and the 72-hour unpublish window that puts every check ahead of
+  `npm publish`. Deliberately **not** `DEPLOY.md`, whose recorded absence is unchanged and
+  now carries a pointer here ([CONTEXT D18](CONTEXT.md)).
+- Six annotated git tags backfilled for `0.2.0` → `0.7.0`, **created locally and not yet
+  pushed**. `git tag -l` and the `## [X.Y.Z]` headings are now the same nine-element set, so
+  *every changelogged version is tagged* has no exception left. The six get tags only — no
+  GitHub Release, and never an npm publish ([CONTEXT D17](CONTEXT.md)).
+
+### Changed
+- [docs/README.md](README.md): `RELEASE.md` in the tree and cross-references, a release item
+  on the pre-commit checklist, a pointer on the `DEPLOY.md` absent-row with its reasoning
+  intact, and a §Conventions note retiring the `— vX.Y.Z` CHANGELOG heading suffix — which
+  correlated 9/9 with tagged versions and was documented nowhere ([CONTEXT D19](CONTEXT.md)).
+  The three headings carrying it are left exactly as shipped.
+- [AGENTS.md](../AGENTS.md): `docs/RELEASE.md` in the documentation map, and the "Ship a
+  version" quick-reference row no longer ends at `VERSION` + CHANGELOG.
+- **`sprint-2026-W33` reopened** (`closed` → `active`) to carry EPIC-4 as its **Phase 2**;
+  its window had not elapsed. Phase 1's scope table, its "6 stories / 15 points" total and
+  its retrospective are left byte-for-byte as written, each scoped to Phase 1. New
+  [CONTEXT D21](CONTEXT.md) makes the general rule: a sprint's scope is not frozen at open,
+  and only the maintainer opens or closes one.
+- The suite is **16 files / 230 tests, 1 skipped** (was 14 / 197): 20 tests drive
+  `release:check` as a CLI against throwaway git repositories, 13 cover the pure judgements
+  inside `release:verify-pack`.
 
 ### Fixed
+- **`package-lock.json`'s `version` field had read `0.1.0` since the `0.2.0` release**,
+  while `package.json` read `1.0.1` — wrong across nine releases, including the
+  publish-readiness pass that went looking for stale artifacts ([CONTEXT D12](CONTEXT.md)).
+  It is a fifth place the version lives and the only one nothing watched: bumps were done by
+  editing `package.json` rather than by `npm version`, which is the command that keeps the
+  lock in step. Found by running a command *because* [RELEASE.md](RELEASE.md) documents it.
+  The field is corrected, `release:check` now covers it, and [LESSONS 4](LESSONS.md) records
+  the shape — a value nothing consumes is the one that stays wrong longest.
 - **`npm test` ran the suite twice.** It reported 28 files / 394 tests against a package
   that owns 14 / 197; the surplus was `.claude/worktrees/read-tools-w33/`, a git worktree
   left behind after `feat/read-tools-w33` merged (`66be3a4`) and still checked out at

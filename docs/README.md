@@ -13,6 +13,7 @@ follow-up" branch.
 docs/
 ├── README.md            ← you are here (doc hub + pre-commit checklist)
 ├── SETUP.md             ← local dev setup + the env var reference (RULE-11)
+├── RELEASE.md           ← how a version is cut and published (NOT a DEPLOY.md — D18)
 ├── CHANGELOG.md         ← release history (every version)
 ├── CONTEXT.md           ← decision log (append-only, never rewrite — RULE-7)
 ├── LESSONS.md           ← retrospective lessons (append-only; created sprint W33)
@@ -48,7 +49,7 @@ A missing file here is a decision, not an oversight.
 |---|---|
 | `PRD.md`, `ARCHITECTURE.md` | Authored today they would describe operations that don't have a shipped tool yet — 11 of the API's 17, as of v1.0.0 (four read tools carried to sprint W34, seven write operations sitting in backlog epic [EPIC-3](sprints/epics/EPIC-3.md)). They land when the read-tool roadmap firms up — at which point every story gains `prd_ref` / `arch_ref` in the same commit ([CONTEXT D1](CONTEXT.md)). |
 | `BRIEF.md` | The [design spec](superpowers/specs/2026-08-05-senti-mcp-server-design.md) already carries the problem statement and scope. |
-| `DEPLOY.md` | `senti-mcp-server` is published on the public npm registry (`npm view senti-mcp-server` — `repository` matches this remote), `1.0.1` being the release that put all six tools there. But publishing a stdio MCP package to npm is not the same as operating a hosted service, and `DEPLOY.md` in this framework is a production runbook for the latter — env vars table, deployment steps ([koni-docs template](../.agents/skills/koni-docs/references/templates/setup.md) §6). This project has no service to run one against: no infrastructure, nothing to deploy beyond `npm publish` itself. It lands if that ever changes; a publish alone does not bring it in. |
+| `DEPLOY.md` | `senti-mcp-server` is published on the public npm registry (`npm view senti-mcp-server` — `repository` matches this remote), `1.0.1` being the release that put all six tools there. But publishing a stdio MCP package to npm is not the same as operating a hosted service, and `DEPLOY.md` in this framework is a production runbook for the latter — env vars table, deployment steps ([koni-docs template](../.agents/skills/koni-docs/references/templates/setup.md) §6). This project has no service to run one against: no infrastructure, nothing to deploy beyond `npm publish` itself. It lands if that ever changes; a publish alone does not bring it in. **The publish procedure itself lives in [RELEASE.md](RELEASE.md)** — a different document for a different reader, which is why it did not become this one ([CONTEXT D18](CONTEXT.md)). |
 | `DESIGN.md` | No UI. This is a stdio MCP server; output formatting lives beside the code that emits it. |
 | `docs/tests/`, `docs/design/` | Owned by `koni-qc`, which is not wired. |
 | `docs/sprints/README.md` | The vendored skill's [`sprint-system.md`](../.agents/skills/koni-docs/references/sprint-system.md) is the live source for the sprint schema; a copy here would drift from it. |
@@ -75,6 +76,8 @@ Walk every applicable item before committing.
 [ ] Frontmatter ID fields are bare IDs, never prose (RULE-17)
 [ ] New env var → SETUP.md + .env.example in the SAME commit (RULE-11)
 [ ] `due` changed? → CONTEXT.md entry in the SAME commit, old → new → why (RULE-18)
+[ ] Shipping a version? → walk RELEASE.md instead of stopping here. `npm run release:check`
+    and `npm run release:verify-pack` must both exit 0 BEFORE the tag is pushed
 [ ] npm run agile:status    — regenerate STATUS.md (RULE-5)
 [ ] npm run agile:validate  — ID graph resolves; must exit 0
 [ ] Touched the skill? python3 .agents/skills/koni-docs/scripts/check-references.py .agents/skills/koni-docs
@@ -114,6 +117,14 @@ Walk every applicable item before committing.
   `📋 backlog · 🚧 in-progress · ✅ done · ⏪ reverted · 🗑️ deprecated`.
 - **Cross-references are markdown links**, not bare paths.
 - **`STATUS.md` is generated.** Regenerate it; never edit it (RULE-5).
+- **CHANGELOG release headings are `## [X.Y.Z] — YYYY-MM-DD — <headline>`, with no
+  trailing `— vX.Y.Z`.** Three older headings — `[0.1.0]`, `[1.0.0]`, `[1.0.1]` — do carry
+  one, and that was not decoration: it appeared on exactly the versions that had a git tag
+  and on none of the six that did not, a 9/9 correlation nothing documented. Every
+  changelogged version is tagged now ([CONTEXT D17](CONTEXT.md)), so the marker would be on
+  every heading and would distinguish nothing; it is retired rather than promoted, and
+  where a check needs to know whether a version is tagged it asks `git`
+  ([CONTEXT D19](CONTEXT.md)). The three existing headings are left exactly as shipped.
 
 ## Commands
 
@@ -126,6 +137,7 @@ npx koni-docs --version   # confirm which CLI you actually have
 ## Cross-references
 
 - [SETUP.md](SETUP.md) — local development setup and the environment variable reference
+- [RELEASE.md](RELEASE.md) — how a version is cut, tagged, published and announced
 - [CHANGELOG.md](CHANGELOG.md) — release history
 - [CONTEXT.md](CONTEXT.md) — decision log
 - [sprints/STATUS.md](sprints/STATUS.md) — current kanban (generated)

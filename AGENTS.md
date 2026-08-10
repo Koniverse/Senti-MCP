@@ -120,6 +120,10 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/README.md](docs/README.md) — **start here.** Doc hub, pre-commit checklist, and
   a table of which files are deliberately absent and what would bring each one in
 - [docs/SETUP.md](docs/SETUP.md) — local dev setup, the env var reference, troubleshooting
+- [docs/RELEASE.md](docs/RELEASE.md) — **how a version is cut and published.** The gate, the
+  tag and Release conventions, the trusted-publisher setup, what each failure means, and the
+  72-hour unpublish window. Not a `DEPLOY.md` — that absence is still recorded
+  ([CONTEXT D18](docs/CONTEXT.md))
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
@@ -232,7 +236,7 @@ that shows it, since the path is gitignored. `vitest.config.ts` scopes collectio
 | Start a story | Flip `status: in-progress`, confirm it is in the sprint scope table |
 | Record a decision | Append the next `D<N>` to [docs/CONTEXT.md](docs/CONTEXT.md) |
 | Add a tool | Read [EPIC-2](docs/sprints/epics/EPIC-2.md) invariants first, then the design spec |
-| Ship a version | Bump [VERSION](VERSION) + add the CHANGELOG entry in the same commit (RULE-1). The version lives in **three** places — `VERSION`, `package.json`, and `SERVER_VERSION` in `src/config.ts`; a test fails if they drift |
+| Ship a version | **Walk [docs/RELEASE.md](docs/RELEASE.md)** — it does not end at the bump. Bump [VERSION](VERSION) + the CHANGELOG entry in the same commit (RULE-1); the version lives in **five** places — `VERSION`, `package.json`, `package-lock.json`, `SERVER_VERSION` in `src/config.ts`, and the git tag. `src/config.test.ts` fails if the first, second and fourth drift; `release:check` covers all five. Then `npm run release:check` and `npm run release:verify-pack` must exit 0, and the annotated `vX.Y.Z` tag push is what publishes |
 | Add an env var | [docs/SETUP.md](docs/SETUP.md) **and** `.env.example`, same commit (RULE-11) |
 | Commit | Walk the checklist in [docs/README.md](docs/README.md) |
 

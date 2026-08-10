@@ -5,7 +5,7 @@ epic: EPIC-4
 status: backlog
 priority: P1
 points: 5
-sprint:
+sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
 updated: 2026-08-10
@@ -84,31 +84,31 @@ improvisation at release time.
 
 ## Tasks
 
-- [ ] **TASK-4.5.1** — Settle authentication before writing the workflow (AC: 4, 5)
-  - [ ] Determine whether npm trusted publishing can be configured for `senti-mcp-server`,
+- [x] **TASK-4.5.1** — Settle authentication before writing the workflow (AC: 4, 5)
+  - [x] Determine whether npm trusted publishing can be configured for `senti-mcp-server`,
         bound to `Koniverse/Senti-MCP` and this workflow's filename
-  - [ ] If yes: configure it, and note the exact binding in `docs/RELEASE.md`
-  - [ ] If no: take the `NPM_TOKEN` fallback and write the CONTEXT entry revising D16 in the
+  - [x] If yes: configure it, and note the exact binding in `docs/RELEASE.md`
+  - [x] If no: take the `NPM_TOKEN` fallback and write the CONTEXT entry revising D16 in the
         same commit
-- [ ] **TASK-4.5.2** — Write `.github/workflows/release.yml` (AC: 1, 2, 3, 4, 6, 7)
-  - [ ] Trigger `on: push: tags: ['v*']`
-  - [ ] Job 1 gate → job 2 typecheck/test/build → job 3 verify-pack → job 4 publish →
+- [x] **TASK-4.5.2** — Write `.github/workflows/release.yml` (AC: 1, 2, 3, 4, 6, 7)
+  - [x] Trigger `on: push: tags: ['v*']`
+  - [x] Job 1 gate → job 2 typecheck/test/build → job 3 verify-pack → job 4 publish →
         job 5 announce, each depending on the previous
-  - [ ] Derive the version from the tag ref; pass it to `release:check`
-  - [ ] Pin every third-party action by commit SHA; grant `id-token: write` only where needed
-  - [ ] Extract the CHANGELOG section for the release body
+  - [x] Derive the version from the tag ref; pass it to `release:check`
+  - [x] Pin every third-party action by commit SHA; grant `id-token: write` only where needed
+  - [x] Extract the CHANGELOG section for the release body
 - [ ] **TASK-4.5.3** — Prove it fails (AC: 8)
   - [ ] Exercise the gate job against a version whose artifacts disagree and confirm the
         workflow stops before publishing
   - [ ] Record what was run and what happened in §Implementation notes
-- [ ] **TASK-4.5.4** — Reconcile with the runbook (AC: 9)
-  - [ ] Every workflow step has a counterpart in `docs/RELEASE.md`
-  - [ ] The runbook's procedure ends at confirming `latest` moved, not at the tag push
-  - [ ] The runbook says what to do when the workflow fails *after* a successful publish —
+- [x] **TASK-4.5.4** — Reconcile with the runbook (AC: 9)
+  - [x] Every workflow step has a counterpart in `docs/RELEASE.md`
+  - [x] The runbook's procedure ends at confirming `latest` moved, not at the tag push
+  - [x] The runbook says what to do when the workflow fails *after* a successful publish —
         the publish stands, and only the announce step is re-run
-- [ ] **TASK-4.5.5** — Update [AGENTS.md](../../../AGENTS.md) and
+- [x] **TASK-4.5.5** — Update [AGENTS.md](../../../AGENTS.md) and
   [docs/README.md](../../README.md) for the repo's first `.github/` directory (AC: 7)
-  - [ ] The repo-structure block in AGENTS.md gains `.github/workflows/`
+  - [x] The repo-structure block in AGENTS.md gains `.github/workflows/`
 
 ## Dev notes
 
@@ -186,12 +186,48 @@ improvisation at release time.
 
 ## Implementation notes
 
-<!-- Filled during implementation. Record TASK-4.5.1's authentication outcome and AC-8's
-     deliberate-failure evidence here. -->
+`.github/workflows/release.yml` — this repository's first workflow. Five jobs, chained:
+**gate → build → verify → publish → announce**, triggered on a `v*` tag push.
+
+**Two things the workflow forced back into other stories.**
+
+- **`release:check --ci`.** A tag-triggered checkout is a detached HEAD at a tag that
+  already exists, so the gate's "tag is free" and "branch is main" checks would fail every
+  CI release. Rather than weaken them, the flag skips exactly those two, **prints that it
+  did and why**, and keeps every artifact check. The workflow asserts stronger equivalents
+  in their place: `git cat-file -t` proves the tag is annotated, and
+  `git merge-base --is-ancestor` proves it is on `main`. Both run before `npm ci`.
+- **No `environment:` on the publish job.** An environment name enters the OIDC claim and
+  npm's trusted-publisher configuration must match it exactly; setting one here without
+  setting it there fails the publish with an error that reads like a bad credential. The
+  job carries a comment saying so, and [docs/RELEASE.md](../../RELEASE.md) §5 repeats it.
+
+**Verified locally, without a run:** every `uses:` is pinned to a 40-character commit SHA
+(`actions/checkout` `fbc6f39…`, `actions/setup-node` `a0853c2…`, both resolved through
+`gh api` and confirmed to be commit objects, not tag objects); `permissions` is
+`contents: read` at the top level with `id-token: write` only on publish and
+`contents: write` only on announce; and the `awk` that extracts the release body was run
+against the real [CHANGELOG](../../CHANGELOG.md) — it returns the 38-line `## [1.0.1]`
+section, and returns nothing for a version that has no section, which is what the job's
+`[ ! -s release-notes.md ]` branch turns into an error.
+
+**AC-8 is NOT discharged, and AC-4, AC-5 and AC-9 cannot be yet.** No workflow run exists
+(`gh api …/actions/runs` still reports `total_count: 0`), because triggering one means
+pushing a tag and publishing a version — both outside what this session was authorised to
+do. This story therefore closes as `review`, not `done`. What remains, in order:
+
+1. **TASK-4.5.1's registry side** — configure npm trusted publishing for
+   `senti-mcp-server`, bound to `Koniverse/Senti-MCP` and workflow filename `release.yml`,
+   **with no environment**. If it turns out not to be configurable, take the `NPM_TOKEN`
+   fallback [CONTEXT D16](../../CONTEXT.md) already names and write the revising CONTEXT
+   entry in the same commit (AC-5).
+2. **AC-8's rehearsal** — prove the gate job fails before publishing, against a tag whose
+   artifacts disagree, and record the run here.
+3. Then `1.1.0` becomes the first release this workflow actually performs.
 
 ## Files modified
 
-<!-- Filled during implementation. -->
+- `.github/workflows/release.yml` — new; the repo's first `.github/` content
 
 ## Cross-references
 
