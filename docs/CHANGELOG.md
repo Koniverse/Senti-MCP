@@ -38,6 +38,20 @@ allowlists `dist` and non-test `src`, so none of the below reaches the tarball
   Business context's "roughly thirty lines" estimate now carries the correction the W33
   retrospective asked for. Live-payload findings from the first authenticating smoke run
   are recorded there for W34.
+- **Sprint W34 opened, and EPIC-2's four remaining stories written.**
+  [sprint-2026-W34](sprints/sprint-2026-W34.md) (2026-08-17 → 2026-08-23, 4 stories / 11
+  points) plus [US-2.10](sprints/stories/US-2.10-get-account-performance-tool.md),
+  [US-2.11](sprints/stories/US-2.11-list-deals-tool.md),
+  [US-2.12](sprints/stories/US-2.12-get-performance-breakdowns-tool.md) and
+  [US-2.13](sprints/stories/US-2.13-get-equity-timeseries-tool.md) — the four `GET`
+  operations still without a tool, one new axis each: query parameters, cursor
+  pagination, payload shaping, downsampling. US-2.13 carries EPIC-2's close.
+- New [CONTEXT D14](CONTEXT.md): those four ship `1.1.0` → `1.4.0`, not the expansion
+  spec's `0.8.0` → `0.11.0`, which was written before the `1.0.0` cut. The spec is left
+  unedited per the D1/D5 precedent. EPIC-2 §Remaining work also records that the
+  `capPositions`/`capOrders` generalization the W33 retrospective deferred to US-2.11
+  does **not** fire: `list_deals` bounds its payload with a caller-supplied `limit`, not
+  a truncation, so it needs no third cap helper.
 
 ---
 

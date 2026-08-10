@@ -542,3 +542,53 @@ a root-level config is not in — `npm pack --dry-run` confirms 42 files with
 
 **Date**: 2026-08-10
 **Version**: unreleased
+
+---
+
+## Phase 6 — W34 read-path completion (2026-08-10)
+
+### D14. The last four read tools ship `1.1.0` → `1.4.0`, not the spec's `0.8.0` → `0.11.0`
+
+**Context**: the [read-tool expansion design spec](superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
+§Story plan assigns a version to every story it plans, and its last four rows read
+`0.8.0`, `0.9.0`, `0.10.0`, `0.11.0`. That column was written on 2026-08-05, when the
+shipped version was `0.1.0` and the growth path was one minor per tool inside a `0.x`
+series. [D11](#d11-cut-100-from-070-not-071) then cut `1.0.0` from `0.7.0` and
+[D12](#d12-publish-to-npm-as-101-leaving-100-git-only-revision-of-d11) published `1.0.1`,
+which makes those four numbers unreachable — `0.8.0` is behind `1.0.1`, and npm's `latest`
+would not move. W34 opens with four stories that each need a version in their frontmatter
+and their CHANGELOG entry, so the discrepancy has to be resolved before the first one is
+written rather than discovered at release time.
+
+**Decision**: US-2.10 → US-2.13 ship `1.1.0`, `1.2.0`, `1.3.0` and `1.4.0` respectively.
+The expansion spec is **not edited** — its `Ships` column stays as written, and this entry
+is what a reader reconciles it against.
+
+**Rationale**: each of the four adds a tool and changes no existing tool's behaviour,
+which is the textbook additive minor under semver — the same shape `0.3.0` → `0.7.0` had
+inside the `0.x` series, continued past the `1.0.0` boundary. Leaving the spec unedited
+follows the precedent [D1](#d1-adopt-koni-docs-as-this-repos-documentation-framework) and
+[D5](#d5-raise-the-supported-node-floor-to-2060) set twice: a planning artifact is a
+snapshot of intent at a date, and this repository amends via CONTEXT rather than
+rewriting one. Editing the column would also destroy the evidence that the plan predates
+the `1.0.0` cut, which is the only thing that explains why it says `0.8.0` at all.
+
+**Alternatives considered**:
+- **Edit the spec's `Ships` column in place** — rejected per D1/D5: it makes the spec
+  look as though it always knew about `1.0.0`, and silently discards the dating that
+  makes the original numbers intelligible.
+- **Ship the four as patches (`1.0.2` → `1.0.5`)** — rejected: each adds a tool, and a
+  tool is a feature. A consumer pinned to `~1.0.1` would receive four new tools without
+  a minor bump ever signalling that the surface grew.
+- **Ship all four as a single `1.1.0` at sprint close** — rejected: it discards the
+  one-version-per-story growth path EPIC-2 has followed since `0.1.0`, and it removes the
+  ability to bisect a regression to one tool. The four are independently useful and
+  independently revertible.
+
+**Impact**: [sprint-2026-W34](sprints/sprint-2026-W34.md) and the four story files carry
+`1.1.0` → `1.4.0` in their release tasks and Changelog entries.
+[EPIC-2](sprints/epics/EPIC-2.md) §Remaining work already flagged the stale column and
+now points here. No code changes; nothing ships from this entry alone.
+
+**Date**: 2026-08-10
+**Version**: unreleased

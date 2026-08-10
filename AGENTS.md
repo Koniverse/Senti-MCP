@@ -123,8 +123,10 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
+- [docs/sprints/sprint-2026-W34.md](docs/sprints/sprint-2026-W34.md) — the active sprint
+  (2026-08-17 → 2026-08-23, `planned`): US-2.10 → US-2.13 close EPIC-2's read path
 - [docs/sprints/sprint-2026-W33.md](docs/sprints/sprint-2026-W33.md) — most recently
-  closed sprint (2026-08-10 → 2026-08-16); W34's sprint file is not yet written
+  closed sprint (2026-08-10 → 2026-08-16)
 - [docs/LESSONS.md](docs/LESSONS.md) — retrospective lessons, append-only
 - [docs/sprints/epics/](docs/sprints/epics/) — EPIC-1 (foundation), EPIC-2 (read path)
 - [docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design

@@ -9,7 +9,7 @@ invariants, and the documentation map. Read it first. On any conflict, AGENTS.md
 koni-docs:
   plugins: []
   docs_path: docs/
-  active_sprint: sprint-2026-W33
+  active_sprint: sprint-2026-W34
   version_file: VERSION
 
 ## Repo-specific notes for Claude Code

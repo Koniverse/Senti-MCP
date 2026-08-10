@@ -55,7 +55,7 @@ own design spec, not an appendix to this one.
 | 4 | **Tool substrate** | [US-2.4](../stories/US-2.4-tool-substrate-and-layout.md) | `core/` + `tools/<tag>/`; `registerReadTool`, `parseOrThrow`, `accountPath`, `query`, and the `404`/`409` branches every later tool consumes |
 | 5 | **Account-independent reads** | [US-2.5](../stories/US-2.5-list-brokers-tool.md), [US-2.6](../stories/US-2.6-list-strategies-tool.md) | `list_brokers` and `list_strategies` — the cheapest proof a tool registers on the new substrate, neither taking a path parameter |
 | 6 | **Account-scoped reads** | [US-2.7](../stories/US-2.7-list-account-strategies-tool.md), [US-2.8](../stories/US-2.8-list-positions-tool.md), [US-2.9](../stories/US-2.9-list-pending-orders-tool.md) | `list_account_strategies`, `list_positions`, `list_pending_orders` — `accountPath`'s traversal guard, the `404` login/id hint, and the terminal-backed `409` branch |
-| 7 | **Query, pagination, and payload shaping** | US-2.10 → US-2.13 | The four remaining reads, each opening one axis this epic has not: query parameters, cursor pagination, breakdown shaping, downsampling. **Not yet written** — see §Remaining work |
+| 7 | **Query, pagination, and payload shaping** | [US-2.10](../stories/US-2.10-get-account-performance-tool.md), [US-2.11](../stories/US-2.11-list-deals-tool.md), [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md), [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | The four remaining reads, each opening one axis this epic has not: query parameters, cursor pagination, breakdown shaping, downsampling. Written 2026-08-10, scoped to [sprint-2026-W34](../sprint-2026-W34.md) — see §Remaining work |
 
 ### Out of scope
 
@@ -114,8 +114,14 @@ most likely to break by copying an earlier one:
 | [US-2.7](../stories/US-2.7-list-account-strategies-tool.md) | `list_account_strategies` tool | P1 | 2 | ✅ done (v0.5.0) | 14–15 |
 | [US-2.8](../stories/US-2.8-list-positions-tool.md) | `list_positions` tool | P1 | 2 | ✅ done (v0.6.0) | 16–17 |
 | [US-2.9](../stories/US-2.9-list-pending-orders-tool.md) | `list_pending_orders` tool | P1 | 2 | ✅ done (v0.7.0) | 18–19 |
+| [US-2.10](../stories/US-2.10-get-account-performance-tool.md) | `get_account_performance` tool | P1 | 2 | 🟢 ready (→ 1.1.0) | — |
+| [US-2.11](../stories/US-2.11-list-deals-tool.md) | `list_deals` tool | P1 | 3 | 🟢 ready (→ 1.2.0) | — |
+| [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md) | `get_performance_breakdowns` tool | P1 | 3 | 🟢 ready (→ 1.3.0) | — |
+| [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | `get_equity_timeseries` tool, and EPIC-2's close | P1 | 3 | 🟢 ready (→ 1.4.0) | — |
 
-The version in each Status cell is where that story *first* shipped. The whole six-tool
+The version in each Status cell is where that story *first* shipped — or, for the four
+`ready` rows, where it is planned to ship ([CONTEXT D14](../../CONTEXT.md)); their Plan
+tasks column is empty because no W34 implementation plan exists yet. The whole six-tool
 surface was then promoted together to `1.0.0` and reached the registry as `1.0.1`
 ([CONTEXT D11, D12](../../CONTEXT.md)) — `0.1.0` and `1.0.1` are the only versions ever
 published to npm, and `1.0.0` is deliberately git-only.
@@ -123,31 +129,46 @@ published to npm, and `1.0.0` is deliberately git-only.
 Growth path: US-2.1 → US-2.3 shipped in [sprint-2026-W32](../sprint-2026-W32.md);
 US-2.4 → US-2.9 in [sprint-2026-W33](../sprint-2026-W33.md), splitting `src/` by API tag
 as the [read-tool expansion design spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
-directs (`tools/brokers/`, `tools/strategies/`, `tools/trading/`, …).
+directs (`tools/brokers/`, `tools/strategies/`, `tools/trading/`, …);
+US-2.10 → US-2.13 in [sprint-2026-W34](../sprint-2026-W34.md), adding `tools/performance/`
+and closing the read path.
 
 ## Remaining work
 
 **This epic is `in-progress`: six of the API's ten `GET` operations have a tool.** The
 four that do not are the reason the status has not flipped:
 
-| US | Tool | New axis | Pts |
-|---|---|---|---|
-| US-2.10 | `get_account_performance` | first query parameters | 2 |
-| US-2.11 | `list_deals` | cursor pagination | 3 |
-| US-2.12 | `get_performance_breakdowns` | payload shaping — the ~70,000-token `breakdowns` response ([CONTEXT D10](../../CONTEXT.md)) | 3 |
-| US-2.13 | `get_equity_timeseries` | downsampling | 3 |
+| US | Tool | New axis | Pts | Ships |
+|---|---|---|---|---|
+| [US-2.10](../stories/US-2.10-get-account-performance-tool.md) | `get_account_performance` | first query parameters | 2 | 1.1.0 |
+| [US-2.11](../stories/US-2.11-list-deals-tool.md) | `list_deals` | cursor pagination | 3 | 1.2.0 |
+| [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md) | `get_performance_breakdowns` | payload shaping — the ~70,000-token `breakdowns` response ([CONTEXT D10](../../CONTEXT.md)) | 3 | 1.3.0 |
+| [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | `get_equity_timeseries` | downsampling | 3 | 1.4.0 |
 
-Eleven points, planned for sprint W34 by the
-[expansion spec §Story plan](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md).
-**No story file or sprint file exists for any of them yet.** Two things to settle when
-they are written:
+Eleven points. **All four stories were written 2026-08-10 and are `ready` in
+[sprint-2026-W34](../sprint-2026-W34.md)** (2026-08-17 → 2026-08-23), the window the
+[expansion spec §Story plan](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
+planned them for. US-2.13 carries the task that flips this epic to `done`.
 
-- **The spec's `Ships` column is stale.** It assigns `0.8.0` → `0.11.0`, written before
-  `1.0.0` was cut. Post-`1.0.1` these are additive minors: `1.1.0` → `1.4.0`.
-- **`capPositions`/`capOrders` generalization** is deferred to US-2.11 and no earlier —
-  two cap helpers returning differently-shaped objects is not yet the sixfold repetition
-  that justified extracting `parseOrThrow`. If `list_deals` needs a third, that is the
-  point to generalize ([W33 retrospective](../sprint-2026-W33.md) §Followups).
+Both open questions this section carried are now settled:
+
+- **The spec's stale `Ships` column** — it assigns `0.8.0` → `0.11.0`, written before
+  `1.0.0` was cut. Post-`1.0.1` these are additive minors, `1.1.0` → `1.4.0`, recorded as
+  [CONTEXT D14](../../CONTEXT.md). The spec itself is left unedited, per the D1/D5
+  precedent for planning artifacts.
+- **`capPositions`/`capOrders` generalization does not happen.** The
+  [W33 retrospective](../sprint-2026-W33.md) §Followups deferred it to US-2.11 on the
+  condition that `list_deals` needed a third cap helper. It does not: `list_deals` bounds
+  its payload with a caller-supplied `limit` enforced by its input schema, not with a
+  server-side truncation, so it emits no `notes` and needs no cap — *paginating is not
+  cutting*. Two copies stay two copies; the trigger to revisit is a third tool that
+  truncates a response the caller did not bound. See
+  [US-2.11](../stories/US-2.11-list-deals-tool.md) §What we explicitly did NOT do.
+
+**What is not settled is the implementation plan.** W33 ran against a task-by-task plan
+with code, and its retrospective credits that plan for why six stories read as
+transcription-with-verification. W34 has stories and no equivalent plan; writing one is
+Superpowers' job, and it precedes Phase 1.
 
 ## Live payload findings
 
@@ -181,4 +202,6 @@ schema — it has to be measured.
 - [EPIC-3](EPIC-3.md) — the write path, where all seven `POST` operations live
 - [sprint-2026-W32](../sprint-2026-W32.md) — US-2.1 → US-2.3
 - [sprint-2026-W33](../sprint-2026-W33.md) — US-2.4 → US-2.9, and the retrospective this file answers
+- [sprint-2026-W34](../sprint-2026-W34.md) — US-2.10 → US-2.13, the sprint that closes this epic
+- [CONTEXT D14](../../CONTEXT.md) — the `1.1.0` → `1.4.0` renumber the four remaining stories follow
 - [Senti-Quant](https://github.com/Koniverse/Senti-Quant) — the upstream product
