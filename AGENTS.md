@@ -17,7 +17,9 @@ Trading. An MCP host cannot call it directly: something has to own the API key, 
 typed tools whose descriptions let a model choose correctly, and turn API errors into
 text a model can act on. This server is that something.
 
-**Current state: v1.0.0 shipped.** Six tools are registered in `src/server.ts`:
+**Current state: v1.0.1 on npm `latest`.** `1.0.0` is the stable-surface cut and is
+tagged git-only; `1.0.1` is the version that carries it to the registry
+([CONTEXT D11, D12](docs/CONTEXT.md)). Six tools are registered in `src/server.ts`:
 `list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
 `list_positions`, `list_pending_orders` — covering six of the API's 10 `GET`
 operations. `list_accounts` shipped first, in v0.1.0, tracked as
@@ -213,6 +215,13 @@ npm run test:smoke        # one live call; needs SENTI_SMOKE_KEY in .env.local
 
 `npm test` builds `dist/` on the way through — `src/index.test.ts` spawns the real
 built entry point, because that is the artifact US-2.2 AC-18 is a claim about.
+
+A clean run is **14 files / 197 tests, 1 skipped** (the opt-in smoke test). If you see
+roughly double that, you have a leftover git worktree under `.claude/worktrees/` being
+collected as a second copy of the suite — `git worktree list` is the only routine command
+that shows it, since the path is gitignored. `vitest.config.ts` scopes collection to
+`src/**/*.test.ts` to prevent exactly this ([CONTEXT D13](docs/CONTEXT.md),
+[LESSONS 3](docs/LESSONS.md)); do not widen it.
 
 | I want to… | Do this |
 |---|---|

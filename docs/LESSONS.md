@@ -49,3 +49,97 @@ trusted to be green for the right reason.
 
 See [CONTEXT.md D9](CONTEXT.md) — the table-driven invariant tests this pattern most
 often gets applied to.
+
+---
+
+## 2. A story's Verification-commands row is a claim, and `-t` that matches nothing exits 0
+
+**What happened (v0.5.0 → v0.7.0, sprint-2026-W33)**: three stories shipped with a row
+in their Verification-commands table that ran no tests at all.
+[US-2.7](sprints/stories/US-2.7-list-account-strategies-tool.md)'s AC-2 row was
+`list-account-strategies.test.ts -t traversal`;
+[US-2.8](sprints/stories/US-2.8-list-positions-tool.md)'s and
+[US-2.9](sprints/stories/US-2.9-list-pending-orders-tool.md)'s AC-1 rows were
+`<domain-module>.test.ts -t accountPath`. Both filters name a behaviour that lives in
+the `register*` function, not in the domain module the file selects — so the filter
+matched nothing in the file it was pointed at. All three were drafted during planning,
+before the tests they name existed, guessing which file and filter the AC would land in
+once written. The [W33 retrospective](sprints/sprint-2026-W33.md) recorded this as
+recurring and asked for it to become a checklist item; this entry is that item.
+
+**Why**: the failure is silent by construction. A name filter that matches nothing is
+not an error in vitest — it is zero selected tests, reported as skipped, and the process
+**exits 0**:
+
+```
+$ npx vitest run src/tools/trading/positions.test.ts -t accountPath
+ ↓ src/tools/trading/positions.test.ts (20 tests | 20 skipped)
+   Test Files  1 skipped (1)
+        Tests  20 skipped (20)
+$ echo $?
+0
+```
+
+Copy that into a story as evidence for an AC and it reads as a pass. Nothing in the
+output says "the thing you meant to verify was never run" — the `↓` and the word
+`skipped` are the only tell, and both are easy to skim past when the exit code agrees
+with what you hoped. The deeper cause is ordering: a table written before its tests
+exist can only guess, and a guess about a file path is not verifiable by rereading it.
+
+**How to avoid**:
+- **Run every row of a Verification-commands table, and read the test *count*, before
+  writing the row into the story.** Not the exit code — the count. A row whose output
+  says `0 passed` or `N skipped` is not evidence of anything.
+- Draft the table *after* the tests exist. During planning, write the AC and leave the
+  command cell empty rather than filling it with a plausible-looking guess that later
+  reads as verified.
+- When an invariant is enforced by a `register*` function but its subject (a helper like
+  `accountPath`) is named after the domain module, the filter almost certainly belongs
+  against `src/server.test.ts`, not the domain module's own test file. That mismatch is
+  what produced all three instances here.
+
+**Pattern**: [US-2.8](sprints/stories/US-2.8-list-positions-tool.md)'s corrected AC-1
+row is `npm test -- src/server.test.ts -t "list_positions.*account-scoped"`, which
+reports `Tests 1 passed | 33 skipped` — one selected test, genuinely run. The count is
+the evidence; the exit code would have been 0 either way. Each of the three corrected
+rows was executed and confirmed passing before being written back into its story, and
+each now carries a note saying why the registration-level test file is the right target.
+
+---
+
+## 3. A gitignored worktree inside the repo is invisible to `git status` and fully visible to vitest
+
+**What happened (v1.0.1, 2026-08-10)**: `npm test` reported **28 files / 394 tests**
+where the package owns 14 files / 197 tests. The extra half came from
+`.claude/worktrees/read-tools-w33/`, a git worktree left behind after
+`feat/read-tools-w33` merged, pinned at `812f7e8` — a commit two releases behind `main`.
+`git status` was clean and `git worktree list` was the only place the tree showed up.
+The suite was green, so nothing drew attention to it; the W33 retrospective's "179 tests
+total" no longer matched what `npm test` printed, and the reason was duplication rather
+than new tests. `npm run prepublishOnly` ran the doubled suite too.
+
+**Why**: two defaults compose badly. `.claude/worktrees/` is in `.gitignore` — correct,
+those trees are scratch space — so git says nothing about it. Vitest's default `include`
+is `**/*.test.ts` from the project root, and its default `exclude`
+(`node_modules`, `dist`, `.git`, `.cache`, `.idea`, …) does not mention `.claude`. So
+the one tool that would have told you the directory exists is silent, and the one tool
+that reads it treats it as first-class source. The dangerous version of this is not a
+doubled count: it is a stale worktree whose *older* copy of a test fails, or passes,
+against code you are not editing.
+
+**How to avoid**:
+- **Scope test collection with an allowlist, not a blacklist.** `vitest.config.ts` sets
+  `include: ['src/**/*.test.ts']`, anchored at the project root, so no nested tree can
+  be collected whatever it is named — this fixes the class, where excluding `.claude/**`
+  would only fix the one path ([CONTEXT D13](CONTEXT.md)).
+- Verify a guard like that with a decoy rather than by reading the glob: drop a
+  deliberately-failing test at `.claude/worktrees/decoy/src/decoy.test.ts`, confirm the
+  count does not move, then delete it. A guard whose failure mode is silent needs
+  evidence, not inspection — the same reasoning as entry 1.
+- After merging a worktree branch, `git worktree remove <path>` and `git branch -d` it.
+  `git worktree list` is the only routine command that shows the leftovers.
+
+**Pattern**: `git worktree remove .claude/worktrees/read-tools-w33` +
+`git branch -d feat/read-tools-w33` took `npm test` from 394 tests to 197, matching
+`npx vitest run --exclude '**/.claude/**'` exactly — which is how the duplication was
+confirmed as the cause before anything was deleted.

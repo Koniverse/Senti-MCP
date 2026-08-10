@@ -3,7 +3,7 @@ id: EPIC-2
 title: "Read-only Senti Quant access over MCP"
 status: in-progress
 created: 2026-08-05
-updated: 2026-08-07
+updated: 2026-08-10
 ---
 
 ## Goal
@@ -26,8 +26,17 @@ errors into text a model can act on rather than a status code it will misread.
 This epic is that something, restricted to the **read path**. It starts as a thin
 vertical slice — config, auth, HTTP client, error mapping, one tool, tests — because a
 slice that works against the real service is worth more than five tools that have only
-ever seen a stubbed `fetch`. Once the slice holds, the design spec estimates the second
-read tool at roughly thirty lines.
+ever seen a stubbed `fetch`. Once the slice holds, the v1 design spec estimated the
+second read tool at roughly thirty lines.
+
+**That estimate held only for the part it actually described.** Measured across the five
+tools that shipped in W33, the *registration* increment — the sliver the substrate made
+cheap — came in at +27 to +45 lines. A whole tool file, counting its Zod schema, parser,
+cap helper where present, formatter and registration, lands at **97–156 lines**
+(`list_brokers` 99, `list_strategies` 113, `list_account_strategies` 97, `list_positions`
+156, `list_pending_orders` 145). Quote the 30 against a registration; do not quote it
+against a story estimate. See the [W33 retrospective](../sprint-2026-W33.md), which
+raised this figure against this paragraph.
 
 The architectural distinction this epic preserves is **read versus write**. The API is
 10 `GET` + 7 `POST`: seven of the 17 operations are `POST`, and two of those are
@@ -43,6 +52,10 @@ own design spec, not an appendix to this one.
 | 1 | **Authenticated substrate** | [US-2.1](../stories/US-2.1-authenticated-senti-api-client.md) | Config, error vocabulary, and the HTTP client that owns auth, timeouts, and status mapping |
 | 2 | **First read tool** | [US-2.2](../stories/US-2.2-list-accounts-tool.md) | `list_accounts` end to end: schema, formatting, registration, stdio bootstrap |
 | 3 | **Proof against the real service** | [US-2.3](../stories/US-2.3-live-smoke-test-and-readme.md) | One opt-in live call, plus the README a user installs from |
+| 4 | **Tool substrate** | [US-2.4](../stories/US-2.4-tool-substrate-and-layout.md) | `core/` + `tools/<tag>/`; `registerReadTool`, `parseOrThrow`, `accountPath`, `query`, and the `404`/`409` branches every later tool consumes |
+| 5 | **Account-independent reads** | [US-2.5](../stories/US-2.5-list-brokers-tool.md), [US-2.6](../stories/US-2.6-list-strategies-tool.md) | `list_brokers` and `list_strategies` — the cheapest proof a tool registers on the new substrate, neither taking a path parameter |
+| 6 | **Account-scoped reads** | [US-2.7](../stories/US-2.7-list-account-strategies-tool.md), [US-2.8](../stories/US-2.8-list-positions-tool.md), [US-2.9](../stories/US-2.9-list-pending-orders-tool.md) | `list_account_strategies`, `list_positions`, `list_pending_orders` — `accountPath`'s traversal guard, the `404` login/id hint, and the terminal-backed `409` branch |
+| 7 | **Query, pagination, and payload shaping** | US-2.10 → US-2.13 | The four remaining reads, each opening one axis this epic has not: query parameters, cursor pagination, breakdown shaping, downsampling. **Not yet written** — see §Remaining work |
 
 ### Out of scope
 
@@ -50,9 +63,11 @@ own design spec, not an appendix to this one.
   design spec once opened. Not registered, and not written "ready to enable".
   Rationale above and in the
   [design spec](../../superpowers/specs/2026-08-05-senti-mcp-server-design.md) §Security.
-- **The other nine read operations** — deferred to US-2.4 and beyond. v1 ships one
-  tool deliberately: replicating a pipe before it is proven multiplies whatever is
-  wrong with it by nine.
+- **The other nine read operations** — deferred past v1, which shipped one tool
+  deliberately: replicating a pipe before it is proven multiplies whatever is wrong with
+  it by nine. **Five of the nine have since shipped** in W33 (US-2.5 → US-2.9); the
+  remaining four are in scope for this epic and out of scope only for the releases so
+  far — see §Remaining work.
 - **Retry and backoff, response caching, npm publishing** — out of scope for v1 per the
   design spec. Each is a decision, not an omission.
 - **Documentation tooling and repo standard** — owned by [EPIC-1](EPIC-1.md).
@@ -68,16 +83,23 @@ most likely to break by copying an earlier one:
 - **The API key never appears in returned text**, including every error branch. Asserted
   by test, not by inspection.
 - **Every path parameter is validated against its expected format and passed through
-  `encodeURIComponent` before being joined into a URL.** No story in v1 has a path
-  parameter, which is exactly why this is recorded now: `accountId` originates from the
-  model, and a value like `..%2F..%2Fadmin` escapes `/api/v1/accounts/` under naive
-  concatenation. This is the easiest defect to introduce when adding the second tool.
+  `encodeURIComponent` before being joined into a URL.** Recorded before any story had a
+  path parameter, because `accountId` originates from the model and a value like
+  `..%2F..%2Fadmin` escapes `/api/v1/accounts/` under naive concatenation. Since US-2.4
+  this is `accountPath` in `core/client.ts`, and enrolment is not optional: the
+  traversal test in `src/server.test.ts` is table-driven over `TOOL_CALLS`, so a new
+  account-scoped tool joins by adding a row. Build the path any other way and the test
+  will not notice — which is the defect, not the guard.
 - **Tool failures are returned as `isError: true` text results, never thrown.** A model
   can read and act on a returned error; it cannot see a call that died.
 - **Nothing writes to `stdout`.** That stream carries JSON-RPC frames. Diagnostics go to
   `stderr`.
 - **Null is not zero.** A null balance renders as `—`. For a trading API the difference
-  between "never synced" and "balance is zero" is real.
+  between "never synced" and "balance is zero" is real. The converse also holds and is
+  live-confirmed: MT5 writes `0` into `sl`/`tp` to mean "not set", so `positions.ts`'s
+  `price()` maps both `0` and `null` to `—`. All 10 positions on the smoke account carry
+  `sl: 0, tp: 0` (§Live payload findings) — rendering those as `0` would tell a model
+  there is a stop loss at price zero.
 
 ## Story index
 
@@ -93,16 +115,70 @@ most likely to break by copying an earlier one:
 | [US-2.8](../stories/US-2.8-list-positions-tool.md) | `list_positions` tool | P1 | 2 | ✅ done (v0.6.0) | 16–17 |
 | [US-2.9](../stories/US-2.9-list-pending-orders-tool.md) | `list_pending_orders` tool | P1 | 2 | ✅ done (v0.7.0) | 18–19 |
 
-Growth path: US-2.4 through US-2.9 ship in [sprint-2026-W33](../sprint-2026-W33.md),
-splitting `src/` by API tag as the [read-tool expansion design spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
-directs (`tools/brokers/`, `tools/strategies/`, `tools/trading/`, …). The remaining
-four read operations — `get_account_performance`, `get_performance_breakdowns`,
-`get_equity_timeseries`, `list_deals` — carry to sprint W34.
+The version in each Status cell is where that story *first* shipped. The whole six-tool
+surface was then promoted together to `1.0.0` and reached the registry as `1.0.1`
+([CONTEXT D11, D12](../../CONTEXT.md)) — `0.1.0` and `1.0.1` are the only versions ever
+published to npm, and `1.0.0` is deliberately git-only.
+
+Growth path: US-2.1 → US-2.3 shipped in [sprint-2026-W32](../sprint-2026-W32.md);
+US-2.4 → US-2.9 in [sprint-2026-W33](../sprint-2026-W33.md), splitting `src/` by API tag
+as the [read-tool expansion design spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
+directs (`tools/brokers/`, `tools/strategies/`, `tools/trading/`, …).
+
+## Remaining work
+
+**This epic is `in-progress`: six of the API's ten `GET` operations have a tool.** The
+four that do not are the reason the status has not flipped:
+
+| US | Tool | New axis | Pts |
+|---|---|---|---|
+| US-2.10 | `get_account_performance` | first query parameters | 2 |
+| US-2.11 | `list_deals` | cursor pagination | 3 |
+| US-2.12 | `get_performance_breakdowns` | payload shaping — the ~70,000-token `breakdowns` response ([CONTEXT D10](../../CONTEXT.md)) | 3 |
+| US-2.13 | `get_equity_timeseries` | downsampling | 3 |
+
+Eleven points, planned for sprint W34 by the
+[expansion spec §Story plan](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md).
+**No story file or sprint file exists for any of them yet.** Two things to settle when
+they are written:
+
+- **The spec's `Ships` column is stale.** It assigns `0.8.0` → `0.11.0`, written before
+  `1.0.0` was cut. Post-`1.0.1` these are additive minors: `1.1.0` → `1.4.0`.
+- **`capPositions`/`capOrders` generalization** is deferred to US-2.11 and no earlier —
+  two cap helpers returning differently-shaped objects is not yet the sixfold repetition
+  that justified extracting `parseOrThrow`. If `list_deals` needs a third, that is the
+  point to generalize ([W33 retrospective](../sprint-2026-W33.md) §Followups).
+
+## Live payload findings
+
+The [W33 retrospective](../sprint-2026-W33.md) closed with both of its open schema
+questions unsettled, because the available `SENTI_SMOKE_KEY` was rejected `401` against
+dev and production alike — "the credential, not the code, is what is unverified." A
+working key arrived **2026-08-10**; `npm run test:smoke` passes against
+`be-dev.sentitrade.xyz`. What the live payloads settle, and what they do not:
+
+| Question | Verdict |
+|---|---|
+| `list_strategies`' `description`, `supportedSymbols`, `supportedTimeframes` — `.nullable().optional()` | **Present and typed in 15/15 strategies**, never absent, never null. The permissiveness is defensive only; nothing observed requires it, and nothing contradicts it either. Do not tighten on 15 rows from one key. |
+| `list_strategies`' `avgRating` — `.nullable()` | **Confirmed necessary.** Null in 5 of 15. |
+| `PositionSchema`'s 13 fields | **Exact.** Row keys match the schema one-for-one — no extra field, none missing. |
+| `sl` / `tp` on positions — `.nullable()` | **The API sends `0`, not `null`** — 10/10 rows, typed number. `price()`'s `0 → —` mapping is the branch that actually runs; the `null` arm is untaken so far. |
+| `priceStopLimit` on pending orders | **Still unsettled.** The account holds zero pending orders. |
+| The `409` / `conflictMeans` terminal-offline branch | **Still unexercised live.** Positions and orders both returned `200`; the terminal is online. |
+
+So the blocker has moved rather than cleared: the credential works, and what is missing
+now is an account **holding a resting order** and an **offline terminal**. W34 needs the
+first before US-2.11's cursor work trusts an order payload's shape, and
+`get_performance_breakdowns`'s payload weight (D10) still cannot be estimated from the
+schema — it has to be measured.
 
 ## Cross-references
 
 - [Design spec](../../superpowers/specs/2026-08-05-senti-mcp-server-design.md) — the approved v1 design
 - [Implementation plan](../../superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — task-by-task, with code
+- [Read-tool expansion spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 design, and the source of the US-2.10 → US-2.13 story plan
 - [EPIC-1](EPIC-1.md) — the documentation framework this epic reports into
-- [sprint-2026-W32](../sprint-2026-W32.md) — the sprint these stories sit in
+- [EPIC-3](EPIC-3.md) — the write path, where all seven `POST` operations live
+- [sprint-2026-W32](../sprint-2026-W32.md) — US-2.1 → US-2.3
+- [sprint-2026-W33](../sprint-2026-W33.md) — US-2.4 → US-2.9, and the retrospective this file answers
 - [Senti-Quant](https://github.com/Koniverse/Senti-Quant) — the upstream product

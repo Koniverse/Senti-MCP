@@ -13,7 +13,31 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ## [Unreleased]
 
-_Nothing yet._
+Nothing publishable — `VERSION` deliberately does not move. `files` in `package.json`
+allowlists `dist` and non-test `src`, so none of the below reaches the tarball
+(`npm pack --dry-run`: 42 files, unchanged).
+
+### Fixed
+- **`npm test` ran the suite twice.** It reported 28 files / 394 tests against a package
+  that owns 14 / 197; the surplus was `.claude/worktrees/read-tools-w33/`, a git worktree
+  left behind after `feat/read-tools-w33` merged (`66be3a4`) and still checked out at
+  `812f7e8`, two releases behind `main`. `.claude/worktrees/` is gitignored so `git
+  status` was silent, while vitest's default `include` of `**/*.test.ts` read the tree as
+  source. The worktree and its merged branch are removed, and a new `vitest.config.ts`
+  scopes collection to `src/**/*.test.ts` so no nested tree can be collected again
+  ([CONTEXT D13](CONTEXT.md), [LESSONS 3](LESSONS.md)). `prepublishOnly` had been running
+  the doubled suite too.
+
+### Documentation
+- Two [LESSONS.md](LESSONS.md) entries: **2** — a story's Verification-commands row is a
+  claim, and `vitest -t` that matches nothing exits 0 (this discharges the
+  [W33 retrospective](sprints/sprint-2026-W33.md)'s third followup); **3** — a gitignored
+  worktree is invisible to `git status` and fully visible to vitest.
+- [EPIC-2](sprints/epics/EPIC-2.md) refreshed to its post-`1.0.1` state: the Feature
+  pillars table and Out-of-scope section had frozen at v0.1.0's one-tool cut, and the
+  Business context's "roughly thirty lines" estimate now carries the correction the W33
+  retrospective asked for. Live-payload findings from the first authenticating smoke run
+  are recorded there for W34.
 
 ---
 

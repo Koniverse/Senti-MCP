@@ -491,3 +491,54 @@ perpetuity.
 
 **Date**: 2026-08-07
 **Version**: 1.0.1
+
+---
+
+## Phase 5 — Post-1.0.1 hygiene, pre-W34 (2026-08-10)
+
+### D13. Scope vitest collection to `src/` with an `include` allowlist
+
+**Context**: `npm test` was collecting 28 files / 394 tests against a package that owns
+14 / 197. The surplus was `.claude/worktrees/read-tools-w33/`, a git worktree left after
+`feat/read-tools-w33` merged at `66be3a4`, still checked out at `812f7e8` — two releases
+behind `main`. `.claude/worktrees/` is gitignored, so `git status` showed nothing;
+vitest's default `include` of `**/*.test.ts` from the project root, whose default
+`exclude` covers `node_modules`/`dist`/`.git`/`.cache` but not `.claude`, read it as
+source. The suite was green, so the duplication announced itself only as a test count
+that no longer matched the W33 retrospective's. `prepublishOnly` ran the doubled suite as
+well. Removing the worktree fixes today; this repo creates worktrees under that path as
+its normal workflow, so it recurs by default.
+
+**Decision**: add `vitest.config.ts` — the repo's first — setting
+`include: ['src/**/*.test.ts']`. Also remove the stale worktree and its merged branch.
+No `exclude` entry is added.
+
+**Rationale**: an allowlist anchored at the project root fixes the class; a blacklist
+entry for `.claude/**` fixes one path and leaves the next nested tree — a second
+worktree root, a vendored checkout, an `examples/` copy — to be discovered the same way,
+by noticing a number. Every test file this package owns lives in `src/` and there is no
+plan for that to change, so the allowlist costs nothing in expressiveness. The guard was
+verified by decoy rather than by reading the glob: a deliberately-failing
+`.claude/worktrees/decoy/src/decoy.test.ts` left the count at 197 and the suite green,
+then was deleted. A guard whose failure mode is silent needs evidence.
+
+**Alternatives considered**:
+- `exclude: [...defaultExclude, '**/.claude/**']` — rejected as above; it also requires
+  importing and spreading `defaultExclude`, since a bare `exclude` overrides vitest's
+  defaults and would silently re-admit `node_modules`.
+- `--exclude '**/.claude/**'` on the `test` script — rejected: it misses `test:watch`,
+  `test:smoke`, and any bare `npx vitest` an agent or contributor runs. The config file
+  covers every invocation, which is the point.
+- Remove the worktree and add no guard — rejected: worktree-per-feature is this repo's
+  standard workflow, so the next sprint reproduces the defect, and its symptom is a
+  green suite.
+
+**Impact**: new `vitest.config.ts`; `npm test` goes 394 → 197 tests, 28 → 14 files, all
+of the loss duplicate. No test or source file changes, and nothing publishable moves:
+`files` in `package.json` is the allowlist `["dist", "src", "!src/**/*.test.ts"]`, which
+a root-level config is not in — `npm pack --dry-run` confirms 42 files with
+`vitest.config.ts` absent. So `VERSION` does not move and the change is recorded under
+`## [Unreleased]` rather than as a release. New [LESSONS entry 3](LESSONS.md).
+
+**Date**: 2026-08-10
+**Version**: unreleased
