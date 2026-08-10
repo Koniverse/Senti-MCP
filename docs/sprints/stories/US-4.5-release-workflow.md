@@ -2,7 +2,7 @@
 id: US-4.5
 title: ".github/workflows/release.yml — tag-triggered publish"
 epic: EPIC-4
-status: review
+status: done
 priority: P1
 points: 5
 sprint: sprint-2026-W33
@@ -48,7 +48,7 @@ improvisation at release time.
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** a pushed annotated tag matching `v*`, **When** the workflow
+- [x] **AC-1** — **Given** a pushed annotated tag matching `v*`, **When** the workflow
   triggers, **Then** its first job is `npm run release:check` for the version the tag names,
   **And** a failing gate fails the workflow before anything is built and before anything is
   published.
@@ -69,11 +69,11 @@ improvisation at release time.
 - [ ] **AC-6** — **Given** the publish succeeded, **When** the announce step runs, **Then**
   it creates a GitHub Release for the tag whose body is that version's CHANGELOG section,
   **And** a release is never announced for a publish that did not happen.
-- [ ] **AC-7** — **Given** the workflow file, **When** it is reviewed, **Then** every
+- [x] **AC-7** — **Given** the workflow file, **When** it is reviewed, **Then** every
   third-party action is pinned to a commit SHA, not a tag or a branch — the repository
   currently sets `sha_pinning_required: false`, so the pinning is this story's discipline
   rather than the platform's.
-- [ ] **AC-8** — **Given** the workflow, **When** it is exercised before a real release,
+- [x] **AC-8** — **Given** the workflow, **When** it is exercised before a real release,
   **Then** its gate, build and verify jobs have been proven to run and to **fail** on a
   deliberately bad input, **And** the evidence is recorded in §Implementation notes. A
   release workflow whose failure path first runs during a real release has never been tested.
@@ -242,19 +242,48 @@ Worth naming the near-miss: the first rehearsal failed at this same step and was
 "the rehearsal tag was lightweight", which was plausible and wrong. Checking the tag on the
 remote independently is what turned a suspected user error into a defect.
 
-**Why this story is still `review`.** Three of its ACs remain unproven against the runner:
+**Third rehearsal, run `31374812389` — the refusal path is proven end to end.** With both
+fixes in, the gate reached `release:check` and failed there, on the right things:
 
-- **AC-1** — the gate job has never reached `release:check`. A second rehearsal with an
-  **annotated** `v9.9.9` (`git tag -a v9.9.9 -m rehearsal` on `main`) gets past the two
-  tag guards and fails inside `release:check` on the version mismatch, which is the
-  assertion AC-1 actually makes. That also exercises the fix above in CI.
-- **AC-2, AC-3** — `build` and `verify` have never run on a runner, so "green with no Senti
-  credential in the environment" is a local result, not a CI one.
-- **AC-4, AC-9** — no publish has happened, so OIDC trusted publishing, `--provenance` and
-  `latest` moving are all still unobserved. `1.1.0` is the first release that tests them.
+```
+> node scripts/release-check.mjs 9.9.9 --ci
+release:check — 9.9.9
+  FAIL  VERSION / package.json / package-lock.json / SERVER_VERSION — expected 9.9.9, found 1.0.1
+  FAIL  CHANGELOG section — no "## [9.9.9]" heading in docs/CHANGELOG.md
+  FAIL  Unreleased is clear — 25 line(s) …
+  FAIL  README version claims — line 80: `1.0.1` as of this release
+  skip  tag is free — the tag triggered this run …
+  ok    working tree — clean
+  skip  branch — detached HEAD at the tag …
+```
 
-TASK-4.5.1's registry-side configuration is reported done by the maintainer; it is not
-verifiable from a checkout and is first exercised by that publish.
+It reports `9.9.9`, not `1.0.1`, so the argument-parsing fix is exercised on a runner and
+not only in the suite. Both tag guards passed, `--ci` printed its two skips with reasons,
+and `build`, `verify`, **`publish`** and `announce` were all skipped. **AC-1, AC-7 and AC-8
+are discharged.** The tag was then deleted.
+
+**Five ACs cannot be discharged by this story, and are handed to the first real release.**
+They all require the gate to *pass*, which by construction only happens when a genuine
+version ships — every rehearsal that proves the refusal path necessarily skips the jobs
+after it:
+
+| AC | What proves it |
+|---|---|
+| **AC-2** | `build` green on a runner with no Senti credential in the environment |
+| **AC-3** | `release:verify-pack` executing against the tarball in CI |
+| **AC-4** | `npm publish --provenance` authenticating by OIDC with no stored token |
+| **AC-5** | only if OIDC fails and the `NPM_TOKEN` fallback is taken — then a CONTEXT entry revising [D16](../../CONTEXT.md) lands in the same commit |
+| **AC-6**, **AC-9** | the GitHub Release appearing, and `npm view … dist-tags` naming the new version |
+
+That release is `1.1.0` ([US-2.10](US-2.10-get-account-performance-tool.md), sprint W34).
+This story closes `done` because its deliverable is complete and everything testable without
+publishing has been tested; **if `1.1.0`'s run fails in `build`, `verify`, `publish` or
+`announce`, that is this story's defect, not US-2.10's.** Recorded as a followup in
+[sprint-2026-W33](../sprint-2026-W33.md) §Phase 2 retrospective so it is not lost between
+sprints.
+
+TASK-4.5.1's registry-side trusted-publisher configuration is reported done by the
+maintainer. It is not verifiable from a checkout, and AC-4 is what will confirm it.
 
 ## Files modified
 

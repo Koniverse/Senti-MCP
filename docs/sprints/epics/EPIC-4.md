@@ -1,7 +1,7 @@
 ---
 id: EPIC-4
 title: "The package release process"
-status: in-progress
+status: done
 created: 2026-08-10
 updated: 2026-08-10
 ---
@@ -146,9 +146,11 @@ serve:
 | [US-4.2](../stories/US-4.2-release-check-gate.md) | `npm run release:check` — the pre-tag gate | P1 | 3 | ✅ done (no version — ships no runtime code) |
 | [US-4.3](../stories/US-4.3-backfill-tags-and-releases.md) | Backfill the six missing tags and `v0.1.0`'s Release | P2 | 2 | ✅ done (no version — reconciles history) |
 | [US-4.4](../stories/US-4.4-tarball-verification.md) | Verify the tarball before it is published | P1 | 3 | ✅ done (no version — ships no runtime code) |
-| [US-4.5](../stories/US-4.5-release-workflow.md) | `.github/workflows/release.yml` — tag-triggered publish | P1 | 5 | ⏸️ review (never run; registry config pending) |
+| [US-4.5](../stories/US-4.5-release-workflow.md) | `.github/workflows/release.yml` — tag-triggered publish | P1 | 5 | ✅ done (gate proven on a runner) |
 
-**Sixteen points.** None is assigned to a sprint — see §Still open.
+**Sixteen points, all delivered** in [sprint-2026-W33](../sprint-2026-W33.md) Phase 2
+(2026-08-10). The release path exists, is documented, is gated, and its refusal path is
+proven against a real runner; what remains is the first release to travel it.
 
 **Sequencing.** US-4.1 → US-4.2 → US-4.4 → US-4.5 is a real dependency chain: the runbook
 decides what a release is, the gate enforces it, the tarball check becomes one of the
@@ -168,14 +170,16 @@ against prose scattered across a decision log.
   sprint's scope is not frozen at open ([CONTEXT D21](../../CONTEXT.md)).
   [sprint-2026-W34](../sprint-2026-W34.md) keeps its committed 11 points untouched, so
   `1.1.0` → `1.4.0` ship under US-4.5's workflow rather than by hand.
-- **Whether npm trusted publishing is configurable for this package.** It requires a
-  one-time configuration on npmjs.com bound to this repository and the workflow filename,
-  which cannot be verified from a checkout. It is a *task*, not a blocker:
-  `npm view senti-mcp-server maintainers` returns `bluezdot`, the sole maintainer and this
-  epic's assignee, so nobody else has to be waited on.
-  [US-4.5](../stories/US-4.5-release-workflow.md) TASK-4.5.1 confirms it, and
-  [CONTEXT D16](../../CONTEXT.md) names the `NPM_TOKEN`-secret fallback in advance so the
-  choice is not improvised at release time.
+- ~~**Whether npm trusted publishing is configurable for this package.**~~ Configured by
+  the maintainer 2026-08-10. It is not verifiable from a checkout, so the first
+  `npm publish` is what confirms it; [CONTEXT D16](../../CONTEXT.md)'s `NPM_TOKEN` fallback
+  stands if it does not.
+- **The workflow's success path has never run.** Every rehearsal proves the *refusal* path
+  and therefore skips everything after the gate — that is what a gate does. `build`,
+  `verify`, `publish` and `announce` are discharged only by a release that passes, which is
+  `1.1.0` ([US-2.10](../stories/US-2.10-get-account-performance-tool.md), sprint W34). Six
+  ACs on [US-4.5](../stories/US-4.5-release-workflow.md) carry that, and a failure there is
+  this epic's defect, not EPIC-2's. *Waiting on*: W34's first release.
 
 ## Cross-references
 

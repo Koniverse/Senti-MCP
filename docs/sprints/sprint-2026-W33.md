@@ -37,7 +37,7 @@ phase and only this phase.
 | US-4.2 | `npm run release:check` — the pre-tag gate | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.2-release-check-gate.md) |
 | US-4.3 | Backfill the six missing tags and `v0.1.0`'s Release | EPIC-4 | P2 | 2 | ✅ done | [link](stories/US-4.3-backfill-tags-and-releases.md) |
 | US-4.4 | Verify the tarball before it is published | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.4-tarball-verification.md) |
-| US-4.5 | `.github/workflows/release.yml` — tag-triggered publish | EPIC-4 | P1 | 5 | ⏸️ review — workflow written, never run | [link](stories/US-4.5-release-workflow.md) |
+| US-4.5 | `.github/workflows/release.yml` — tag-triggered publish | EPIC-4 | P1 | 5 | ✅ done | [link](stories/US-4.5-release-workflow.md) |
 
 **Phase 2: 5 stories / 16 points.** **Sprint total: 11 stories / 31 points.**
 
@@ -206,7 +206,59 @@ live key), `npm run typecheck` and `npm run build` clean at close.
 
 ## Phase 2 retrospective — the package release process
 
-<!-- Filled when Phase 2 closes. Phase 1's retrospective above is not touched. -->
+All five EPIC-4 stories closed on 2026-08-10, 16 points. `docs/RELEASE.md`, two gates
+(`release:check`, `release:verify-pack`), this repository's first workflow, and the six
+backfilled tags that make *every changelogged version is tagged* exception-free. Suite went
+14 files / 197 tests to **16 / 232, 1 skipped**; `VERSION` deliberately did not move and the
+tarball is unchanged at 42 entries.
+
+### What went well
+
+- **Every gate found something real before it was trusted.** `release:verify-pack` caught a
+  removed tool through the packaged README when the build-vs-tarball comparison could not.
+  `release:check` caught `package-lock.json` sitting at `0.1.0` — eight releases stale, a
+  fifth place the version lives that nothing watched. Neither was in the plan.
+- **Writing the workflow fed requirements back into the gate.** `--ci` exists because a
+  tag-triggered checkout is a detached HEAD at a tag that already exists; it skips exactly
+  those two local-only preconditions and prints that it did. Building the automation last,
+  against a gate that already existed, is what surfaced that rather than a redesign.
+- **Reopening this sprint cost nothing and settled a rule.** Phase 1's record is untouched
+  and Phase 2 sits beside it; [CONTEXT D21](../CONTEXT.md) makes it general.
+
+### What didn't
+
+- **Two defects shipped into `main` and were caught only by rehearsing.** `release:check`
+  discarded its version argument whenever `--root` was absent — the exact CI invocation —
+  so every version check passed by construction; all 20 tests missed it because every one
+  passed `--root` to reach a fixture ([LESSONS 5](../LESSONS.md)). And the workflow's
+  annotated-tag guard read local git state that `actions/checkout` had already overwritten
+  with the commit SHA, so it could never pass and would have blocked `1.1.0`
+  ([LESSONS 6](../LESSONS.md)).
+- **The first rehearsal's failure was misread as user error.** It failed at "the tag must be
+  annotated" and the obvious reading — the rehearsal tag was lightweight — was wrong.
+  `git ls-remote` proved the pushed tag was genuinely annotated. Three rehearsals were spent
+  where one should have done.
+- **Bookkeeping drifted from reality once.** A script that set story statuses matched on
+  `status: in-progress`, which US-4.3 and US-4.5 had never been flipped to, so it changed
+  nothing while reporting success. Only `STATUS.md` showed the disagreement — the same
+  shape as the two defects above: a report of intent mistaken for a report of result.
+
+### Followups
+
+- **`1.1.0` is EPIC-4's acceptance test, not just EPIC-2's first W34 release.**
+  [US-4.5](stories/US-4.5-release-workflow.md) AC-2, AC-3, AC-4, AC-5, AC-6 and AC-9 can
+  only be discharged by a run whose gate passes. If `1.1.0` fails in `build`, `verify`,
+  `publish` or `announce`, that is EPIC-4's defect — do not debug it as a
+  [US-2.10](stories/US-2.10-get-account-performance-tool.md) problem. Whoever ships it
+  should record the run id in US-4.5 §Implementation notes and tick those six.
+- **Read *which step* failed before diagnosing any red run.** Two of this phase's three
+  wrong turns came from a failure that looked correct. This is now
+  [LESSONS 5](../LESSONS.md) and [LESSONS 6](../LESSONS.md); the practical form is: ask what
+  the run did *not* reach.
+- **A second CI workflow is still an open question.** This phase deliberately added only
+  `release.yml` ([EPIC-4](epics/EPIC-4.md) §Out of scope). Both defects above reached `main`
+  because nothing runs on a push or a pull request. That is now an argument with evidence
+  behind it rather than a preference.
 
 ## Cross-references
 

@@ -40,13 +40,18 @@ files are excluded by `!src/**/*.test.ts`.
   between `dist/` and the registry, where [CONTEXT D12](CONTEXT.md)'s dead-`dist/` defect
   lived. Adopted instead of a `next` dist-tag, because it protects the same failure one
   irreversible act earlier ([CONTEXT D20](CONTEXT.md)).
-- **`.github/workflows/release.yml` — this repository's first workflow.** Pushing an
+- **`.github/workflows/release.yml` — this repository's first workflow, with its refusal
+  path proven on a real runner.** Pushing an
   annotated `vX.Y.Z` tag runs gate → build → verify → publish → announce. The gate fails the
   workflow before anything is built; the build runs with no Senti credential in the
   environment; `npm publish --provenance` authenticates by OIDC trusted publishing with no
   `NPM_TOKEN` stored anywhere; and a GitHub Release carrying that version's CHANGELOG
   section is created only after a successful publish. Every third-party action is pinned to
-  a 40-character commit SHA ([CONTEXT D16](CONTEXT.md)).
+  a 40-character commit SHA ([CONTEXT D16](CONTEXT.md)). Rehearsed against a deliberately
+  bad `v9.9.9`: the gate reached `release:check`, reported all seven disagreements, and
+  `build`, `verify`, **`publish`** and `announce` were skipped. The success path is
+  discharged by the first real release — `1.1.0` — and six ACs on
+  [US-4.5](sprints/stories/US-4.5-release-workflow.md) carry that handoff.
 - **[docs/RELEASE.md](RELEASE.md)** — the runbook this repo never had: the four-artifact
   contract, the ordered procedure, the tag-message and tag-sort conventions, what each gate
   failure means, and the 72-hour unpublish window that puts every check ahead of
@@ -67,6 +72,8 @@ files are excluded by `!src/**/*.test.ts`.
   The three headings carrying it are left exactly as shipped.
 - [AGENTS.md](../AGENTS.md): `docs/RELEASE.md` in the documentation map, and the "Ship a
   version" quick-reference row no longer ends at `VERSION` + CHANGELOG.
+- **[EPIC-4](sprints/epics/EPIC-4.md) closed** — all five stories done, 16 points, in
+  `sprint-2026-W33` Phase 2.
 - **`sprint-2026-W33` reopened** (`closed` → `active`) to carry EPIC-4 as its **Phase 2**;
   its window had not elapsed. Phase 1's scope table, its "6 stories / 15 points" total and
   its retrospective are left byte-for-byte as written, each scoped to Phase 1. New
