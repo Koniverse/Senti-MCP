@@ -77,6 +77,14 @@ files are excluded by `!src/**/*.test.ts`.
   inside `release:verify-pack`.
 
 ### Fixed
+- **The release workflow's annotated-tag guard could never pass.** It read
+  `git cat-file -t "$GITHUB_REF_NAME"`, which is correct locally and meaningless on a
+  runner: `actions/checkout` resolves the tag and then force-writes the commit SHA into
+  `refs/tags/<tag>` (`git fetch --no-tags origin +<sha>:refs/tags/<tag>`), so the local ref
+  is a commit whatever the remote holds. The guard reported `commit` for a tag
+  `git ls-remote` proves is annotated, and it would have blocked `1.1.0` and every release
+  after it. Now checked against the remote — a `^{}` peeled ref exists if and only if the
+  tag is a real tag object — verified in both directions ([LESSONS 6](LESSONS.md)).
 - **`release:check` silently checked the wrong version in the one invocation CI uses.**
   Its argument parser skipped `--root`'s value by comparing against `rootFlag + 1`, which
   is `0` when `indexOf` returns `-1` — so with no `--root` it discarded the *version
@@ -106,7 +114,8 @@ files are excluded by `!src/**/*.test.ts`.
   the doubled suite too.
 
 ### Documentation
-- Two further [LESSONS.md](LESSONS.md) entries: **4** — a version string nothing reads drifts
+- Three further [LESSONS.md](LESSONS.md) entries: **6** — `actions/checkout` rewrites
+  `refs/tags/<tag>` to the commit SHA, so local tag inspection in CI is meaningless; **4** — a version string nothing reads drifts
   silently (`package-lock.json` was eight releases behind); **5** — twenty tests and none of
   them ran the invocation CI uses, and a red CI run is not proof the thing you care about
   ran.

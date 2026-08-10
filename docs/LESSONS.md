@@ -230,3 +230,54 @@ ordering works, not that the gate does.
 hand — reconstructing the workflow's exact command line — while checking why the rehearsal
 had stopped at the annotated-tag guard. Asking "what did the run *not* reach?" is what
 turned a green-looking result into a real defect.
+
+---
+
+## 6. `actions/checkout` rewrites `refs/tags/<tag>` to the commit SHA, so local tag inspection in CI is meaningless
+
+**Trap**: the release workflow's first guard asserted the pushed tag is annotated:
+
+```yaml
+kind=$(git cat-file -t "$GITHUB_REF_NAME")
+[ "$kind" = "tag" ] || exit 1
+```
+
+Correct locally — `git cat-file -t v1.0.1` returns `tag` for an annotated tag. On a runner
+it returns `commit` **every time, for every tag**, so the guard could never pass and would
+have blocked every release including `1.1.0`.
+
+The reason is in the checkout log, two `fetch` calls apart:
+
+```
+git fetch ... origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+git rev-parse refs/tags/v9.9.9
+git fetch --no-tags ... origin +e41e3a42...:refs/tags/v9.9.9
+git checkout --progress --force refs/tags/v9.9.9
+```
+
+The first fetch brings down the real tag object. The second — checkout's own
+"fetch exactly the resolved commit" step — force-writes the **commit SHA** into
+`refs/tags/v9.9.9`, clobbering it. Whatever the tag was on the remote, the local ref is a
+commit by the time any step runs.
+
+**How to avoid**:
+- **Ask the remote for facts about refs, not the working copy.** A peeled ref exists on the
+  remote if and only if the tag is a real tag object, and nothing checkout does can affect
+  that:
+  ```bash
+  [ -n "$(git ls-remote --tags origin "refs/tags/$TAG^{}")" ] || exit 1   # annotated
+  ```
+- **Distinguish "reads git data" from "reads git refs".** `"$TAG^{commit}"` peels to the
+  same commit either way, so the *reachable-from-main* guard beside this one was never
+  affected. Only checks that care what kind of object a ref points at are.
+- **Verify a predicate in both directions before trusting it.** This one was confirmed
+  against three real annotated tags on the remote *and* against a throwaway repository
+  holding one annotated and one lightweight tag — the negative case is the half that
+  proves it discriminates, and it is the half easy to skip.
+
+**Pattern**: two rehearsal runs failed at the same step with the same message before the
+cause was looked up rather than guessed. The first was read as "the rehearsal tag was
+lightweight" — plausible, and wrong. `git ls-remote` showed the tag on the remote *was*
+annotated, which is what turned a suspected user error into a real defect. When a guard
+fails on input you believe is valid, check the input independently before assuming the
+input is at fault.

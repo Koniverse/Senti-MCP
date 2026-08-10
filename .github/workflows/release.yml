@@ -45,13 +45,22 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Releasing $version from tag $GITHUB_REF_NAME"
 
+      # Ask the REMOTE, not the local checkout. actions/checkout resolves the tag
+      # and then force-writes the commit SHA into the local ref:
+      #
+      #   git fetch --no-tags origin +<commit-sha>:refs/tags/<tag>
+      #
+      # so `git cat-file -t <tag>` reports `commit` for every tag on a runner,
+      # annotated or not, and a local check can only ever fail. `ls-remote` for
+      # the peeled ref is unaffected: a `^{}` line exists on the remote if and
+      # only if the tag is a real tag object. See LESSONS 6.
       - name: The tag must be annotated
         run: |
-          kind=$(git cat-file -t "$GITHUB_REF_NAME")
-          if [ "$kind" != "tag" ]; then
-            echo "::error::$GITHUB_REF_NAME is a $kind, not an annotated tag. See docs/RELEASE.md §4."
+          if [ -z "$(git ls-remote --tags origin "refs/tags/$GITHUB_REF_NAME^{}")" ]; then
+            echo "::error::$GITHUB_REF_NAME is a lightweight tag. Releases are cut with 'git tag -a'. See docs/RELEASE.md §4."
             exit 1
           fi
+          echo "$GITHUB_REF_NAME is an annotated tag."
 
       - name: The tag must be reachable from main
         run: |

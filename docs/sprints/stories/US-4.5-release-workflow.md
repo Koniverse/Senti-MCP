@@ -226,6 +226,22 @@ construction. Fixed in `scripts/release-check.mjs`, covered by two new tests tha
 gate the way this workflow does, and recorded as [LESSONS 5](../../LESSONS.md). A red run is
 not proof the thing you care about ran.
 
+**A second defect, found by the second rehearsal (run `31374274359`).** The gate's first
+guard — "The tag must be annotated" — read `git cat-file -t "$GITHUB_REF_NAME"`. That is
+correct locally and impossible on a runner: `actions/checkout` resolves the tag and then
+force-writes the commit SHA into the local ref
+(`git fetch --no-tags origin +<sha>:refs/tags/<tag>`, visible in the checkout log), so the
+ref is a commit by the time any step runs. The guard returned `commit` for a tag that
+`git ls-remote` proves is annotated, and it would have blocked `1.1.0` and every release
+after it. Replaced with a remote-side check — a `^{}` peeled ref exists if and only if the
+tag is a real tag object — verified against three annotated tags on the remote and against
+a throwaway repository holding one annotated and one lightweight tag.
+[LESSONS 6](../../LESSONS.md).
+
+Worth naming the near-miss: the first rehearsal failed at this same step and was read as
+"the rehearsal tag was lightweight", which was plausible and wrong. Checking the tag on the
+remote independently is what turned a suspected user error into a defect.
+
 **Why this story is still `review`.** Three of its ACs remain unproven against the runner:
 
 - **AC-1** — the gate job has never reached `release:check`. A second rehearsal with an
