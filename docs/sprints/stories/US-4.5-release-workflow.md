@@ -2,7 +2,7 @@
 id: US-4.5
 title: ".github/workflows/release.yml — tag-triggered publish"
 epic: EPIC-4
-status: backlog
+status: review
 priority: P1
 points: 5
 sprint: sprint-2026-W33

@@ -52,10 +52,12 @@ files are excluded by `!src/**/*.test.ts`.
   failure means, and the 72-hour unpublish window that puts every check ahead of
   `npm publish`. Deliberately **not** `DEPLOY.md`, whose recorded absence is unchanged and
   now carries a pointer here ([CONTEXT D18](CONTEXT.md)).
-- Six annotated git tags backfilled for `0.2.0` → `0.7.0`, **created locally and not yet
-  pushed**. `git tag -l` and the `## [X.Y.Z]` headings are now the same nine-element set, so
-  *every changelogged version is tagged* has no exception left. The six get tags only — no
-  GitHub Release, and never an npm publish ([CONTEXT D17](CONTEXT.md)).
+- **Six annotated git tags backfilled for `0.2.0` → `0.7.0`, and `v0.1.0`'s missing GitHub
+  Release created.** `git tag -l` and the `## [X.Y.Z]` headings are now the same nine-element
+  set, so *every changelogged version is tagged* has no exception left; Releases go 2 → 3.
+  The six get tags only — no Release, and never an npm publish, which stays at `0.1.0` and
+  `1.0.1` ([CONTEXT D17](CONTEXT.md)). Pushing six `v*` tags triggered no workflow run:
+  Actions reads the workflow from the tagged commit, and all six predate `.github/`.
 
 ### Changed
 - [docs/README.md](README.md): `RELEASE.md` in the tree and cross-references, a release item

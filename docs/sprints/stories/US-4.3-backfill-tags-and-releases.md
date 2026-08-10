@@ -2,7 +2,7 @@
 id: US-4.3
 title: "Backfill the six missing tags and v0.1.0's GitHub Release"
 epic: EPIC-4
-status: backlog
+status: done
 priority: P2
 points: 2
 sprint: sprint-2026-W33
@@ -91,13 +91,13 @@ nothing and nothing depends on it.
 - [x] **TASK-4.3.2** — Create the six annotated tags locally (AC: 2)
   - [x] Read the message form off `git for-each-ref refs/tags` before writing new ones
   - [x] Confirm each is an annotated tag object, not a lightweight ref
-- [ ] **TASK-4.3.3** — Push the tags and confirm (AC: 3, 7)
-  - [ ] Push; then diff `git tag -l` against the CHANGELOG headings and confirm both sets
+- [x] **TASK-4.3.3** — Push the tags and confirm (AC: 3, 7)
+  - [x] Push; then diff `git tag -l` against the CHANGELOG headings and confirm both sets
         are nine
-  - [ ] Confirm no branch changed
-- [ ] **TASK-4.3.4** — Create `v0.1.0`'s GitHub Release (AC: 4, 5)
-  - [ ] Body is the `## [0.1.0]` CHANGELOG section
-  - [ ] Confirm `gh release list` shows exactly three, and that none of the six appears
+  - [x] Confirm no branch changed
+- [x] **TASK-4.3.4** — Create `v0.1.0`'s GitHub Release (AC: 4, 5)
+  - [x] Body is the `## [0.1.0]` CHANGELOG section
+  - [x] Confirm `gh release list` shows exactly three, and that none of the six appears
 - [x] **TASK-4.3.5** — Confirm the registry is untouched, and record the sort consequence
   (AC: 5, 6)
   - [x] `npm view senti-mcp-server versions` unchanged
@@ -170,10 +170,22 @@ nothing and nothing depends on it.
 
 ## Implementation notes
 
-**Six annotated tags created locally. Nothing pushed, nothing published, no GitHub Release
-created** — the push and the `v0.1.0` Release are held for explicit maintainer approval,
-which is where this story stops by agreement. `git ls-remote --tags origin` still lists
-three; `npm view senti-mcp-server versions` still returns `0.1.0, 1.0.1`.
+**Complete as of 2026-08-10.** Six annotated tags created, reviewed, then pushed by the
+maintainer; `v0.1.0`'s GitHub Release created. `git ls-remote --tags origin` now lists
+**nine** and `gh release list` lists **three**. `npm view senti-mcp-server versions` is
+unchanged at `0.1.0, 1.0.1` — the six are tagged and will never be published (AC-5).
+
+**Pushing the six triggered no workflow, and that was verified before pushing rather than
+hoped for.** A `push` of a `v*` tag is exactly `release.yml`'s trigger, but Actions runs the
+workflow file as it exists *at the tagged commit* — and `git ls-tree -r --name-only v0.2.0`
+(and `v0.7.0`, and `v1.0.1`) shows no `.github/` at all, because every one of those commits
+predates the workflow. Six tag pushes, zero runs, zero publishes.
+
+**One correction after the fact:** `v0.1.0`'s Release was created flagged `isPrerelease:
+true`, which `v1.0.0` and `v1.0.1` are not. `0.1.0` was a real release — it held npm's
+`latest` from 2026-08-05 to 2026-08-07 and its CHANGELOG entry calls it "First release" — so
+the flag asserted something untrue about it. Cleared with
+`gh release edit v0.1.0 --prerelease=false`.
 
 **AC-1 verified before tagging, and it caught more than the plan asked for.** Each commit
 was confirmed with `git show <sha>:VERSION`, and `package.json` and `src/config.ts` were
