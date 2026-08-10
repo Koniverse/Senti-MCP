@@ -52,6 +52,36 @@ allowlists `dist` and non-test `src`, so none of the below reaches the tarball
   `capPositions`/`capOrders` generalization the W33 retrospective deferred to US-2.11
   does **not** fire: `list_deals` bounds its payload with a caller-supplied `limit`, not
   a truncation, so it needs no third cap helper.
+- **[EPIC-4](sprints/epics/EPIC-4.md) opened — the package release process.** This repo's
+  release procedure was undocumented, and the record shows the cost: **nine** versions have
+  a `## [X.Y.Z]` section here, **three** have a git tag, **two** have a GitHub Release
+  (`v0.1.0` is tagged without one), and **two** are on npm. Four artifact sets that do not
+  nest, against a pre-commit checklist that stops at `VERSION` and `CHANGELOG.md` with no
+  `git tag`, `gh release` or `npm publish` item in it, and no `.github/` directory at all
+  (`total_count: 0` workflow runs, ever). Five stories / 16 points, all `backlog` with no
+  sprint: [US-4.1](sprints/stories/US-4.1-release-contract-and-runbook.md) `docs/RELEASE.md`
+  and the release contract, [US-4.2](sprints/stories/US-4.2-release-check-gate.md) the
+  `release:check` gate, [US-4.3](sprints/stories/US-4.3-backfill-tags-and-releases.md) the
+  six missing tags and `v0.1.0`'s Release,
+  [US-4.4](sprints/stories/US-4.4-tarball-verification.md) tarball verification before
+  publish, and [US-4.5](sprints/stories/US-4.5-release-workflow.md) the tag-triggered
+  workflow. Nothing is added to [sprint-2026-W34](sprints/sprint-2026-W34.md), which stays
+  at its committed 11 points.
+- Six new CONTEXT entries, [D15–D20](CONTEXT.md), one per question the brainstorm settled:
+  **D15** every version is tagged, released and published as it lands — W33's batching was
+  reasonable while nothing was on the registry and is not now that `latest` is `1.0.1`;
+  **D16** releases run from `.github/workflows/release.yml` on a `v*` tag push, gated first,
+  publishing by OIDC trusted publishing with `--provenance` and no stored `NPM_TOKEN` —
+  possible because `npm test` is 196 passed / 1 skipped with no Senti credential in the
+  environment; **D17** backfill six annotated tags for `0.2.0` → `0.7.0` plus `v0.1.0`'s
+  missing Release, and never publish the six; **D18** the runbook is `docs/RELEASE.md` and
+  `DEPLOY.md` stays absent for its recorded reason; **D19** the `— vX.Y.Z` CHANGELOG heading
+  suffix — which correlated 9/9 with tagged versions and was documented nowhere — is retired
+  rather than promoted, with no existing heading rewritten; **D20** no `next` dist-tag, with
+  the trigger that would bring one in recorded.
+- [EPIC-2](sprints/epics/EPIC-2.md) §Out of scope now points its "npm publishing" deferral at
+  EPIC-4 instead of leaving it homeless, and [AGENTS.md](../AGENTS.md)'s epic list names all
+  four epics (it had omitted EPIC-3).
 
 ---
 

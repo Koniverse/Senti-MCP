@@ -1,16 +1,22 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-10 04:39:29 UTC
-> Total stories: 14
+> Last generated: 2026-08-10 07:32:01 UTC
+> Total stories: 19
 
 ## ⏰ Deadlines (0)
 
 _No stories carry an explicit deadline._
 
-## 📋 Backlog (0)
+## 📋 Backlog (5)
 
-_No stories_
+| ID | Title | Epic | Pri | Points | Sprint | Assignee |
+|---|---|---|---|---|---|---|
+| US-4.1 | The release contract and docs/RELEASE.md | EPIC-4 | P1 | 3 | — | bluezdot |
+| US-4.2 | npm run release:check — the pre-tag gate | EPIC-4 | P1 | 3 | — | bluezdot |
+| US-4.3 | Backfill the six missing tags and v0.1.0's GitHub Release | EPIC-4 | P2 | 2 | — | bluezdot |
+| US-4.4 | Verify the tarball before it is published | EPIC-4 | P1 | 3 | — | bluezdot |
+| US-4.5 | .github/workflows/release.yml — tag-triggered publish | EPIC-4 | P1 | 5 | — | bluezdot |
 
 ## 🟢 Ready (4)
 
@@ -56,7 +62,7 @@ _No stories_
 
 ## Summary
 
-- 📋 **Backlog**: 0
+- 📋 **Backlog**: 5
 - 🟢 **Ready**: 4
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0

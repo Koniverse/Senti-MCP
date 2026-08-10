@@ -128,7 +128,8 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/sprints/sprint-2026-W33.md](docs/sprints/sprint-2026-W33.md) — most recently
   closed sprint (2026-08-10 → 2026-08-16)
 - [docs/LESSONS.md](docs/LESSONS.md) — retrospective lessons, append-only
-- [docs/sprints/epics/](docs/sprints/epics/) — EPIC-1 (foundation), EPIC-2 (read path)
+- [docs/sprints/epics/](docs/sprints/epics/) — EPIC-1 (foundation), EPIC-2 (read path),
+  EPIC-3 (write path, backlog), EPIC-4 (the package release process, backlog)
 - [docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design
 - [docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md](docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 plan, task by task
