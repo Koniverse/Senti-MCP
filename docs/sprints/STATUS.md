@@ -1,16 +1,18 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-10 10:46:53 UTC
-> Total stories: 19
+> Last generated: 2026-08-10 11:44:28 UTC
+> Total stories: 20
 
 ## ⏰ Deadlines (0)
 
 _No stories carry an explicit deadline._
 
-## 📋 Backlog (0)
+## 📋 Backlog (1)
 
-_No stories_
+| ID | Title | Epic | Pri | Points | Sprint | Assignee |
+|---|---|---|---|---|---|---|
+| US-5.1 | Re-decide the supported Node floor, now that Node 20 is EOL | EPIC-5 | P2 | 3 | — | bluezdot |
 
 ## 🟢 Ready (3)
 
@@ -61,7 +63,7 @@ _No stories_
 
 ## Summary
 
-- 📋 **Backlog**: 0
+- 📋 **Backlog**: 1
 - 🟢 **Ready**: 3
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0

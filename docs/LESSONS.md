@@ -281,3 +281,59 @@ lightweight" — plausible, and wrong. `git ls-remote` showed the tag on the rem
 annotated, which is what turned a suspected user error into a real defect. When a guard
 fails on input you believe is valid, check the input independently before assuming the
 input is at fault.
+
+---
+
+## 7. A CI job pinned to the *consumer* floor could not host the tooling it needed, and nothing noticed for a whole epic
+
+**Trap**: `release.yml` pinned every job to `node-version: 20.6.0` — the floor
+[CONTEXT D5](CONTEXT.md) set for *users*, because `AbortSignal.any()` needs 20.3.0 and
+`test:smoke`'s `--env-file` needs 20.6.0. For `gate`, `build` and `verify` that is right and
+valuable: running the suite and installing the tarball on the exact floor is what turns the
+floor from a claim into a proof.
+
+For `publish` it made the job impossible. That job needs OIDC trusted publishing, which
+needs **npm ≥ 11.5.1**, and every npm that new declares:
+
+```
+npm 11.x  engines.node  ^20.17.0 || >=22.9.0
+npm 12.x  engines.node  ^22.22.2 || ^24.15.0 || >=26.0.0
+```
+
+Node 20.6.0 is below `^20.17.0`. On that runtime the newest installable npm is 10.x, which
+cannot do OIDC at all. **There was no npm version that satisfied both constraints** — the
+job was unsatisfiable the day it was written, not the day it broke.
+
+It surfaced as `EBADENGINE ... npm@12.0.2 ... Required: {"node":"^22.22.2 ..."}`, which
+reads like "npm 12 just shipped and broke us". That reading is wrong and worth resisting:
+had `latest` still pointed at npm 11, the step would have failed identically with
+`Required: ^20.17.0`. npm 12 changed the error text, not the outcome.
+
+**Why it hid for five stories**: EPIC-4 built and rehearsed this workflow against a
+deliberately bad `v9.9.9`, and the rehearsal's whole point was that the gate refuses first —
+so `build`, `verify`, `publish` and `announce` were skipped. `publish` had **never executed
+once** before the first real release. The epic said as much (*"the success path is
+discharged by the first real release"*) and then closed anyway, which is the actual lesson:
+a documented untested path is still an untested path.
+
+**How to avoid**:
+- **Ask what each CI job is *for* before giving it a version.** A job that proves the floor
+  should run on the floor. A job that builds, packs, signs or uploads serves no consumer,
+  and pinning it to the floor buys nothing while constraining its tooling. Here the
+  published artifact is identical either way — `tsc` emits per `tsconfig` (`target: ES2022`),
+  not per host Node.
+- **A version constraint written as a comment is not enforced.** `# npm 11.5.1+ is required
+  for OIDC` sat directly above a step that could not install npm 11.5.1, one line apart, for
+  five stories. If a requirement matters, express it where it fails loudly.
+- **`@latest` is a mutable reference.** This workflow pins third-party actions by commit SHA
+  on the stated grounds that a mutable tag is a write path into a single-maintainer package —
+  and then installed `npm@latest`. Apply the rule to every moving part, not the ones that
+  look like third-party code.
+- **When a job has never run, say so where the release is approved**, not only in the epic
+  that built it. `verify` passing is not evidence about `publish`.
+
+**Pattern**: same shape as [6](#6-actionscheckout-rewrites-refstagstag-to-the-commit-sha-so-local-tag-inspection-in-ci-is-meaningless) — a guard or step that is correct on a developer's
+machine and impossible on a runner, found only when the branch finally executed. Both were
+written, reviewed and merged with the defect visible in the file. The cheap check for the
+next one: for every pinned version in CI, name the constraint it has to satisfy and confirm
+the pin satisfies it — `npm view <pkg>@<ver> engines` costs seconds.

@@ -135,6 +135,22 @@ the first time on a version that is not a rehearsal.
   module, 11 through a connected MCP client.
 
 ### Fixed
+- **The `publish` job could never have published, on any npm version.** It pinned
+  `node-version: 20.6.0` — the floor [CONTEXT D5](CONTEXT.md) set for *consumers* — and then
+  asked for an npm capable of OIDC trusted publishing. That needs npm ≥ 11.5.1, and every
+  npm 11.x declares `engines.node ^20.17.0 || >=22.9.0`; 20.6.0 is below it, so the newest
+  installable npm there is 10.x, which cannot do OIDC. No npm version satisfied both
+  constraints. The job now runs on **Node 24.19.0**, which serves no consumer and is
+  invisible in what ships (`tsc` emits per `tsconfig`, `target: ES2022`, not per host); the
+  floor keeps being *proven* where it matters, by `build` running the suite on 20.6.0 and
+  `verify` installing the tarball and spawning the binary on it. The `npm install -g` step
+  is **pinned to `npm@11.19.0`** rather than `@latest` — this workflow SHA-pins third-party
+  actions on the grounds that a mutable reference is a write path into a single-maintainer
+  package, and `@latest` was that same reference in different clothes; it rolled to npm 12
+  (`engines.node ^22.22.2 || …`) on the first day this step ever ran. Found by the first
+  real release, exactly as [EPIC-4](sprints/epics/EPIC-4.md) said the success path would be
+  — the `v9.9.9` rehearsal failed at the gate by design, so `publish` had never executed
+  once. New [LESSONS 7](LESSONS.md).
 - **The release workflow's annotated-tag guard could never pass.** It read
   `git cat-file -t "$GITHUB_REF_NAME"`, which is correct locally and meaningless on a
   runner: `actions/checkout` resolves the tag and then force-writes the commit SHA into
@@ -172,6 +188,18 @@ the first time on a version that is not a rehearsal.
   the doubled suite too.
 
 ### Documentation
+- **[LESSONS 7](LESSONS.md)** — a CI job pinned to the *consumer* floor could not host the
+  tooling it needed, and nothing noticed for a whole epic. Sibling of 6: both are steps that
+  are correct on a developer's machine and impossible on a runner, both shipped with the
+  defect visible in the file, and both were found only when the branch finally executed.
+- **[EPIC-5](sprints/epics/EPIC-5.md) opened** — *Supported runtime and dependency
+  currency*, `backlog`. It owns the distinction LESSONS 7 turned on: `engines.node` / README
+  / SETUP bind consumers, while `node-version:` in CI binds nobody and exists only to prove
+  the first group true. Carries one story,
+  [US-5.1](sprints/stories/US-5.1-node-floor-and-ci-pins.md) — re-decide the Node floor now
+  that Node 20 reached end of life on 2026-04-30. Deliberately unscheduled: `publish` is
+  unblocked as of this release, so nothing there is urgent, and scheduling is the
+  maintainer's ([CONTEXT D21](CONTEXT.md)).
 - Three further [LESSONS.md](LESSONS.md) entries: **6** — `actions/checkout` rewrites
   `refs/tags/<tag>` to the commit SHA, so local tag inspection in CI is meaningless; **4** — a version string nothing reads drifts
   silently (`package-lock.json` was eight releases behind); **5** — twenty tests and none of

@@ -138,12 +138,40 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 20.6.0
+          # Deliberately NOT the 20.6.0 floor `gate`, `build` and `verify` pin.
+          #
+          # That floor is a claim about what a CONSUMER can run (CONTEXT D5:
+          # AbortSignal.any needs 20.3.0, test:smoke's --env-file needs 20.6.0),
+          # and it is proven by `build` running the suite on it and `verify`
+          # installing the tarball and spawning the binary on it. This job
+          # serves no consumer — it packs and uploads — and its Node version is
+          # invisible in what ships, because tsc emits per tsconfig
+          # (target ES2022), not per host.
+          #
+          # It has to be higher, because the floor cannot host the tooling this
+          # job needs: OIDC trusted publishing requires npm >= 11.5.1, and every
+          # npm 11.x and 12.x declares engines.node ^20.17.0 || >=22.9.0 (12.x:
+          # ^22.22.2 || ^24.15.0 || >=26.0.0). On Node 20.6.0 the newest
+          # installable npm is 10.x, which cannot do OIDC — so this job was
+          # unsatisfiable as written, for every npm version, not just today's.
+          # It went unnoticed because the v9.9.9 rehearsal failed at the gate by
+          # design and never reached this job. See LESSONS 7.
+          #
+          # 24.19.0 bundles npm 11.17.0, so the pin below is a floor-raise on an
+          # already-adequate npm rather than a rescue.
+          node-version: 24.19.0
           cache: npm
           registry-url: https://registry.npmjs.org
 
       # npm 11.5.1+ is required for OIDC trusted publishing.
-      - run: npm install -g npm@latest
+      #
+      # Pinned, never `npm@latest`. This workflow pins third-party actions by
+      # commit SHA precisely because a mutable reference is a write path into a
+      # package with one maintainer; `npm@latest` was the same mutable reference
+      # wearing different clothes, and it rolled to npm 12 — whose Node floor is
+      # higher again — on the first day this step ever ran. Raise this
+      # deliberately, in a commit that says why.
+      - run: npm install -g npm@11.19.0
 
       - run: npm ci
 
