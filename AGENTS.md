@@ -25,13 +25,15 @@ tagged git-only; `1.0.1` is the version that carries it to the registry
 operations. `list_accounts` shipped first, in v0.1.0, tracked as
 [US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md) and proven against the
 live API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md); the
-other five closed out [sprint-2026-W33](docs/sprints/sprint-2026-W33.md) (now closed),
+other five closed out [sprint-2026-W33](docs/sprints/sprint-2026-W33.md)'s Phase 1,
 tracked as [US-2.4](docs/sprints/stories/US-2.4-tool-substrate-and-layout.md) through
 [US-2.9](docs/sprints/stories/US-2.9-list-pending-orders-tool.md). **Four** read
 operations remain — `get_account_performance`, `get_performance_breakdowns`,
-`get_equity_timeseries`, `list_deals` — carried to sprint W34, per the
+`get_equity_timeseries`, `list_deals`. The
 [read-tool expansion spec](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
-(EPIC-2 stays `in-progress` until they ship). Read the
+put them in W34; they were pulled forward into the same W33 window as its **Phase 3** on
+2026-08-10 ([CONTEXT D22](docs/CONTEXT.md)), and EPIC-2 stays `in-progress` until they
+ship. Read the
 [v1 design spec](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) and the
 expansion spec above before touching anything under `src/`.
 
@@ -80,9 +82,10 @@ src/
                           calls. Shipped in v0.1.0, relocated here in v0.2.0
     brokers/            ← list-brokers.ts (v0.3.0)
     strategies/         ← list-strategies.ts, list-account-strategies.ts (v0.4.0, v0.5.0)
-    trading/            ← positions.ts, orders.ts (v0.6.0, v0.7.0). deals.ts carries to W34
-    performance/        ← not yet present. summary.ts, breakdowns.ts, timeseries.ts carry
-                          to W34
+    trading/            ← positions.ts, orders.ts (v0.6.0, v0.7.0). deals.ts lands in
+                          W33 Phase 3
+    performance/        ← not yet present. summary.ts, breakdowns.ts, timeseries.ts land
+                          in W33 Phase 3
 
 docs/                   ← all documentation (see docs/README.md)
   SETUP.md              ← local dev setup + env var reference
@@ -127,10 +130,12 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
-- [docs/sprints/sprint-2026-W34.md](docs/sprints/sprint-2026-W34.md) — the active sprint
-  (2026-08-17 → 2026-08-23, `planned`): US-2.10 → US-2.13 close EPIC-2's read path
-- [docs/sprints/sprint-2026-W33.md](docs/sprints/sprint-2026-W33.md) — most recently
-  closed sprint (2026-08-10 → 2026-08-16)
+- [docs/sprints/sprint-2026-W33.md](docs/sprints/sprint-2026-W33.md) — **the active
+  sprint** (2026-08-10 → 2026-08-16, three phases): Phase 1 US-2.4 → US-2.9 and Phase 2
+  EPIC-4 both delivered; Phase 3 US-2.10 → US-2.13 close EPIC-2's read path
+- [docs/sprints/sprint-2026-W34.md](docs/sprints/sprint-2026-W34.md) — `planned` for
+  2026-08-17 → 2026-08-23 and carrying no scope; its four stories became W33's Phase 3
+  ([CONTEXT D22](docs/CONTEXT.md))
 - [docs/LESSONS.md](docs/LESSONS.md) — retrospective lessons, append-only
 - [docs/sprints/epics/](docs/sprints/epics/) — EPIC-1 (foundation), EPIC-2 (read path),
   EPIC-3 (write path, backlog), EPIC-4 (the package release process, backlog)

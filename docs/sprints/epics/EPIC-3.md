@@ -21,8 +21,9 @@ re-explain.
 
 ### Business context
 
-[EPIC-2](EPIC-2.md) is not done — five of its nine remaining read tools ship in
-[sprint-2026-W33](../sprint-2026-W33.md), four more in W34 — and this epic opens no
+[EPIC-2](EPIC-2.md) is not done — five of its nine remaining read tools shipped in
+[sprint-2026-W33](../sprint-2026-W33.md) §Phase 1, and the last four are that same
+sprint's §Phase 3 ([CONTEXT D22](../../CONTEXT.md)) — and this epic opens no
 story until it is. The [read-tool expansion design spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
 states the sequencing rationale directly: *"Both epics, read first... Reads produce
 the `accountId` and `ticket` values writes consume, and the write guardrails deserve a

@@ -179,6 +179,21 @@ files are excluded by `!src/**/*.test.ts`.
 - [EPIC-2](sprints/epics/EPIC-2.md) §Out of scope now points its "npm publishing" deferral at
   EPIC-4 instead of leaving it homeless, and [AGENTS.md](../AGENTS.md)'s epic list names all
   four epics (it had omitted EPIC-3).
+- **EPIC-2's four remaining stories moved out of W34 and into the running sprint.**
+  [sprint-2026-W33](sprints/sprint-2026-W33.md) gains a **Phase 3** carrying
+  [US-2.10](sprints/stories/US-2.10-get-account-performance-tool.md) →
+  [US-2.13](sprints/stories/US-2.13-get-equity-timeseries-tool.md) — 11 points, the whole
+  of [sprint-2026-W34](sprints/sprint-2026-W34.md)'s committed scope — so the sprint is
+  now 15 stories / 42 points across three phases, 31 of them delivered. W34 keeps its file
+  and its `planned` status with no stories, pointing at where its scope went and how work
+  returns to it. New [CONTEXT D22](CONTEXT.md) records why: the dependency those four
+  actually had was a release procedure, and Phase 2 built it that same day — what was left
+  holding them at `ready` was a calendar date, which is what
+  [D21](CONTEXT.md) rule 1 exists to refuse. The bullet above about W34 keeping "its
+  committed 11 points" was true when written and is superseded here; W33's Phase 1 and
+  Phase 2 records, including that sentence in the sprint file, are left as written.
+  Neither sprint's `status:` was flipped — that stays the maintainer's ([D21](CONTEXT.md)
+  rule 2).
 
 ---
 

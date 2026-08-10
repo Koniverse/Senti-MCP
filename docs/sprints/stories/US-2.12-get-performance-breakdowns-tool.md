@@ -5,7 +5,7 @@ epic: EPIC-2
 status: ready
 priority: P1
 points: 3
-sprint: sprint-2026-W34
+sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
 updated: 2026-08-10
@@ -53,7 +53,8 @@ be as misleading as no `notes` at all.
 from the schema — it has to be measured." A working smoke key arrived 2026-08-10, so it
 can be, and TASK-2.12.1 does it **before** the shaping code is written. If the real
 number contradicts D10 by an order of magnitude, the cuts are re-argued then, not at
-review — this is carried as the first risk in [sprint-2026-W34](../sprint-2026-W34.md).
+review — this is carried as the first risk in
+[sprint-2026-W33](../sprint-2026-W33.md) §Phase 3 risks.
 
 Shipped as `1.3.0` ([CONTEXT D14](../../CONTEXT.md)), not the expansion spec's `0.10.0`.
 
@@ -226,7 +227,7 @@ story in EPIC-2 that has one.
 ## Cross-references
 
 - [Epic EPIC-2](../epics/EPIC-2.md)
-- [sprint-2026-W34](../sprint-2026-W34.md)
+- [sprint-2026-W33](../sprint-2026-W33.md) — §Phase 3
 - [CHANGELOG](../../CHANGELOG.md)
 - [CONTEXT D10](../../CONTEXT.md) · [CONTEXT D14](../../CONTEXT.md)
 - [read-tool expansion design spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)

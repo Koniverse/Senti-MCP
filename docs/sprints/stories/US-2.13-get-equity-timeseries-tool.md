@@ -5,7 +5,7 @@ epic: EPIC-2
 status: ready
 priority: P1
 points: 3
-sprint: sprint-2026-W34
+sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
 updated: 2026-08-10
@@ -22,7 +22,8 @@ the series started, where it ended, and how deep the worst drawdown went — mus
 the downsample, not fall between two samples.
 
 Its close is the last read tool in the API. It closes [EPIC-2](../epics/EPIC-2.md) and
-[sprint-2026-W34](../sprint-2026-W34.md).
+ends [sprint-2026-W33](../sprint-2026-W33.md)'s Phase 3 — the sprint's own `status:` is
+the maintainer's to flip ([CONTEXT D21](../../CONTEXT.md)).
 
 ## Background
 
@@ -122,15 +123,17 @@ Shipped as `1.4.0` ([CONTEXT D14](../../CONTEXT.md)), not the expansion spec's `
   - [ ] `VERSION`, `package.json`, `src/config.ts` `SERVER_VERSION` → `1.4.0` in
         lockstep; `docs/CHANGELOG.md` `[1.4.0]`; `README.md` tool-table row naming all
         ten tools
-- [ ] **TASK-2.13.4** — Close EPIC-2 and sprint W34 (AC: 10)
+- [ ] **TASK-2.13.4** — Close EPIC-2 and end sprint W33's Phase 3 (AC: 10)
   - [ ] Extend `src/smoke.test.ts` with a `get_equity_timeseries` leg, so the smoke walk
         covers all ten read tools
   - [ ] [EPIC-2](../epics/EPIC-2.md): `status: done`; the four story-index rows flipped;
         §Remaining work replaced with a closing statement that **names the branches
         shipped unexercised against the live service** — US-2.9's `priceStopLimit`
         nullability and the `409` terminal-offline path — rather than closing silently
-  - [ ] [sprint-2026-W34](../sprint-2026-W34.md): `status: closed`, scope table flipped,
-        retrospective written
+  - [ ] [sprint-2026-W33](../sprint-2026-W33.md): Phase 3 scope table flipped, and a
+        **Phase 3 retrospective** section appended beside the Phase 1 and Phase 2 ones.
+        Do **not** touch the sprint's `status:` — only the maintainer closes a sprint
+        ([CONTEXT D21](../../CONTEXT.md))
   - [ ] `npm run agile:status` to regenerate [STATUS.md](../STATUS.md) (RULE-5)
 
 ## Dev notes
@@ -238,7 +241,7 @@ Shipped as `1.4.0` ([CONTEXT D14](../../CONTEXT.md)), not the expansion spec's `
 
 - [Epic EPIC-2](../epics/EPIC-2.md) — closed by this story
 - [EPIC-3](../epics/EPIC-3.md) — the write path, next
-- [sprint-2026-W34](../sprint-2026-W34.md) — closed by this story
+- [sprint-2026-W33](../sprint-2026-W33.md) — §Phase 3, ended by this story
 - [CHANGELOG](../../CHANGELOG.md)
 - [CONTEXT D10](../../CONTEXT.md) · [CONTEXT D14](../../CONTEXT.md)
 - [read-tool expansion design spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)

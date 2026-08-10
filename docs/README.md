@@ -23,7 +23,8 @@ docs/
 └── sprints/
     ├── STATUS.md        ← AUTO-GENERATED kanban (never hand-edit — RULE-5)
     ├── sprint-2026-W32.md   ← closed
-    ├── sprint-2026-W33.md   ← most recently closed sprint; W34's file not yet written
+    ├── sprint-2026-W33.md   ← the active sprint (3 phases)
+    ├── sprint-2026-W34.md   ← planned, no committed scope (CONTEXT D22)
     ├── epics/           ← EPIC-N.md
     └── stories/         ← US-X.Y-<slug>.md (canonical AC + Tasks source)
 
@@ -47,7 +48,7 @@ A missing file here is a decision, not an oversight.
 
 | Absent | Why, and what would bring it in |
 |---|---|
-| `PRD.md`, `ARCHITECTURE.md` | Authored today they would describe operations that don't have a shipped tool yet — 11 of the API's 17, as of v1.0.0 (four read tools carried to sprint W34, seven write operations sitting in backlog epic [EPIC-3](sprints/epics/EPIC-3.md)). They land when the read-tool roadmap firms up — at which point every story gains `prd_ref` / `arch_ref` in the same commit ([CONTEXT D1](CONTEXT.md)). |
+| `PRD.md`, `ARCHITECTURE.md` | Authored today they would describe operations that don't have a shipped tool yet — 11 of the API's 17, as of v1.0.0 (four read tools in [sprint-2026-W33](sprints/sprint-2026-W33.md) §Phase 3, seven write operations sitting in backlog epic [EPIC-3](sprints/epics/EPIC-3.md)). They land when the read-tool roadmap firms up — at which point every story gains `prd_ref` / `arch_ref` in the same commit ([CONTEXT D1](CONTEXT.md)). |
 | `BRIEF.md` | The [design spec](superpowers/specs/2026-08-05-senti-mcp-server-design.md) already carries the problem statement and scope. |
 | `DEPLOY.md` | `senti-mcp-server` is published on the public npm registry (`npm view senti-mcp-server` — `repository` matches this remote), `1.0.1` being the release that put all six tools there. But publishing a stdio MCP package to npm is not the same as operating a hosted service, and `DEPLOY.md` in this framework is a production runbook for the latter — env vars table, deployment steps ([koni-docs template](../.agents/skills/koni-docs/references/templates/setup.md) §6). This project has no service to run one against: no infrastructure, nothing to deploy beyond `npm publish` itself. It lands if that ever changes; a publish alone does not bring it in. **The publish procedure itself lives in [RELEASE.md](RELEASE.md)** — a different document for a different reader, which is why it did not become this one ([CONTEXT D18](CONTEXT.md)). |
 | `DESIGN.md` | No UI. This is a stdio MCP server; output formatting lives beside the code that emits it. |
@@ -141,8 +142,11 @@ npx koni-docs --version   # confirm which CLI you actually have
 - [CHANGELOG.md](CHANGELOG.md) — release history
 - [CONTEXT.md](CONTEXT.md) — decision log
 - [sprints/STATUS.md](sprints/STATUS.md) — current kanban (generated)
-- [sprints/sprint-2026-W33.md](sprints/sprint-2026-W33.md) — most recently closed
-  sprint; W34's sprint file is not yet written
+- [sprints/sprint-2026-W33.md](sprints/sprint-2026-W33.md) — the active sprint
+  (2026-08-10 → 2026-08-16): Phase 1 read tools and Phase 2 release process delivered,
+  Phase 3 closes EPIC-2's read path
+- [sprints/sprint-2026-W34.md](sprints/sprint-2026-W34.md) — planned, and carrying no
+  scope since [CONTEXT D22](CONTEXT.md) pulled its four stories forward
 - [superpowers/specs/2026-08-05-senti-mcp-server-design.md](superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design spec
 - [superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [superpowers/plans/2026-08-05-senti-mcp-server-v1.md](superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 implementation plan

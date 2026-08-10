@@ -974,3 +974,72 @@ standing rule for every future sprint in this repo, not a description of this on
 
 **Date**: 2026-08-10
 **Version**: unreleased
+
+---
+
+### D22. Pull EPIC-2's four remaining read tools out of W34 and into the running sprint
+
+**Context**: [D21](#d21-a-sprints-scope-stays-open-only-the-maintainer-opens-or-closes-one)
+rejected "add EPIC-4 to W34" that morning on the grounds that *"W34 was sized at 11 points
+deliberately, and the release process has to be settled before W34's first release, not
+during it."* By the end of the same day both halves of that sentence had been discharged:
+EPIC-4 closed as W33's Phase 2 — `docs/RELEASE.md`, `release:check`, `release:verify-pack`,
+`.github/workflows/release.yml`, and the six backfilled tags — and the release procedure
+`1.1.0` → `1.4.0` needed was written, gated, and rehearsed. What was left holding
+[US-2.10](sprints/stories/US-2.10-get-account-performance-tool.md) →
+[US-2.13](sprints/stories/US-2.13-get-equity-timeseries-tool.md) at `ready` was the
+calendar: [sprint-2026-W34](sprints/sprint-2026-W34.md) starts 08-17, and
+[sprint-2026-W33](sprints/sprint-2026-W33.md)'s window runs to 08-16 with four days unspent.
+
+**Decision**: move all four stories — 11 points, the whole of W34's committed scope — into
+`sprint-2026-W33` as its **Phase 3**. `sprint-2026-W34` keeps its file and its `planned`
+status but carries no stories; it becomes a pointer to where its scope went, plus the
+instructions for returning work to it. Nothing is renumbered: the four still ship `1.1.0`
+→ `1.4.0` per [D14](#d14-the-last-four-read-tools-ship-110--140-not-the-specs-080--0110), and US-2.13
+still closes [EPIC-2](sprints/epics/EPIC-2.md).
+
+**Rationale**: because a `ready` story with a satisfied dependency and an open window is
+being held by a date, not by a blocker — which is exactly the shape D21 rule 1 exists to
+refuse. The dependency EPIC-2's remaining work actually had was a release procedure, and
+Phase 2 built it; deferring the four stories to 08-17 would mean the procedure sits
+unexercised for six days while the tools that would exercise it sit `ready`. It also puts
+EPIC-4's own acceptance test — its §Still open bullet says `build`, `verify`, `publish` and
+`announce` are discharged only by a release that passes — inside the week that built it,
+where the people who wrote the workflow still have it in hand.
+
+**What is protected, and how**: D21's rule holds unchanged here. Phase 1's and Phase 2's
+scope tables, totals and retrospectives are untouched, including the Phase 2 rationale
+sentence that says W34's committed points are untouched — true when written, superseded by
+Phase 3, and left as written with a note at the top of the file rather than edited into
+agreement. The `status:` on both sprint files was not flipped by this change: W33 was
+already `active` and W34 stays `planned`, because opening and closing sprints is the
+maintainer's ([D21](#d21-a-sprints-scope-stays-open-only-the-maintainer-opens-or-closes-one)
+rule 2). The [expansion spec](superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
+§Story plan still assigns these four to W34 and is left unedited, the same treatment
+[D1](#d1-adopt-koni-docs-as-this-repos-documentation-framework),
+[D5](#d5-raise-the-supported-node-floor-to-2060) and
+[D14](#d14-the-last-four-read-tools-ship-110--140-not-the-specs-080--0110) gave planning artifacts —
+this entry is the reconciliation.
+
+**Alternatives considered**:
+- **Leave them in W34 and start on 08-17** — rejected: it holds eleven ready points against
+  a date rather than a dependency, and leaves the release automation unexercised across the
+  gap it was built to serve.
+- **Split them — US-2.10 now, the other three in W34** — rejected: `1.1.0` is the release
+  that discharges six of US-4.5's ACs, so shipping it alone would leave EPIC-4's acceptance
+  test passed and EPIC-2's read path still open in two sprints. Either the window can take
+  the phase or it cannot; a one-story phase is the ceremony D21 already refused once.
+- **Close W33 early and move the window of W34 forward to 08-10** — rejected: it rewrites
+  two sprints' dates to avoid a scope edit, and the dates are the one thing in a sprint
+  file that is not negotiable.
+- **Delete `sprint-2026-W34.md`** — rejected: the id is referenced from this log, the
+  CHANGELOG, three epics and several stories, and deleting a sprint file is a lifecycle
+  action reserved to the maintainer. Emptied and pointed instead.
+
+**Impact**: `sprint-2026-W33` is `active` with **15 stories / 42 points** across three
+phases, 31 of them delivered. `sprint-2026-W34` is `planned` with 0 stories. The four story
+files carry `sprint: sprint-2026-W33`. If the window closes with any of Phase 3 unstarted,
+returning it to W34 is the maintainer's call and W34's file says how.
+
+**Date**: 2026-08-10
+**Version**: unreleased

@@ -78,9 +78,9 @@ SENTI_SMOKE_KEY=sq_live_…
 > As of v1.0.0, `accounts:read` (`list_accounts`), `brokers:read` (`list_brokers`),
 > `strategies:read` (`list_strategies`, `list_account_strategies`) and `trading:read`
 > (`list_positions`, `list_pending_orders`) are exercised by a shipped tool.
-> `performance:read` is not yet — it belongs to sprint W34's remaining read
-> operations. Creating the key with all five now still saves a trip back to the
-> dashboard once those land.
+> `performance:read` is not yet — it arrives with the remaining read operations, which
+> are [sprint-2026-W33](sprints/sprint-2026-W33.md)'s Phase 3. Creating the key with all
+> five now still saves a trip back to the dashboard once those land.
 
 > ### The key and the base URL must match environments
 >

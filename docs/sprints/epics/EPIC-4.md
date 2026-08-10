@@ -177,9 +177,13 @@ against prose scattered across a decision log.
 - **The workflow's success path has never run.** Every rehearsal proves the *refusal* path
   and therefore skips everything after the gate — that is what a gate does. `build`,
   `verify`, `publish` and `announce` are discharged only by a release that passes, which is
-  `1.1.0` ([US-2.10](../stories/US-2.10-get-account-performance-tool.md), sprint W34). Six
+  `1.1.0` ([US-2.10](../stories/US-2.10-get-account-performance-tool.md)). Six
   ACs on [US-4.5](../stories/US-4.5-release-workflow.md) carry that, and a failure there is
-  this epic's defect, not EPIC-2's. *Waiting on*: W34's first release.
+  this epic's defect, not EPIC-2's. *Waiting on*: `1.1.0`. **That wait got shorter on
+  2026-08-10**: US-2.10 → US-2.13 moved out of W34 and into
+  [sprint-2026-W33](../sprint-2026-W33.md) §Phase 3, this week
+  ([CONTEXT D22](../../CONTEXT.md)) — the paragraphs above still read "sprint W34" because
+  that was true when this epic closed, and they are left as written.
 
 ## Cross-references
 
@@ -191,4 +195,5 @@ against prose scattered across a decision log.
 - [EPIC-1](EPIC-1.md) — the documentation framework; this epic is the shipping half of the governance it started
 - [EPIC-2](EPIC-2.md) — the read path, whose §Out of scope deferred npm publishing to exactly here
 - [EPIC-3](EPIC-3.md) — the write path, which inherits this release procedure unchanged
-- [sprint-2026-W34](../sprint-2026-W34.md) — the four releases that made settling this urgent
+- [sprint-2026-W33](../sprint-2026-W33.md) — §Phase 2 is this epic; §Phase 3 is the four releases that made settling it urgent, pulled forward from W34 on 2026-08-10
+- [CONTEXT D22](../../CONTEXT.md) — that pull-forward, and why this epic's `1.1.0` acceptance test comes this week rather than next

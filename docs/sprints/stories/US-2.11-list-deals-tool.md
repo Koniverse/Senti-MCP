@@ -5,7 +5,7 @@ epic: EPIC-2
 status: ready
 priority: P1
 points: 3
-sprint: sprint-2026-W34
+sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
 updated: 2026-08-10
@@ -53,8 +53,8 @@ a resolution, not as a further deferral. See §What we explicitly did NOT do.
 smoke account holds zero pending orders, leaving US-2.9's `priceStopLimit` nullability
 unverified. That is an *orders* gap, not a *deals* gap — `list_deals` returns closed
 deals and never touches `priceStopLimit`. It is carried as a sprint-level risk in
-[sprint-2026-W34](../sprint-2026-W34.md) §Risks, and this story's smoke leg picks it up
-opportunistically only if a suitable account appears.
+[sprint-2026-W33](../sprint-2026-W33.md) §Phase 3 risks, and this story's smoke leg picks
+it up opportunistically only if a suitable account appears.
 
 Shipped as `1.2.0` ([CONTEXT D14](../../CONTEXT.md)), not the expansion spec's `0.9.0`.
 
@@ -148,9 +148,9 @@ Shipped as `1.2.0` ([CONTEXT D14](../../CONTEXT.md)), not the expansion spec's `
   [US-2.9](US-2.9-list-pending-orders-tool.md) — `tools/trading/`'s conventions: the
   table-driven test shape of `positions.test.ts`, the real-zero phrasing, and the
   `0`-means-unset rendering in `price()`.
-- **Depends on nothing else in W34.** It shares no code with US-2.10, US-2.12 or
-  US-2.13, so it can start first or run concurrently
-  ([sprint-2026-W34](../sprint-2026-W34.md) §Dependencies).
+- **Depends on nothing else in this sprint phase.** It shares no code with US-2.10,
+  US-2.12 or US-2.13, so it can start first or run concurrently
+  ([sprint-2026-W33](../sprint-2026-W33.md) §Phase 3 dependencies).
 
 ### What we explicitly did NOT do
 
@@ -220,7 +220,7 @@ Shipped as `1.2.0` ([CONTEXT D14](../../CONTEXT.md)), not the expansion spec's `
 ## Cross-references
 
 - [Epic EPIC-2](../epics/EPIC-2.md)
-- [sprint-2026-W34](../sprint-2026-W34.md)
+- [sprint-2026-W33](../sprint-2026-W33.md) — §Phase 3
 - [CHANGELOG](../../CHANGELOG.md)
 - [CONTEXT D14](../../CONTEXT.md)
 - [read-tool expansion design spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)

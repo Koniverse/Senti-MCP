@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-10 09:32:13 UTC
+> Last generated: 2026-08-10 10:15:32 UTC
 > Total stories: 19
 
 ## ⏰ Deadlines (0)
@@ -16,10 +16,10 @@ _No stories_
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
-| US-2.10 | get_account_performance tool | EPIC-2 | P1 | 2 | sprint-2026-W34 | bluezdot |
-| US-2.11 | list_deals tool | EPIC-2 | P1 | 3 | sprint-2026-W34 | bluezdot |
-| US-2.12 | get_performance_breakdowns tool | EPIC-2 | P1 | 3 | sprint-2026-W34 | bluezdot |
-| US-2.13 | get_equity_timeseries tool, and EPIC-2's close | EPIC-2 | P1 | 3 | sprint-2026-W34 | bluezdot |
+| US-2.10 | get_account_performance tool | EPIC-2 | P1 | 2 | sprint-2026-W33 | bluezdot |
+| US-2.11 | list_deals tool | EPIC-2 | P1 | 3 | sprint-2026-W33 | bluezdot |
+| US-2.12 | get_performance_breakdowns tool | EPIC-2 | P1 | 3 | sprint-2026-W33 | bluezdot |
+| US-2.13 | get_equity_timeseries tool, and EPIC-2's close | EPIC-2 | P1 | 3 | sprint-2026-W33 | bluezdot |
 
 ## 🟡 In Progress (0)
 

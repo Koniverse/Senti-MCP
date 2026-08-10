@@ -5,7 +5,7 @@ epic: EPIC-2
 status: ready
 priority: P1
 points: 2
-sprint: sprint-2026-W34
+sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
 updated: 2026-08-10
@@ -201,7 +201,7 @@ predates the `1.0.0` cut. See [CONTEXT D14](../../CONTEXT.md).
 ## Cross-references
 
 - [Epic EPIC-2](../epics/EPIC-2.md)
-- [sprint-2026-W34](../sprint-2026-W34.md)
+- [sprint-2026-W33](../sprint-2026-W33.md) — §Phase 3
 - [CHANGELOG](../../CHANGELOG.md)
 - [CONTEXT D14](../../CONTEXT.md)
 - [read-tool expansion design spec](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
