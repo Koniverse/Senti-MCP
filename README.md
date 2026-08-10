@@ -14,6 +14,7 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | `list_account_strategies` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the strategies currently deployed on one MT5 account, with each deployment's symbol, timeframe and status. |
 | `list_positions` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the positions currently open on one MT5 account, read live from the terminal: symbol, direction, volume, open/current price, stop loss, take profit, swap and floating profit. A `409` means the account's terminal is offline — not that the account holds no positions. |
 | `list_pending_orders` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the pending limit and stop orders resting on one MT5 account, read live from the terminal: symbol, order type, volume, trigger price, stop loss, take profit and stop-limit price. These are orders that have NOT been filled — for open positions, use `list_positions`. A `409` means the account's terminal is offline — not that the account has no pending orders. |
+| `get_account_performance` | `accountId`, plus optional `from`, `to` (`YYYY-MM-DD`, UTC) and `reporting` (an ISO-4217 currency code, default `USD`) | Summarizes how one MT5 account performed over a date window: net P&L, win rate, profit factor, gross profit and loss, deal counts, costs, cash flow, period ROI and IRR, lifetime IRR, and the live terminal state. Omit `from`/`to` for the last 30 days. Unlike the two tools above there is no `409` — an unreachable terminal arrives as a null `live` block inside a success, and is reported as unreachable rather than as zeroes. |
 
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
@@ -29,11 +30,11 @@ the MT5 account number, not a key.
   [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). There is
   no key-introspection endpoint, so a missing scope isn't caught at startup: it
   surfaces as a `403` naming the scope the first time the affected tool is
-  called, and every other tool keeps working. As of v1.0.0, `accounts:read`
-  (`list_accounts`), `brokers:read` (`list_brokers`), `strategies:read`
-  (`list_strategies`, `list_account_strategies`) and `trading:read`
-  (`list_positions`, `list_pending_orders`) are exercised by a shipped tool;
-  `performance:read` is not yet.
+  called, and every other tool keeps working. As of v1.1.0 all five are
+  exercised by a shipped tool: `accounts:read` (`list_accounts`), `brokers:read`
+  (`list_brokers`), `strategies:read` (`list_strategies`,
+  `list_account_strategies`), `trading:read` (`list_positions`,
+  `list_pending_orders`) and `performance:read` (`get_account_performance`).
 
 ## Configuration
 
@@ -76,14 +77,15 @@ No install step — `npx` fetches the published package on first run:
 }
 ```
 
-Restart the client; all six tools should appear. `npx -y senti-mcp-server`
-resolves to whatever npm's `latest` tag points at — `1.0.1` as of this release,
-the first published version carrying all six tools. Only `list_accounts` is
-reachable on `0.1.0`, which was published before the other five existed, so
-check `npm view senti-mcp-server dist-tags` if a tool you expect is missing.
+Restart the client; all seven tools should appear. `npx -y senti-mcp-server`
+resolves to whatever npm's `latest` tag points at — `1.1.0` as of this release,
+the first published version carrying all seven. `1.0.1` carries the six read
+tools without `get_account_performance`, and only `list_accounts` is reachable
+on `0.1.0`, which was published before the others existed, so check
+`npm view senti-mcp-server dist-tags` if a tool you expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@1.0.1"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@1.1.0"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server

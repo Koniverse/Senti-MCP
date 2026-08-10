@@ -6,6 +6,7 @@ import {
   parseAccountStrategies,
 } from './tools/strategies/list-account-strategies.js';
 import { formatStrategies, parseStrategies } from './tools/strategies/list-strategies.js';
+import { formatPerformance, parsePerformance } from './tools/performance/summary.js';
 import { capOrders, formatOrders, parseOrders } from './tools/trading/orders.js';
 import { capPositions, formatPositions, parsePositions } from './tools/trading/positions.js';
 import { accountPath, createClient } from './core/client.js';
@@ -86,5 +87,23 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
     } catch (error) {
       expect(String(error)).toMatch(/409/);
     }
+
+    // No terminal-offline tolerance here, and that is the point: `performance`
+    // declares no 409. An offline terminal arrives as `live: null` inside a
+    // 200, so this leg must parse and render either way — a throw is a real
+    // failure, not a state of the world.
+    const window = { from: '2026-07-01', to: '2026-07-31', reporting: 'USD' };
+    const performance = parsePerformance(
+      await client.get(accountPath(first.id, 'performance'), {
+        scope: 'performance:read',
+        query: window,
+      }),
+    );
+
+    expect(formatPerformance(performance, window).length).toBeGreaterThan(0);
+    // The window is what makes this leg more than a schema check: an omitted
+    // `from`/`to` would exercise the API's default and prove nothing about the
+    // query option this story exists to wire up.
+    expect(formatPerformance(performance, window)).toContain('2026-07-01');
   }, 60_000);
 });

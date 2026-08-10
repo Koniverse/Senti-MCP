@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
+import { PerformanceOutputSchema } from './tools/performance/summary.js';
 import { AccountStrategiesOutputSchema } from './tools/strategies/list-account-strategies.js';
 import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
 import { OrdersOutputSchema } from './tools/trading/orders.js';
@@ -544,6 +545,241 @@ describe('list_pending_orders', () => {
   });
 });
 
+const PERFORMANCE = {
+  metrics: {
+    grossProfit: 3042.12,
+    grossLoss: -373.32,
+    winRate: 82.75862068965517,
+    totalPnl: 2668.8,
+    profitFactor: 8.148826743812277,
+    totalBalance: 128751.31,
+    totalEquity: 165873.03,
+    totalVolume: 4.85,
+    totalNotionalVolume: 1971479.65,
+    longCount: 16,
+    shortCount: 42,
+    robotCount: 56,
+    manualCount: 2,
+    totalClosedDeals: 58,
+    winCount: 48,
+    lossCount: 10,
+    unconvertedAccounts: [],
+    notionalIncomplete: false,
+    staleBalanceAccounts: [],
+    deposits: 0,
+    withdrawals: 0,
+    netCashFlow: 0,
+    commission: 0,
+    swap: 0,
+    fee: 0,
+  },
+  portfolioReturn: {
+    roi: 2.1167091296009253,
+    irr: 31.55911156908283,
+    periodNetPnL: 2668.8,
+    periodGrossDeposits: 0,
+    startingBalance: 126082.51,
+    endingValue: 165873.03,
+    capitalBase: 126082.51,
+    cashFlowCount: 0,
+  },
+  lifetimeIrr: {
+    irr: 1581.109499644062,
+    cashFlowCount: 3,
+    earliestMs: 1780999200000,
+    grossDeposits: 110007.76,
+    grossWithdrawals: 0,
+  },
+  live: {
+    balance: 128751.31,
+    equity: 165802.7,
+    profit: 37051.39,
+    margin: 1159.12,
+    marginFree: 164643.58,
+    marginLevel: 14304.19,
+    leverage: 500,
+    currency: 'USD',
+    name: 'Test API',
+  },
+};
+
+/** Records every URL the tool asks for, and answers each with the same body. */
+function recordingFetch(calls: string[], body: unknown = PERFORMANCE): typeof fetch {
+  return (async (url: string | URL) => {
+    calls.push(String(url));
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }) as unknown as typeof fetch;
+}
+
+describe('get_account_performance', () => {
+  test('calls the account-scoped path and returns both channels', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls));
+
+    const result = (await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance');
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('82.76%');
+    expect(PerformanceOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('sends from, to and reporting to the URL as query parameters', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls));
+
+    await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: 'abc-123', from: '2026-05-01', to: '2026-05-31', reporting: 'EUR' },
+    });
+
+    const url = new URL(calls[0] ?? '');
+    expect(url.pathname).toBe('/api/v1/accounts/abc-123/performance');
+    expect(url.searchParams.get('from')).toBe('2026-05-01');
+    expect(url.searchParams.get('to')).toBe('2026-05-31');
+    expect(url.searchParams.get('reporting')).toBe('EUR');
+  });
+
+  test('leaves an omitted parameter out of the query string entirely', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls));
+
+    await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: 'abc-123', from: '2026-05-01' },
+    });
+
+    // Not `to=undefined`, not `to=`, not present at all. The three are different
+    // requests to the API and only the third is the one that was asked for.
+    expect(calls[0]).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance?from=2026-05-01',
+    );
+  });
+
+  test('sends no query string at all when the caller supplied no window', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls));
+
+    await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: 'abc-123' },
+    });
+
+    expect(calls[0]).not.toContain('?');
+  });
+
+  test('rejects a malformed date before any HTTP call, naming the format', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: 'abc-123', from: 'last month' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('YYYY-MM-DD');
+    expect(called).toBe(false);
+  });
+
+  test('rejects a reporting value that is not a currency code, before any HTTP call', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: 'abc-123', reporting: 'monthly' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/ISO-4217/);
+    expect(called).toBe(false);
+  });
+
+  test('states an unreachable terminal rather than rendering it as zeroes', async () => {
+    const client = await connect(recordingFetch([], { ...PERFORMANCE, live: null }));
+
+    const result = (await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toMatch(/could not be reached/i);
+    expect(textOf(result)).not.toMatch(/equity 0\.00/);
+  });
+
+  test('returns an empty notes array, because it cuts nothing', async () => {
+    const client = await connect(recordingFetch([]));
+
+    const result = (await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect((result.structuredContent as { notes: string[] }).notes).toEqual([]);
+  });
+
+  test('names the performance:read scope on 403', async () => {
+    const forbidden = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Insufficient scope.' } }),
+        { status: 403, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(forbidden);
+
+    const result = (await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('performance:read');
+  });
+
+  test('turns a 404 into the login-versus-id hint', async () => {
+    const missing = (async () =>
+      new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found.' } }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof fetch;
+    const client = await connect(missing);
+
+    const result = (await client.callTool({
+      name: 'get_account_performance',
+      arguments: { accountId: '413878201' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/list_accounts/);
+    expect(textOf(result)).toMatch(/login/);
+  });
+
+  test('tells the model that reporting is a currency, not a period', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'get_account_performance');
+
+    expect(tool?.description).toMatch(/ISO-4217/);
+    expect(tool?.description).toMatch(/not a reporting period/i);
+  });
+});
+
 /**
  * One entry per registered tool. Later tool stories add a row here rather than
  * writing their own leak test or their own `outputSchema` assertion — that is
@@ -580,6 +816,12 @@ const TOOL_CALLS: {
     arguments: { accountId: 'abc-123' },
     outputSchema: OrdersOutputSchema,
     successBody: { orders: [ORDER] },
+  },
+  {
+    name: 'get_account_performance',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: PerformanceOutputSchema,
+    successBody: PERFORMANCE,
   },
 ];
 

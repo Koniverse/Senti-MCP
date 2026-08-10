@@ -13,13 +13,53 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ## [Unreleased]
 
-Nothing publishable — `VERSION` deliberately does not move. `files` in `package.json`
-allowlists `dist` and non-test `src`, so none of the below reaches the tarball
-(`npm pack --dry-run`: 42 files, unchanged) — the two new scripts live in `scripts/`
-and the workflow in `.github/`, neither of which is in `files`, and the two new test
-files are excluded by `!src/**/*.test.ts`.
+Nothing pending.
+
+## [1.1.0] — 2026-08-10 — `get_account_performance`: the first tool with query parameters
+
+The seventh tool, and the one that opens EPIC-2's last axis: query parameters. `from`,
+`to` and `reporting` reach the URL through `client.get`'s `query` option, which has
+existed since `0.2.0` and which no tool had ever passed — the substrate was built and
+untried, the same shape `accountPath` had at [US-2.7](sprints/stories/US-2.7-list-account-strategies-tool.md).
+`performance:read` becomes the fifth of five scopes exercised by a shipped tool.
+
+This is also the tag that first carries EPIC-4's release tooling. Those entries sat under
+`## [Unreleased]` because none of them reaches the tarball — `files` allowlists `dist` and
+non-test `src`, so the two scripts in `scripts/` and the workflow in `.github/` are
+outside it (`npm pack --dry-run`: 42 files before this release, **45** after — `summary.ts`
+plus its two compiled artifacts in `dist/`). They move here because a tag is what makes
+them shipped, and `1.1.0` is that tag — this release runs the tag-triggered workflow for
+the first time on a version that is not a rehearsal.
 
 ### Added
+- **`get_account_performance` — a fixed-size performance summary for one account**
+  (`src/tools/performance/summary.ts`, the first file in `src/tools/performance/`).
+  `PerformanceSchema`, `parsePerformance`, `formatPerformance`. Net P&L, win rate, profit
+  factor, gross profit and loss, deal counts, costs, cash flow, period ROI and IRR,
+  lifetime IRR, and the live terminal block. The response does not grow with the requested
+  window, so it is returned in full and `notes` is always empty.
+  - **The first tool to send query parameters.** `from`, `to` and `reporting` are handed
+    to `client.get`'s `query` whole; `queryStringOf` drops the undefined ones, so an
+    omitted parameter is absent from the URL rather than sent as `from=undefined` or
+    `from=`. No tool-side string building.
+  - **`reporting` is an ISO-4217 currency code, not a reporting period** — the name reads
+    like a period and the story was written expecting a closed enum of them. The live
+    OpenAPI document declares `type: string`, "ISO-4217 currency the money metrics are
+    normalized to. Default `USD`". Validated by shape (`/^[A-Z]{3}$/`) rather than against
+    a list this server would have invented ([CONTEXT D23](CONTEXT.md)).
+  - **An unreachable terminal is stated, never rendered as zeroes.** Unlike `positions`
+    and `orders` this endpoint declares no `409`: an offline terminal arrives as
+    `live: null` inside a `200`, so the *null is not zero* invariant moves out of a
+    status-code branch and into the formatter. A null `live` block reports that the
+    terminal could not be reached and says outright that this is not an empty account.
+  - **The window is stated in the text**, including when the caller supplied none. The
+    response echoes no window back, so a model that asked a vague question would otherwise
+    attribute the figures to whatever period it had in mind; an empty window renders as
+    "the API's default window — the 30 days ending today".
+  - **The API's own caveats are carried through.** `notionalIncomplete`,
+    `staleBalanceAccounts` and `unconvertedAccounts` are statements about the figures
+    beside them, and are rendered as caveats rather than dropped. They are not `notes`:
+    `notes` records what this server cut, and this tool cuts nothing.
 - **`npm run release:check` — the gate a release has to pass** (`scripts/release-check.mjs`).
   Eight checks, all reported in one run with the value each observed: the five version
   strings agree (`VERSION`, `package.json`, `package-lock.json`, `src/config.ts`'s
@@ -65,6 +105,16 @@ files are excluded by `!src/**/*.test.ts`.
   Actions reads the workflow from the tagged commit, and all six predate `.github/`.
 
 ### Changed
+- **[README.md](../README.md)**: a `get_account_performance` row on the tool table, "all
+  seven tools" and the `1.1.0` pin in the install section, and the scope list now says all
+  five read scopes are exercised by a shipped tool — `performance:read` was the one that
+  was not.
+- **`src/smoke.test.ts` walks a seventh leg**, and deliberately without the
+  terminal-offline `try`/`catch` the positions and orders legs carry: `performance`
+  declares no `409`, so a throw there is a real failure rather than a state of the world.
+  It requests an explicit `2026-07-01 → 2026-07-31` window, because an omitted one would
+  exercise the API's default and prove nothing about the query option this release wires
+  up.
 - [docs/README.md](README.md): `RELEASE.md` in the tree and cross-references, a release item
   on the pre-commit checklist, a pointer on the `DEPLOY.md` absent-row with its reasoning
   intact, and a §Conventions note retiring the `— vX.Y.Z` CHANGELOG heading suffix — which
@@ -79,9 +129,10 @@ files are excluded by `!src/**/*.test.ts`.
   its retrospective are left byte-for-byte as written, each scoped to Phase 1. New
   [CONTEXT D21](CONTEXT.md) makes the general rule: a sprint's scope is not frozen at open,
   and only the maintainer opens or closes one.
-- The suite is **16 files / 232 tests, 1 skipped** (was 14 / 197): 22 tests drive
+- The suite is **17 files / 277 tests, 1 skipped** (was 14 / 197): 22 tests drive
   `release:check` as a CLI against throwaway git repositories, 13 cover the pure judgements
-  inside `release:verify-pack`.
+  inside `release:verify-pack`, and 45 cover `get_account_performance` — 34 on the domain
+  module, 11 through a connected MCP client.
 
 ### Fixed
 - **The release workflow's annotated-tag guard could never pass.** It read

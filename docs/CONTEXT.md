@@ -1043,3 +1043,73 @@ returning it to W34 is the maintainer's call and W34's file says how.
 
 **Date**: 2026-08-10
 **Version**: unreleased
+
+---
+
+## Phase 9 — The performance read path (2026-08-10)
+
+### D23. `reporting` is a currency code, and it is validated by shape rather than by enum
+
+**Context**: [US-2.10](sprints/stories/US-2.10-get-account-performance-tool.md) was written
+against the [read-tool expansion spec](superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
+§Tool surface, which lists the three performance endpoints' query parameters as `from`,
+`to`, `reporting` and says nothing further about the third. The story read `reporting` as a
+reporting *period* — the word's ordinary meaning in a performance API — and wrote AC-4 as
+*"`reporting` is likewise a closed enum, not a free string"*, with TASK-2.10.2 specifying
+"an optional Zod enum". TASK-2.10.1 existed precisely to check that reading against the
+document before a schema was written, on the standing rule that *a schema is written against
+the document, not against a spec's summary of it*.
+
+The document disagrees. `GET /api/v1/accounts/{accountId}/performance` declares `reporting`
+as `type: string`, described as **"ISO-4217 currency the money metrics are normalized to.
+Default `USD`"** — a currency, not a period. The live API accepts `reporting=USD` and
+normalizes the money figures to it.
+
+**Decision**: `reporting` is an ISO-4217 currency code, validated by **shape** —
+`/^[A-Z]{3}$/` — and not against an enumerated list of codes. It stays a closed *format*:
+`monthly`, `daily` and a lowercase `usd` are all rejected by the input schema before any
+HTTP request is made, which is what AC-4 was protecting. AC-4's wording is corrected in the
+story rather than satisfied literally.
+
+**Rationale**: hard-coding the currency list would be this server inventing a closed set the
+API never declared, and it fails closed on the first legitimate currency nobody listed — a
+`403`-shaped outage caused by this server's assumption rather than by the API's contract.
+That is the same trade already recorded in `core/client.ts`'s `PATH_SEGMENT`, which is
+deliberately not a UUID pattern for exactly this reason: reject what makes the value
+dangerous, not everything that is unfamiliar. Shape validation catches the failure that
+actually threatened the model — passing a *period* where a *currency* belongs, which a
+`type: string` parameter would have accepted and silently mis-answered.
+
+**What this binds**: [US-2.12](sprints/stories/US-2.12-get-performance-breakdowns-tool.md)
+and [US-2.13](sprints/stories/US-2.13-get-equity-timeseries-tool.md) send the same three
+parameters and were written to *"copy rather than re-derive"* whatever US-2.10 settled about
+the input schema. What they copy is this: `from`/`to` are UTC `YYYY-MM-DD` calendar dates —
+validated for existence, not only shape, so `2026-02-31` is refused — and `reporting` is a
+three-letter uppercase currency code. Neither story should declare its own.
+
+**Alternatives considered**:
+- **A Zod enum of major currencies (`USD`, `EUR`, `GBP`, …)**, as the story specified —
+  rejected above. It is the literal reading of AC-4 and the wrong artifact.
+- **`z.string()` with no validation, letting the API's `400` be the guard** — rejected: it
+  sends a round trip to learn what the schema already knows, and the API's "Invalid date
+  range or query parameter" does not distinguish which parameter or why. The point of an
+  input schema is to fail before the network, with the expected format named.
+- **Rename the tool's parameter to `currency` and map it** — rejected: a tool parameter that
+  does not match the API's parameter name puts a translation layer between the model and
+  the document a maintainer will read. The description says what it is instead.
+
+**Also settled by the same read**: the response surface is exactly the four blocks the spec
+named (`metrics`, `portfolioReturn`, `lifetimeIrr`, `live`); this endpoint declares **no
+`409`**, confirming the story's "no `conflictMeans`" instruction; and it declares a **`503`**
+("the performance warehouse is temporarily unavailable — retry later") that no design
+artifact mentions. `503` falls to `core/client.ts`'s default branch and renders as
+"Senti API request failed: HTTP 503", which is true but does not say the condition is
+transient. Left as is for this story — see [US-2.12](sprints/stories/US-2.12-get-performance-breakdowns-tool.md),
+which hits the same endpoint family and is where a `serviceUnavailableMeans` option would
+earn its place if the branch is ever seen.
+
+**Impact**: `get_account_performance` ships in `1.1.0` with `from`/`to`/`reporting` as
+described. The story's AC-4 and TASK-2.10.2 are corrected in place with a pointer here.
+
+**Date**: 2026-08-10
+**Version**: 1.1.0

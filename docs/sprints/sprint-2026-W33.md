@@ -38,7 +38,7 @@ phase and only this phase.
 
 | US | Title | Epic | Pri | Points | Status | Story file |
 |---|---|---|---|---|---|---|
-| US-2.10 | `get_account_performance` tool | EPIC-2 | P1 | 2 | 🟢 ready | [link](stories/US-2.10-get-account-performance-tool.md) |
+| US-2.10 | `get_account_performance` tool | EPIC-2 | P1 | 2 | ✅ done (1.1.0) | [link](stories/US-2.10-get-account-performance-tool.md) |
 | US-2.11 | `list_deals` tool | EPIC-2 | P1 | 3 | 🟢 ready | [link](stories/US-2.11-list-deals-tool.md) |
 | US-2.12 | `get_performance_breakdowns` tool | EPIC-2 | P1 | 3 | 🟢 ready | [link](stories/US-2.12-get-performance-breakdowns-tool.md) |
 | US-2.13 | `get_equity_timeseries` tool, and EPIC-2's close | EPIC-2 | P1 | 3 | 🟢 ready | [link](stories/US-2.13-get-equity-timeseries-tool.md) |
@@ -85,6 +85,11 @@ US-2.12 or US-2.13 and could run concurrently with either.
   `from`/`to`/`reporting`. Whatever US-2.10 settles about validating those inputs — the
   date format the input schema accepts, the `reporting` enum's members — the other two copy
   rather than re-derive. Nothing else about US-2.10 is load-bearing for them.
+  **Settled, 2026-08-10** ([CONTEXT D23](../CONTEXT.md)): `from`/`to` are UTC `YYYY-MM-DD`
+  and are validated for *existence*, not only shape, so `2026-02-31` is refused before any
+  request. `reporting` has no enum members to copy — it is an **ISO-4217 currency code**,
+  not a reporting period, validated as `/^[A-Z]{3}$/`. Both stories import the shape from
+  `tools/performance/summary.ts` rather than redeclaring it.
 - **US-2.11 depends on nothing else in this phase.** It builds on US-2.4's `accountPath`
   and `registerReadTool`, both shipped, and on US-2.8/US-2.9's `tools/trading/`
   conventions. It is the story to start first if two people are working.
