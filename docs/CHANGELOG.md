@@ -15,6 +15,65 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [1.2.0] — 2026-08-11 — `list_deals`: the first paginated tool, and a refusal to drain
+
+The eighth tool, and the first whose answer does not fit in one response. Positions and
+pending orders say what is open right now; nothing said what already closed.
+`GET /accounts/{accountId}/deals` does, and it is paginated — which is the axis
+[US-2.11](sprints/stories/US-2.11-list-deals-tool.md) exists to open.
+
+The policy for that axis is a refusal. One tool call issues **exactly one** HTTP request,
+whatever `nextCursor` holds. A tool that quietly follows cursors until exhaustion turns
+one question into an unbounded number of requests against a rate-limited API and spends
+the user's context on data nobody asked for. The cursor goes to the model as data; the
+model decides whether the next page is worth asking for.
+
+### Added
+- **`list_deals` — one page of an account's closed deal history**
+  (`src/tools/trading/deals.ts`). `DealSchema`, `parseDeals`, `formatDeals`. Symbol,
+  direction, entry kind, volume, price, realized profit, costs, the linked position and
+  order, and the placing expert advisor. `limit` (default **50**, maximum 500), `cursor`,
+  `entry`, `from` and `to` all reach the URL through `client.get`'s `query`.
+  - **No automatic drain, and no `maxPages` parameter that would smuggle one in.** The
+    tool is a single `client.get` with no loop, asserted by counting calls to a stubbed
+    `fetch` against a page that always answers with a cursor — output inspection would
+    only show which page won, not how many were read.
+  - **The cursor is quoted in the text, not only in `structuredContent`.** Many clients
+    surface `content` alone, and a cursor the model cannot see is a page it cannot ask
+    for. The more-available and last-page cases are written to read differently without
+    opening the structured channel at all.
+  - **`limit` is sent explicitly on every call**, including when the caller omits it. The
+    API's own default is 100, stated in no response and free to change; 50 is this
+    server's, stated in the tool description and enforced by the input schema.
+  - **The `entry` case asymmetry is caught before the request exists.** The query
+    parameter takes lowercase `in`/`out`; the response field is uppercase
+    `IN`/`OUT`/`INOUT`/`OUT_BY`. A model feeding one back as the other would get a 400
+    about a query parameter — the input schema rejects it instead, and the description
+    says which case goes where.
+  - **A page total is labelled a page total.** The header states realized P&L across the
+    rows shown and says outright that it is not the account's, pointing at
+    `get_account_performance` for that — the same defect class `list_positions` guards
+    against when it totals the full list rather than the surviving slice.
+  - **`syncedThrough` is carried through rather than dropped.** This endpoint reads a
+    warehouse, not the MT5 terminal, so a deal closed after that instant is not in the
+    answer yet. That is the difference between "you have no trades today" and "today has
+    not been ingested yet".
+  - **No `409` branch**, unlike `list_positions` and `list_pending_orders`. The live
+    OpenAPI document declares none here — an offline terminal costs this endpoint
+    freshness, not availability. Copying US-2.8's call shape would have added a branch
+    the API never takes.
+
+### Notes
+- **The `capPositions`/`capOrders` generalization stays deferred, and this closes the
+  question rather than moving it.** The
+  [W33 retrospective](sprints/sprint-2026-W33.md) parked it here on the condition that
+  `list_deals` needed a third truncation helper. It does not: `limit` is a bound the
+  caller chose and the input schema enforces, not a server-side cut, so this tool ships
+  with no such helper and no `notes` field at all — the one deliberate exception to the
+  uniformity `tools/performance/` keeps. Two copies remain two copies. The trigger to
+  revisit is now a third tool that truncates a response the caller did not bound; EPIC-3's
+  write-path read-backs are the next plausible source.
+
 ## [1.1.0] — 2026-08-10 — `get_account_performance`: the first tool with query parameters
 
 The seventh tool, and the one that opens EPIC-2's last axis: query parameters. `from`,

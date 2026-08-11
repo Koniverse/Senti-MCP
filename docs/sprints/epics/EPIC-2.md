@@ -119,11 +119,11 @@ most likely to break by copying an earlier one:
 | [US-2.8](../stories/US-2.8-list-positions-tool.md) | `list_positions` tool | P1 | 2 | ✅ done (v0.6.0) | 16–17 |
 | [US-2.9](../stories/US-2.9-list-pending-orders-tool.md) | `list_pending_orders` tool | P1 | 2 | ✅ done (v0.7.0) | 18–19 |
 | [US-2.10](../stories/US-2.10-get-account-performance-tool.md) | `get_account_performance` tool | P1 | 2 | ✅ done (v1.1.0) | — |
-| [US-2.11](../stories/US-2.11-list-deals-tool.md) | `list_deals` tool | P1 | 3 | 🟢 ready (→ 1.2.0) | — |
+| [US-2.11](../stories/US-2.11-list-deals-tool.md) | `list_deals` tool | P1 | 3 | ✅ done (v1.2.0) | — |
 | [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md) | `get_performance_breakdowns` tool | P1 | 3 | 🟢 ready (→ 1.3.0) | — |
 | [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | `get_equity_timeseries` tool, and EPIC-2's close | P1 | 3 | 🟢 ready (→ 1.4.0) | — |
 
-The version in each Status cell is where that story *first* shipped — or, for the three
+The version in each Status cell is where that story *first* shipped — or, for the two
 remaining `ready` rows, where it is planned to ship ([CONTEXT D14](../../CONTEXT.md)); their
 Plan tasks column is empty because no implementation plan for them exists yet. US-2.10's is
 empty for the same reason and it shipped anyway — see §Remaining work. The whole six-tool
@@ -143,21 +143,25 @@ three sprints rather than four.
 
 ## Remaining work
 
-**This epic is `in-progress`: seven of the API's ten `GET` operations have a tool.** The
-three that do not are the reason the status has not flipped:
+**This epic is `in-progress`: eight of the API's ten `GET` operations have a tool.** The
+two that do not are the reason the status has not flipped:
 
 | US | Tool | New axis | Pts | Ships |
 |---|---|---|---|---|
-| [US-2.11](../stories/US-2.11-list-deals-tool.md) | `list_deals` | cursor pagination | 3 | 1.2.0 |
 | [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md) | `get_performance_breakdowns` | payload shaping — the ~70,000-token `breakdowns` response ([CONTEXT D10](../../CONTEXT.md)) | 3 | 1.3.0 |
 | [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | `get_equity_timeseries` | downsampling | 3 | 1.4.0 |
 
-Eight points. **[US-2.10](../stories/US-2.10-get-account-performance-tool.md) shipped
+Six points. **[US-2.10](../stories/US-2.10-get-account-performance-tool.md) shipped
 `1.1.0` on 2026-08-10**, opening the query-parameter axis and settling for the other two
 performance stories what `from`, `to` and `reporting` accept — `reporting` being an
 ISO-4217 currency code rather than the reporting period its name suggests
 ([CONTEXT D23](../../CONTEXT.md)). `performance:read` is now the fifth of five scopes
-exercised by a shipped tool. **The remaining three were written 2026-08-10 and are `ready`
+exercised by a shipped tool. **[US-2.11](../stories/US-2.11-list-deals-tool.md) shipped
+`1.2.0` on 2026-08-11**, opening the last new axis before the shaping pair — cursor
+pagination — as a refusal rather than a mechanism: one tool call is exactly one HTTP
+request, and `nextCursor` goes to the model as data. It binds neither remaining story,
+because neither endpoint paginates ([CONTEXT D24](../../CONTEXT.md)).
+**The remaining two were written 2026-08-10 and are `ready`
 in [sprint-2026-W33](../sprint-2026-W33.md) §Phase 3** (2026-08-10 → 2026-08-16). The
 [expansion spec §Story plan](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
 planned them for W34 (08-17 → 08-23) and they were pulled forward into the running window
@@ -165,7 +169,8 @@ the same day they were written, once EPIC-4 had settled the release procedure th
 minors depend on ([CONTEXT D22](../../CONTEXT.md)). US-2.13 carries the task that flips
 this epic to `done`.
 
-Both open questions this section carried are now settled:
+Both open questions this section carried are now settled — the second by US-2.11 in code,
+not only on paper:
 
 - **The spec's stale `Ships` column** — it assigns `0.8.0` → `0.11.0`, written before
   `1.0.0` was cut. Post-`1.0.1` these are additive minors, `1.1.0` → `1.4.0`, recorded as
@@ -176,8 +181,10 @@ Both open questions this section carried are now settled:
   condition that `list_deals` needed a third cap helper. It does not: `list_deals` bounds
   its payload with a caller-supplied `limit` enforced by its input schema, not with a
   server-side truncation, so it emits no `notes` and needs no cap — *paginating is not
-  cutting*. Two copies stay two copies; the trigger to revisit is a third tool that
-  truncates a response the caller did not bound. See
+  cutting*. **Shipped that way in `1.2.0`**: `grep -n 'notes\|cap' src/tools/trading/deals.ts`
+  returns nothing, which is US-2.11's AC-10. Two copies stay two copies; the trigger to
+  revisit is a third tool that truncates a response the caller did not bound, and EPIC-3's
+  write-path read-backs are the next plausible source. See
   [US-2.11](../stories/US-2.11-list-deals-tool.md) §What we explicitly did NOT do.
 
 **What is still not settled is the implementation plan.** W33's Phase 1 ran against a
@@ -185,14 +192,16 @@ task-by-task plan with code, and its retrospective credits that plan for why six
 read as transcription-with-verification. Phase 3 has stories and no equivalent plan;
 writing one is Superpowers' job.
 
-US-2.10 shipped without one, and that is a data point rather than a precedent. It held
-because a 2-point story with a fixed-size response is the cheapest thing in the phase, and
-because its own TASK-2.10.1 forced the contract check that a plan would otherwise have
-carried — which is exactly where the story's specification turned out to be wrong. The
-three that remain are the shaping stories, where the equivalent unknown is a payload weight
+US-2.10 and US-2.11 both shipped without one, and that is now two data points rather than
+a precedent. Both held for the same reason: their own TASK-x.1 forced the contract check a
+plan would otherwise have carried, and in both cases that check is where the story's
+specification turned out to be incomplete — `reporting`'s meaning in US-2.10, and in
+US-2.11 an undeclared `syncedThrough` field, an absent `409`, and an `entry` parameter
+whose case disagrees with the response field's ([CONTEXT D24](../../CONTEXT.md)). The two
+that remain are the shaping stories, where the equivalent unknown is a payload weight
 nobody has measured (US-2.12) and a downsampling rule that has to preserve the deepest
-drawdown (US-2.13). Writing the plan before those is worth more than it was before this
-one.
+drawdown (US-2.13) — neither of which a contract check alone will settle. Writing the plan
+before those is worth more than it was before either of these.
 
 ## Live payload findings
 
@@ -208,18 +217,17 @@ working key arrived **2026-08-10**; `npm run test:smoke` passes against
 | `list_strategies`' `avgRating` — `.nullable()` | **Confirmed necessary.** Null in 5 of 15. |
 | `PositionSchema`'s 13 fields | **Exact.** Row keys match the schema one-for-one — no extra field, none missing. |
 | `sl` / `tp` on positions — `.nullable()` | **The API sends `0`, not `null`** — 10/10 rows, typed number. `price()`'s `0 → —` mapping is the branch that actually runs; the `null` arm is untaken so far. |
-| `priceStopLimit` on pending orders | **Still unsettled.** The account holds zero pending orders. |
+| `priceStopLimit` on pending orders | **The API sends `0`, not `null`** — settled 2026-08-11 by US-2.11's smoke leg, once the account acquired a resting `ORDER_TYPE_BUY_LIMIT` it had not held on 08-10. `orders.ts` omits the stop-limit line on `0`, which is the branch that runs; the `null` arm is untaken so far, exactly as `sl`/`tp` above. |
 | The `409` / `conflictMeans` terminal-offline branch | **Still unexercised live.** Positions and orders both returned `200`; the terminal is online. |
 | `reporting`'s type — assumed a closed enum of reporting periods | **Wrong assumption, caught before code.** It is an ISO-4217 **currency code**, `type: string`, default `USD`. Settled from the OpenAPI document by US-2.10's TASK-2.10.1; binds US-2.12 and US-2.13 ([CONTEXT D23](../../CONTEXT.md)). |
 | `winRate`, `roi`, `irr` — scale undeclared by any schema | **Percentages, not fractions.** 48 wins of 58 deals returns `82.7586…`. Recorded in `summary.test.ts`'s fixture, since nothing in the API's schema states it. |
 | `performance`'s `live: null` offline branch | **Unexercised live**, for the same reason as the `409` above — the smoke account's terminal is online and returned a full live block. Covered by test only. |
 | Whether `from`/`to` actually change the answer | **Yes, live-confirmed.** The default window returned 58 closed deals; `2026-07-01 → 2026-07-31` returned 391. The query option US-2.4 built and no tool had used is proven against the real service. |
 
-So the blocker has moved rather than cleared: the credential works, and what is missing
-now is an account **holding a resting order** and an **offline terminal**. Phase 3 needs
-the first before US-2.11's cursor work trusts an order payload's shape, and
-`get_performance_breakdowns`'s payload weight (D10) still cannot be estimated from the
-schema — it has to be measured.
+So the blocker has moved again, and is now a single item: an **offline terminal**. The
+credential works; the resting order arrived on 2026-08-11 and settled `priceStopLimit`.
+What is still unmeasurable from the schema is `get_performance_breakdowns`'s payload
+weight (D10) — US-2.12's TASK-2.12.1 has to measure it.
 
 US-2.10 added a third item to that list without resolving either of the first two: the
 offline-terminal gap now costs **two** untested branches rather than one, because

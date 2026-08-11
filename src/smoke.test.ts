@@ -7,6 +7,7 @@ import {
 } from './tools/strategies/list-account-strategies.js';
 import { formatStrategies, parseStrategies } from './tools/strategies/list-strategies.js';
 import { formatPerformance, parsePerformance } from './tools/performance/summary.js';
+import { formatDeals, parseDeals } from './tools/trading/deals.js';
 import { capOrders, formatOrders, parseOrders } from './tools/trading/orders.js';
 import { capPositions, formatPositions, parsePositions } from './tools/trading/positions.js';
 import { accountPath, createClient } from './core/client.js';
@@ -105,5 +106,50 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
     // `from`/`to` would exercise the API's default and prove nothing about the
     // query option this story exists to wire up.
     expect(formatPerformance(performance, window)).toContain('2026-07-01');
+
+    // `deals` declares no 409 either — it reads the warehouse, not the
+    // terminal — so a throw here is a real failure rather than a state of the
+    // world, same as `performance` above.
+    //
+    // `limit: 2` is deliberate. It keeps the live call small and makes a
+    // second page near-certain on any account that has traded more than
+    // twice, which is what puts the *more-available* branch under a live
+    // cursor instead of only under a fixture.
+    const dealQuery = { limit: 2 };
+    const firstPage = parseDeals(
+      await client.get(accountPath(first.id, 'deals'), {
+        scope: 'trading:read',
+        query: dealQuery,
+      }),
+    );
+    const rendered = formatDeals(firstPage, dealQuery);
+
+    expect(rendered.length).toBeGreaterThan(0);
+
+    if (firstPage.nextCursor === null) {
+      // Not a failure, and not a skipped leg: an account with two deals or
+      // fewer has no second page to prove. The last-page branch is the one
+      // that ran, and it rendered — that is what this asserts.
+      expect(rendered).toMatch(/last page/i);
+    } else {
+      expect(rendered).toMatch(/more deals are available/i);
+      // The cursor reaches the model through the text, not only through
+      // `structuredContent`, so the text is where it has to be checked.
+      expect(rendered).toContain(firstPage.nextCursor);
+
+      const secondPage = parseDeals(
+        await client.get(accountPath(first.id, 'deals'), {
+          scope: 'trading:read',
+          query: { ...dealQuery, cursor: firstPage.nextCursor },
+        }),
+      );
+
+      // A cursor the API accepts and that actually advances. Echoing page one
+      // back would satisfy a schema check and still be a broken contract.
+      expect(secondPage.deals.length).toBeGreaterThan(0);
+      expect(secondPage.deals.map((deal) => deal.ticket)).not.toEqual(
+        firstPage.deals.map((deal) => deal.ticket),
+      );
+    }
   }, 60_000);
 });

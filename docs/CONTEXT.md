@@ -1113,3 +1113,77 @@ described. The story's AC-4 and TASK-2.10.2 are corrected in place with a pointe
 
 **Date**: 2026-08-10
 **Version**: 1.1.0
+
+---
+
+## Phase 10 — Cursor pagination (2026-08-11)
+
+### D24. `list_deals` reads one page and stops; `syncedThrough` is surfaced, not dropped
+
+**Context**: [US-2.11](sprints/stories/US-2.11-list-deals-tool.md) opens the last new axis
+in EPIC-2's read path — cursor pagination — and TASK-2.11.1 checked the contract against
+the live OpenAPI document before a schema was written, on the same standing rule that
+produced [D23](#d23-reporting-is-a-currency-code-and-it-is-validated-by-shape-rather-than-by-enum).
+Three things the document says were not in any design artifact.
+
+**Decision**: three, taken together.
+
+1. **One tool call is exactly one HTTP request, and the tool ships no `maxPages`.** This is
+   the design spec's §Payload policy carried into code as a refusal: `registerListDeals`
+   contains a single `client.get` and no loop. `nextCursor` reaches the model as data, in
+   the **text** as well as in `structuredContent`, and the model decides whether the next
+   page is worth asking for.
+2. **No `409` branch, so no `conflictMeans`.** `positions` and `orders` declare one because
+   they read through to the MT5 terminal. `deals` does not — the document declares
+   `400/401/403/404/429/503` and nothing else. It reads the ClickHouse warehouse, so an
+   offline terminal costs this endpoint freshness rather than availability.
+3. **`syncedThrough` is rendered, not dropped.** The response carries a third envelope field
+   no design artifact mentions: `deals`, `nextCursor`, **`syncedThrough`** — the instant the
+   warehouse has ingested up to (`2026-08-10T04:23:29.000Z` on the smoke account). The text
+   states it and says that anything closed after it is not in the answer yet.
+
+**Rationale**: (1) is the story's own reasoning — an unbounded number of requests against a
+rate-limited API, and a context window spent on data nobody asked for, both from one
+question. (2) is the rule D23 already set for `performance`: a branch the API never takes is
+a branch that misleads whoever reads the call site next. (3) is the `notionalIncomplete`
+argument from `summary.ts` applied to a new field — quoting a history while discarding the
+API's own statement about how complete it is, is how a model states a confident, wrong
+answer about real money. A trade history that is silently 12 hours stale reads as complete.
+
+**What this binds**: nothing in [US-2.12](sprints/stories/US-2.12-get-performance-breakdowns-tool.md)
+or [US-2.13](sprints/stories/US-2.13-get-equity-timeseries-tool.md) — neither endpoint
+paginates. What survives this story is the **trigger**, not a rule: the
+`capPositions`/`capOrders` generalization the W33 retrospective parked here does not happen,
+because `limit` is a caller-supplied bound and not a server-side cut, and the next candidate
+is a third tool that truncates a response the caller did not bound.
+
+**Alternatives considered**:
+- **Drain the cursor, bounded by a `maxPages` parameter** — rejected. A bound the model
+  supplies to a loop it cannot observe is still an unbounded number of requests from the
+  user's point of view, and it hides the one decision worth surfacing.
+- **Return `nextCursor` in `structuredContent` only** — rejected: many clients surface
+  `content` alone, and a cursor the model cannot see is a page it cannot ask for. The cursor
+  is quoted verbatim in the text.
+- **Accept the API's default `limit` of 100 by omitting the parameter** — rejected. The
+  default is stated in no response and is free to change under this server; 50 is sent
+  explicitly on every call, so the URL states the bound this tool promised in its
+  description.
+- **Drop `syncedThrough`, as no artifact asked for it** — rejected above.
+
+**Also settled by the same read**: the `entry` **query parameter takes lowercase `in`/`out`
+while the response field is uppercase `IN`/`OUT`/`INOUT`/`OUT_BY`** — a model feeding one
+back as the other gets a `400` about a query parameter, so the input schema rejects the
+wrong case before the request exists and the tool description says which case goes where.
+The deal record's fifteen fields are all required and **none is nullable**, so no field here
+shares the MT5 `0`-means-unset convention `positions.ts`'s `price()` exists for: a
+`commission`, `fee`, `swap` or `profit` of 0 is a real zero and renders as one. `magic` of 0
+is the single value with a second meaning — no expert advisor placed the deal — and renders
+as "manual". This endpoint declares the same **`503`** D23 left unhandled; it still falls to
+`core/client.ts`'s default branch, and a `serviceUnavailableMeans` option still has not
+earned its place.
+
+**Impact**: `list_deals` ships in `1.2.0`. The story's ACs are satisfied as written; nothing
+in it is corrected.
+
+**Date**: 2026-08-11
+**Version**: 1.2.0

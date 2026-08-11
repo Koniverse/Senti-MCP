@@ -17,19 +17,25 @@ Trading. An MCP host cannot call it directly: something has to own the API key, 
 typed tools whose descriptions let a model choose correctly, and turn API errors into
 text a model can act on. This server is that something.
 
-**Current state: v1.0.1 on npm `latest`.** `1.0.0` is the stable-surface cut and is
-tagged git-only; `1.0.1` is the version that carries it to the registry
-([CONTEXT D11, D12](docs/CONTEXT.md)). Six tools are registered in `src/server.ts`:
+**Current state: `1.2.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
+`1.0.1` is the version that carried it to the registry
+([CONTEXT D11, D12](docs/CONTEXT.md)). **Eight** tools are registered in `src/server.ts`:
 `list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
-`list_positions`, `list_pending_orders` — covering six of the API's 10 `GET`
-operations. `list_accounts` shipped first, in v0.1.0, tracked as
+`list_positions`, `list_pending_orders`, `list_deals`, `get_account_performance` —
+covering eight of the API's 10 `GET` operations. `list_accounts` shipped first, in v0.1.0,
+tracked as
 [US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md) and proven against the
 live API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md); the
-other five closed out [sprint-2026-W33](docs/sprints/sprint-2026-W33.md)'s Phase 1,
+next five closed out [sprint-2026-W33](docs/sprints/sprint-2026-W33.md)'s Phase 1,
 tracked as [US-2.4](docs/sprints/stories/US-2.4-tool-substrate-and-layout.md) through
-[US-2.9](docs/sprints/stories/US-2.9-list-pending-orders-tool.md). **Four** read
-operations remain — `get_account_performance`, `get_performance_breakdowns`,
-`get_equity_timeseries`, `list_deals`. The
+[US-2.9](docs/sprints/stories/US-2.9-list-pending-orders-tool.md); Phase 3 has since
+added `get_account_performance` in `1.1.0`
+([US-2.10](docs/sprints/stories/US-2.10-get-account-performance-tool.md)) and
+`list_deals` in `1.2.0`
+([US-2.11](docs/sprints/stories/US-2.11-list-deals-tool.md), the first paginated tool —
+one call is one request, and it never drains a cursor: [CONTEXT D24](docs/CONTEXT.md)).
+**Two** read operations remain — `get_performance_breakdowns` and
+`get_equity_timeseries`. The
 [read-tool expansion spec](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
 put them in W34; they were pulled forward into the same W33 window as its **Phase 3** on
 2026-08-10 ([CONTEXT D22](docs/CONTEXT.md)), and EPIC-2 stays `in-progress` until they
@@ -82,10 +88,11 @@ src/
                           calls. Shipped in v0.1.0, relocated here in v0.2.0
     brokers/            ← list-brokers.ts (v0.3.0)
     strategies/         ← list-strategies.ts, list-account-strategies.ts (v0.4.0, v0.5.0)
-    trading/            ← positions.ts, orders.ts (v0.6.0, v0.7.0). deals.ts lands in
+    trading/            ← positions.ts, orders.ts, deals.ts (v0.6.0, v0.7.0, v1.2.0).
+                          deals.ts is the only paginated tool and the only one with no
+                          `notes` field — paginating is not cutting
+    performance/        ← summary.ts (v1.1.0). breakdowns.ts and timeseries.ts land in
                           W33 Phase 3
-    performance/        ← not yet present. summary.ts, breakdowns.ts, timeseries.ts land
-                          in W33 Phase 3
 
 docs/                   ← all documentation (see docs/README.md)
   SETUP.md              ← local dev setup + env var reference
@@ -228,7 +235,7 @@ npm run test:smoke        # one live call; needs SENTI_SMOKE_KEY in .env.local
 `npm test` builds `dist/` on the way through — `src/index.test.ts` spawns the real
 built entry point, because that is the artifact US-2.2 AC-18 is a claim about.
 
-A clean run is **14 files / 197 tests, 1 skipped** (the opt-in smoke test). If you see
+A clean run is **18 files / 324 tests, 1 skipped** (the opt-in smoke test) as of `1.2.0`. If you see
 roughly double that, you have a leftover git worktree under `.claude/worktrees/` being
 collected as a second copy of the suite — `git worktree list` is the only routine command
 that shows it, since the path is gitignored. `vitest.config.ts` scopes collection to

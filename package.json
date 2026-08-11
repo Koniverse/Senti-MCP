@@ -1,6 +1,6 @@
 {
   "name": "senti-mcp-server",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "MCP server exposing the Senti Quant Public API to an AI host",
   "type": "module",
   "engines": {

@@ -39,7 +39,7 @@ phase and only this phase.
 | US | Title | Epic | Pri | Points | Status | Story file |
 |---|---|---|---|---|---|---|
 | US-2.10 | `get_account_performance` tool | EPIC-2 | P1 | 2 | ✅ done (1.1.0) | [link](stories/US-2.10-get-account-performance-tool.md) |
-| US-2.11 | `list_deals` tool | EPIC-2 | P1 | 3 | 🟢 ready | [link](stories/US-2.11-list-deals-tool.md) |
+| US-2.11 | `list_deals` tool | EPIC-2 | P1 | 3 | ✅ done (1.2.0) | [link](stories/US-2.11-list-deals-tool.md) |
 | US-2.12 | `get_performance_breakdowns` tool | EPIC-2 | P1 | 3 | 🟢 ready | [link](stories/US-2.12-get-performance-breakdowns-tool.md) |
 | US-2.13 | `get_equity_timeseries` tool, and EPIC-2's close | EPIC-2 | P1 | 3 | 🟢 ready | [link](stories/US-2.13-get-equity-timeseries-tool.md) |
 
@@ -93,6 +93,10 @@ US-2.12 or US-2.13 and could run concurrently with either.
 - **US-2.11 depends on nothing else in this phase.** It builds on US-2.4's `accountPath`
   and `registerReadTool`, both shipped, and on US-2.8/US-2.9's `tools/trading/`
   conventions. It is the story to start first if two people are working.
+  **Shipped 2026-08-11 as `1.2.0`**, and it bound nothing for US-2.12 or US-2.13 —
+  neither endpoint paginates. What it settled is recorded in
+  [CONTEXT D24](../CONTEXT.md): one request per call, no `409` branch on `deals`, and the
+  `syncedThrough` field no design artifact anticipated.
 - **US-2.12 and US-2.13 are the shaping pair.** Both drop `perAccount` from an
   account-scoped response and both carry `notes`. US-2.12 lands first, so US-2.13 reuses
   its `notes` phrasing rather than inventing a second vocabulary for the same idea — the
@@ -127,12 +131,21 @@ US-2.12 or US-2.13 and could run concurrently with either.
   which branches shipped unexercised rather than closing the epic silently; if an account
   with deal history and a resting order becomes available mid-week, US-2.11's smoke leg
   picks up both opportunistically. *Owner*: @bluezdot.
+  **Half discharged, 2026-08-11.** The account acquired a resting `ORDER_TYPE_BUY_LIMIT`
+  between 08-10 and 08-11, and it carries `priceStopLimit: 0` — not `null`. So US-2.9's
+  zero case is now live-verified and only its `null` arm is test-only. The terminal is
+  still online, so the `409`/`conflictMeans` branch remains unexercised against the real
+  service; that half stands, and US-2.13's epic-close task still has to state it.
 - **An account with no deal history makes US-2.11's pagination untestable live.** *Impact*:
   `nextCursor` only appears when a second page exists; a smoke account with fewer than
   `limit` deals exercises the empty-cursor path and nothing else. *Mitigation*: the cursor
   contract is proven by stubbed `fetch` in `deals.test.ts` regardless, and the smoke leg
   skips cleanly rather than failing — the same posture `smoke.test.ts` already takes when a
   key owns no accounts. *Owner*: @bluezdot.
+  **Did not materialize, 2026-08-11.** The smoke account holds 500+ deals; at `limit: 2`
+  the live first page returned a real `nextCursor`, and a second call with it returned
+  different tickets. The cursor path is proven against the real service, not only against
+  a stub. The skip-cleanly arm shipped and did not run.
 - **No implementation plan exists for these four stories yet.** Phase 1 ran against
   [read-tools-w33](../superpowers/plans/2026-08-06-senti-read-tools-w33.md), a task-by-task
   plan with code, and the retrospective below credits that plan for why six stories read as

@@ -6,6 +6,7 @@ import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 import { PerformanceOutputSchema } from './tools/performance/summary.js';
 import { AccountStrategiesOutputSchema } from './tools/strategies/list-account-strategies.js';
 import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
+import { DealsOutputSchema } from './tools/trading/deals.js';
 import { OrdersOutputSchema } from './tools/trading/orders.js';
 import { PositionsOutputSchema } from './tools/trading/positions.js';
 import { loadConfig } from './config.js';
@@ -545,6 +546,26 @@ describe('list_pending_orders', () => {
   });
 });
 
+const DEAL = {
+  ticket: 4207514236,
+  positionId: 4884575186,
+  orderId: 4884575186,
+  magic: 25,
+  symbol: 'XAUUSDm',
+  type: 'BUY',
+  entry: 'OUT',
+  volume: 0.01,
+  price: 4336,
+  commission: -0.35,
+  fee: 0,
+  swap: -1.2,
+  profit: 11.04,
+  comment: 'AT_DCA_B_9',
+  time: '2026-08-10T04:23:29.000Z',
+};
+
+const DEALS_PAGE = { deals: [DEAL], nextCursor: null, syncedThrough: '2026-08-10T04:23:29.000Z' };
+
 const PERFORMANCE = {
   metrics: {
     grossProfit: 3042.12,
@@ -781,6 +802,260 @@ describe('get_account_performance', () => {
 });
 
 /**
+ * The wiring `deals.test.ts` cannot reach. The domain module never calls
+ * `accountPath`, never builds a URL and never sees the input schema — all three
+ * belong to `registerListDeals`, so the query, limit-bound and one-request
+ * claims are asserted here, through a real client over a stubbed `fetch`.
+ */
+describe('list_deals', () => {
+  test('builds its path through accountPath — a traversal accountId never reaches the network', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'list_deals',
+      arguments: { accountId: '../../admin' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/Invalid path segment/);
+    expect(called).toBe(false);
+  });
+
+  test('calls the account-scoped path and returns both channels', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, DEALS_PAGE));
+
+    const result = (await client.callTool({
+      name: 'list_deals',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(new URL(calls[0] ?? '').pathname).toBe('/api/v1/accounts/abc-123/deals');
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('ticket 4207514236');
+    expect(DealsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('sends limit=50 in the query when the caller omits it', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, DEALS_PAGE));
+
+    await client.callTool({ name: 'list_deals', arguments: { accountId: 'abc-123' } });
+
+    // Explicitly on the URL, not left to the API's own default — which is 100,
+    // is unstated in any response, and can change without this server knowing.
+    expect(new URL(calls[0] ?? '').searchParams.get('limit')).toBe('50');
+  });
+
+  test('sends limit, cursor, entry, from and to to the URL as query parameters', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, DEALS_PAGE));
+
+    await client.callTool({
+      name: 'list_deals',
+      arguments: {
+        accountId: 'abc-123',
+        limit: 25,
+        cursor: 'eyJ2IjoxfQ',
+        entry: 'out',
+        from: '2026-07-01',
+        to: '2026-07-31T23:59:59Z',
+      },
+    });
+
+    const url = new URL(calls[0] ?? '');
+    expect(url.pathname).toBe('/api/v1/accounts/abc-123/deals');
+    expect(url.searchParams.get('limit')).toBe('25');
+    expect(url.searchParams.get('cursor')).toBe('eyJ2IjoxfQ');
+    expect(url.searchParams.get('entry')).toBe('out');
+    expect(url.searchParams.get('from')).toBe('2026-07-01');
+    expect(url.searchParams.get('to')).toBe('2026-07-31T23:59:59Z');
+  });
+
+  test('leaves an omitted cursor, entry, from or to out of the query string entirely', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, DEALS_PAGE));
+
+    await client.callTool({ name: 'list_deals', arguments: { accountId: 'abc-123' } });
+
+    // Not `entry=undefined`, not `entry=`, not present at all. Only `limit`
+    // survives, because only `limit` has a default.
+    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/deals?limit=50');
+  });
+
+  test('rejects a limit above 500 before the query is built, naming the maximum', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'list_deals',
+      arguments: { accountId: 'abc-123', limit: 501 },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('500');
+    expect(called).toBe(false);
+  });
+
+  test('rejects a limit below 1 before the query is built', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'list_deals',
+      arguments: { accountId: 'abc-123', limit: 0 },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(called).toBe(false);
+  });
+
+  test('rejects an uppercase entry before the query is built — the API takes in/out', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    // The response field is `OUT`; the query parameter is `out`. A model that
+    // feeds one back as the other gets a 400 from the API about a query
+    // parameter — caught here instead, before the request exists.
+    const result = (await client.callTool({
+      name: 'list_deals',
+      arguments: { accountId: 'abc-123', entry: 'OUT' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(called).toBe(false);
+  });
+
+  test('rejects a malformed from before the query is built, naming the format', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'list_deals',
+      arguments: { accountId: 'abc-123', from: 'last month' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('ISO-8601');
+    expect(called).toBe(false);
+  });
+
+  test('makes a single request per call, whatever nextCursor holds', async () => {
+    const calls: string[] = [];
+    // Every page answers with a cursor, so a tool that drained would never
+    // stop. Counting the stubbed `fetch` is the assertion — inspecting the
+    // output would only show that the last page won, not how many were read.
+    const endless = recordingFetch(calls, { ...DEALS_PAGE, nextCursor: 'always-more' });
+    const client = await connect(endless);
+
+    const result = (await client.callTool({
+      name: 'list_deals',
+      arguments: { accountId: 'abc-123', limit: 1 },
+    })) as ToolResult;
+
+    expect(calls).toHaveLength(1);
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toMatch(/more deals are available/i);
+  });
+
+  test('makes a single request on the last page too', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, DEALS_PAGE));
+
+    await client.callTool({ name: 'list_deals', arguments: { accountId: 'abc-123' } });
+
+    expect(calls).toHaveLength(1);
+  });
+
+  test('names the trading:read scope on 403', async () => {
+    const forbidden = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Insufficient scope.' } }),
+        { status: 403, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(forbidden);
+
+    const result = (await client.callTool({
+      name: 'list_deals',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('trading:read');
+  });
+
+  test('turns a 404 into the login-versus-id hint', async () => {
+    const missing = (async () =>
+      new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found.' } }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof fetch;
+    const client = await connect(missing);
+
+    const result = (await client.callTool({
+      name: 'list_deals',
+      arguments: { accountId: '413878201' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/list_accounts/);
+    expect(textOf(result)).toMatch(/login/);
+  });
+
+  test('tells the model the page size, the ceiling, and that it must pass the cursor back', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'list_deals');
+
+    // A policy the model is not told is a policy it cannot follow: nothing in
+    // the payload says this tool refuses to drain, so the description must.
+    expect(tool?.description).toMatch(/defaults to 50/i);
+    expect(tool?.description).toMatch(/may not exceed 500/i);
+    expect(tool?.description).toMatch(/`cursor`/);
+    expect(tool?.description).toMatch(/never pages on its own/i);
+  });
+
+  test('declares accountId required and every other parameter optional', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'list_deals');
+
+    expect(tool?.inputSchema.required).toEqual(['accountId']);
+    expect(Object.keys(tool?.inputSchema.properties ?? {}).sort()).toEqual([
+      'accountId',
+      'cursor',
+      'entry',
+      'from',
+      'limit',
+      'to',
+    ]);
+  });
+});
+
+/**
  * One entry per registered tool. Later tool stories add a row here rather than
  * writing their own leak test or their own `outputSchema` assertion — that is
  * the point of the table. `outputSchema` and `successBody` exist only for the
@@ -816,6 +1091,12 @@ const TOOL_CALLS: {
     arguments: { accountId: 'abc-123' },
     outputSchema: OrdersOutputSchema,
     successBody: { orders: [ORDER] },
+  },
+  {
+    name: 'list_deals',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: DealsOutputSchema,
+    successBody: DEALS_PAGE,
   },
   {
     name: 'get_account_performance',
