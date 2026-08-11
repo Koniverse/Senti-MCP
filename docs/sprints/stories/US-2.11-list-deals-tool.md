@@ -2,7 +2,7 @@
 id: US-2.11
 title: "list_deals tool"
 epic: EPIC-2
-status: ready
+status: in-progress
 priority: P1
 points: 3
 sprint: sprint-2026-W33
