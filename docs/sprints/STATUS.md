@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-11 05:08:47 UTC
+> Last generated: 2026-08-11 11:21:59 UTC
 > Total stories: 20
 
 ## ⏰ Deadlines (0)
@@ -20,17 +20,15 @@ _No stories carry an explicit deadline._
 |---|---|---|---|---|---|---|
 | US-2.13 | get_equity_timeseries tool, and EPIC-2's close | EPIC-2 | P1 | 3 | sprint-2026-W33 | bluezdot |
 
-## 🟡 In Progress (1)
+## 🟡 In Progress (0)
 
-| ID | Title | Epic | Pri | Points | Sprint | Assignee |
-|---|---|---|---|---|---|---|
-| US-2.12 | get_performance_breakdowns tool | EPIC-2 | P1 | 3 | sprint-2026-W33 | bluezdot |
+_No stories_
 
 ## 👀 Review (0)
 
 _No stories_
 
-## ✅ Done (17)
+## ✅ Done (18)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
@@ -46,6 +44,7 @@ _No stories_
 | US-2.9 | list_pending_orders tool | EPIC-2 | P1 | 2 | sprint-2026-W33 | bluezdot |
 | US-2.10 | get_account_performance tool | EPIC-2 | P1 | 2 | sprint-2026-W33 | bluezdot |
 | US-2.11 | list_deals tool | EPIC-2 | P1 | 3 | sprint-2026-W33 | bluezdot |
+| US-2.12 | get_performance_breakdowns tool | EPIC-2 | P1 | 3 | sprint-2026-W33 | bluezdot |
 | US-4.1 | The release contract and docs/RELEASE.md | EPIC-4 | P1 | 3 | sprint-2026-W33 | bluezdot |
 | US-4.2 | npm run release:check — the pre-tag gate | EPIC-4 | P1 | 3 | sprint-2026-W33 | bluezdot |
 | US-4.3 | Backfill the six missing tags and v0.1.0's GitHub Release | EPIC-4 | P2 | 2 | sprint-2026-W33 | bluezdot |
@@ -66,12 +65,12 @@ _No stories_
 
 - 📋 **Backlog**: 1
 - 🟢 **Ready**: 1
-- 🟡 **In Progress**: 1
+- 🟡 **In Progress**: 0
 - 👀 **Review**: 0
-- ✅ **Done**: 17
+- ✅ **Done**: 18
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 
-✓ WIP: 1/3 stories in-progress.
+✓ WIP: 0/3 stories in-progress.
 
 ✓ No overdue stories.

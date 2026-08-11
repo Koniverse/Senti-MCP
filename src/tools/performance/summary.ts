@@ -192,8 +192,12 @@ export type PerformanceWindow = {
 };
 
 const NO_VALUE = '—';
-/** The API's documented default when `reporting` is omitted. */
-const DEFAULT_CURRENCY = 'USD';
+/**
+ * The API's documented default when `reporting` is omitted. Exported for the
+ * same reason as `windowOf`: it is what the API does, not what this module
+ * prefers, and `breakdowns.ts` reports the same currency for the same omission.
+ */
+export const DEFAULT_CURRENCY = 'USD';
 
 function money(value: number): string {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -217,8 +221,14 @@ function day(epochMs: number | null): string {
  * figures cover — including when the caller supplied nothing and the API chose.
  * Without it a model that asked a vague question attributes the numbers to
  * whatever period it had in mind.
+ *
+ * Exported for `breakdowns.ts`, which takes the same three query parameters
+ * against the same defaults and so makes the same statement. This is a claim
+ * about the API's window semantics rather than a formatting helper — two
+ * copies could disagree about what an omitted `from` means, and only one of
+ * them would be right.
  */
-function windowOf({ from, to }: PerformanceWindow): string {
+export function windowOf({ from, to }: PerformanceWindow): string {
   if (from && to) return `${from} → ${to}`;
   if (from) return `${from} → today (the API's default end)`;
   if (to) return `the 30 days ending ${to} (the API's default start)`;
