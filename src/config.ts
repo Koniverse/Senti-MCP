@@ -1,9 +1,3 @@
-/**
- * Server identity. `server.ts` and the default User-Agent both read these, so
- * they stay in one place; keep in sync with package.json on release.
- * `config.test.ts` fails if `SERVER_VERSION` drifts from `VERSION` or
- * package.json.
- */
 export const SERVER_NAME = 'senti-mcp-server';
 export const SERVER_VERSION = '1.2.0';
 const DEFAULT_BASE_URL = 'https://api.sentitrade.xyz';
@@ -12,10 +6,6 @@ const ALLOWED_PROTOCOLS: readonly string[] = ['https:', 'http:'];
 export type Config = {
   /** API root, without a trailing slash. */
   baseUrl: string;
-  /**
-   * First-party key (`sq_live_…`). It leaves this process only as an
-   * `Authorization` header — never as a tool argument, never in output.
-   */
   apiKey: string;
 };
 
