@@ -40,7 +40,7 @@ phase and only this phase.
 |---|---|---|---|---|---|---|
 | US-2.10 | `get_account_performance` tool | EPIC-2 | P1 | 2 | ✅ done (1.1.0) | [link](stories/US-2.10-get-account-performance-tool.md) |
 | US-2.11 | `list_deals` tool | EPIC-2 | P1 | 3 | ✅ done (1.2.0) | [link](stories/US-2.11-list-deals-tool.md) |
-| US-2.12 | `get_performance_breakdowns` tool | EPIC-2 | P1 | 3 | 🟢 ready | [link](stories/US-2.12-get-performance-breakdowns-tool.md) |
+| US-2.12 | `get_performance_breakdowns` tool | EPIC-2 | P1 | 3 | 🟡 in-progress | [link](stories/US-2.12-get-performance-breakdowns-tool.md) |
 | US-2.13 | `get_equity_timeseries` tool, and EPIC-2's close | EPIC-2 | P1 | 3 | 🟢 ready | [link](stories/US-2.13-get-equity-timeseries-tool.md) |
 
 **Phase 3: 4 stories / 11 points.** **Sprint total: 15 stories / 42 points.**
