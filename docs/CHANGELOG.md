@@ -15,6 +15,76 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [1.3.0] — 2026-08-11 — `get_performance_breakdowns`: the largest payload, cut down and traced
+
+The ninth tool, and the first that returns materially less than the API gave it.
+`GET /accounts/{accountId}/performance/breakdowns` answers "which symbol is losing me
+money" and "what hour do I trade worst" — and measured live on 2026-08-11, it answers
+them in **87,063 bytes (~21,766 tokens)** for a 63-day window on an account trading a
+single symbol. Both `content` and `structuredContent` enter the model's context, so
+returning that whole is a decision to spend a fifth of a context window on a question
+the user thought was small. [US-2.12](sprints/stories/US-2.12-get-performance-breakdowns-tool.md)
+is the tool and the cuts that make it answerable; the same live read brings it to
+**12,187 bytes (~3,047 tokens), 86.0% removed**.
+
+The rule those cuts follow is [CONTEXT D10](CONTEXT.md)'s: **every cut that loses
+something leaves a trace.** A model reading a ten-symbol breakdown it believes is
+complete will state a confident, wrong conclusion about real money. `notes` says what
+went, how much remains and how to ask for the rest — and it is **empty when nothing was
+cut**, so its presence never implies a cut occurred.
+
+### Added
+- **`get_performance_breakdowns` — an account broken down by day, symbol and hour**
+  (`src/tools/performance/breakdowns.ts`). `BreakdownsSchema`, `parseBreakdowns`,
+  `shapeBreakdowns`, `formatBreakdowns`. `from`, `to` and `reporting` reach the URL
+  through `client.get`'s `query`, using
+  [US-2.10](sprints/stories/US-2.10-get-account-performance-tool.md)'s input schema
+  object itself rather than a second copy of its date and currency rules.
+  - **Five cuts, of which two lose something and two therefore write a note.**
+    `perAccount` goes whole — the endpoint is already scoped to one account, and a live
+    read confirmed all 32 of its `dailyPnlRows` reproduce `daily.pnl` exactly. `daily`
+    loses `cumulativePnl`, `cumulativeVolume` and `cumulativeNotional`; `perSymbol`
+    loses `cumPnlRows` and `cumDealsRows`. All five running sums were verified value by
+    value against the live response rather than inferred from their names
+    ([CONTEXT D25](CONTEXT.md)). `perSymbol` then keeps the **10 symbols with the largest
+    absolute net P&L**, and the heatmap collapses to **24 hourly buckets** totalled
+    across the window. Only the last two write a note.
+  - **The symbol cut removes columns, not rows.** These blocks are keyed by `dateKey`
+    with one numeric column per symbol, so dropping symbols must not shorten the window
+    the caller asked for. Every `dateKey` survives, and the note says so.
+  - **It ranks on absolute *net* P&L, not on churn.** A symbol that wins 5,000 and loses
+    5,100 has the largest daily figures on the account and nets −100; it is the 12th
+    most interesting symbol, not the 1st. The unit test's fixture is built around
+    exactly that pair, so a cut implementing the wrong rule fails rather than passes
+    quietly.
+  - **`perAccount` is `z.unknown()` rather than transcribed.** `parse.ts` validates
+    all-or-nothing so malformed data never reaches the model — but data this tool drops
+    never reaches the model whatever shape it arrives in, so validating it would only
+    convert an upstream change in a block nobody reads into an outage for the blocks
+    everybody does.
+  - **The hourly buckets are matched by name and returned in order.** The API sends its
+    two series newest-hour-first (`23:00` down to `00:00`); pairing them by index would
+    eventually report one hour's P&L against another's deal count.
+  - **The text summarizes; the structured channel carries the series.** Both reach the
+    model's context, so a text that restates every row would put back the weight the
+    cuts removed. The text answers the two questions the tool exists for — best and
+    worst day, symbols worst-first, best and worst hour — and repeats every note
+    verbatim, because many hosts surface `content` alone.
+  - **No `full: true` escape hatch**, and no client-side recomputation of the dropped
+    running sums. A model given a way to request the unshaped payload will use it, and
+    recomputing a running total in the formatter restores exactly the bytes the cut
+    removed. The answer to a symbol you needed is a narrower `from`/`to`, and the note
+    says so.
+
+### Changed
+- `windowOf` and `DEFAULT_CURRENCY` are now exported from
+  `src/tools/performance/summary.ts`. Both are statements about the API's window and
+  currency defaults rather than formatting helpers, and two copies could disagree about
+  what an omitted `from` means — with only one of them right.
+- `src/smoke.test.ts` grows a ninth leg that reads the widest window the smoke account
+  can produce and prints the raw-versus-shaped byte and token counts to stderr, so the
+  payload budget is re-measured against a live account rather than trusted from a note.
+
 ## [1.2.0] — 2026-08-11 — `list_deals`: the first paginated tool, and a refusal to drain
 
 The eighth tool, and the first whose answer does not fit in one response. Positions and

@@ -6,6 +6,11 @@ import {
   parseAccountStrategies,
 } from './tools/strategies/list-account-strategies.js';
 import { formatStrategies, parseStrategies } from './tools/strategies/list-strategies.js';
+import {
+  formatBreakdowns,
+  parseBreakdowns,
+  shapeBreakdowns,
+} from './tools/performance/breakdowns.js';
 import { formatPerformance, parsePerformance } from './tools/performance/summary.js';
 import { formatDeals, parseDeals } from './tools/trading/deals.js';
 import { capOrders, formatOrders, parseOrders } from './tools/trading/orders.js';
@@ -151,5 +156,51 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
         firstPage.deals.map((deal) => deal.ticket),
       );
     }
+
+    // `breakdowns` is the largest payload the API serves, and the only tool
+    // with a payload budget rather than a latency one. The widest window the
+    // account can produce is the one that has to fit, so this leg asks for the
+    // whole of its history rather than a convenient month — a 30-day default
+    // would prove the cuts run and nothing about whether they are enough.
+    const widest = {
+      from: first.createdAt.slice(0, 10),
+      to: new Date().toISOString().slice(0, 10),
+      reporting: 'USD',
+    };
+    const rawBreakdowns = await client.get(accountPath(first.id, 'performance', 'breakdowns'), {
+      scope: 'performance:read',
+      query: widest,
+    });
+    const shaped = shapeBreakdowns(parseBreakdowns(rawBreakdowns));
+    const breakdownsText = formatBreakdowns(shaped, widest);
+
+    const rawBytes = JSON.stringify(rawBreakdowns).length;
+    const shapedBytes = JSON.stringify(shaped).length;
+    // Measured, not asserted-and-forgotten: the figure goes into US-2.12's
+    // §Implementation notes, and this line is where a later reader re-reads it
+    // off a live account instead of trusting the number written down.
+    console.error(
+      `[smoke] breakdowns ${widest.from} → ${widest.to}: raw ${rawBytes} bytes ` +
+        `(~${Math.round(rawBytes / 4)} tok) → shaped ${shapedBytes} bytes ` +
+        `(~${Math.round(shapedBytes / 4)} tok), ` +
+        `${(100 - (shapedBytes / rawBytes) * 100).toFixed(1)}% removed`,
+    );
+
+    expect(breakdownsText.length).toBeGreaterThan(0);
+    // The budget in US-2.12 §Performance budget, as a test rather than a note.
+    expect(shapedBytes).toBeLessThan(rawBytes / 2);
+    expect(shapedBytes / 4).toBeLessThan(5_000);
+
+    // Cut 1 and cut 2 against live data: `perAccount` is gone, and so are the
+    // running sums it and `daily` carried.
+    expect(shaped).not.toHaveProperty('perAccount');
+    for (const row of shaped.daily) expect(row).not.toHaveProperty('cumulativePnl');
+    expect(shaped.perSymbol).not.toHaveProperty('cumPnlRows');
+
+    // Cut 4 always applies, so on any account with more than one active date
+    // there is a note — and every note has to reach the text, not only
+    // `structuredContent`.
+    for (const note of shaped.notes) expect(breakdownsText).toContain(note);
+    expect(shaped.perSymbol.pnlSymbols.length).toBeLessThanOrEqual(10);
   }, 60_000);
 });

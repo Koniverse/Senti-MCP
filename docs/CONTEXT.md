@@ -1187,3 +1187,85 @@ in it is corrected.
 
 **Date**: 2026-08-11
 **Version**: 1.2.0
+
+---
+
+## Phase 11 — Payload shaping (2026-08-11)
+
+### D25. `breakdowns` is cut five ways, not four; only a cut that loses something writes a note
+
+**Context**: [US-2.12](sprints/stories/US-2.12-get-performance-breakdowns-tool.md)'s
+TASK-2.12.1 measured the `breakdowns` payload before any shaping code was written, on the
+standing rule that produced [D23](#d23-reporting-is-a-currency-code-and-it-is-validated-by-shape-rather-than-by-enum)
+and [D24](#d24-list_deals-reads-one-page-and-stops-syncedthrough-is-surfaced-not-dropped).
+[D10](#d10-tools-bind-and-shape-their-own-payloads) names **four** cuts and estimates the
+unshaped response at ~70,000 tokens for a year-long window; [EPIC-2](sprints/epics/EPIC-2.md)
+§Live payload findings says outright that the figure "cannot be estimated from the schema —
+it has to be measured."
+
+Measured 2026-08-11 against `be-dev.sentitrade.xyz`, over the widest window the smoke
+account has (2026-06-10 → 2026-08-11, 63 days, **one symbol**): **87,063 bytes ≈ 21,766
+tokens**, split `heatmap` 47%, `perAccount` 28%, `perSymbol` 17%, `daily` 8%. Extrapolated
+to a year that is ~126,000 tokens — the same order of magnitude as D10's estimate, so the
+cuts were not re-argued and the story's 3 points stood.
+
+**Decision**: two, both about how far the cutting goes and what it has to say.
+
+1. **A fifth cut: `perSymbol.cumPnlRows` and `perSymbol.cumDealsRows` go too.** D10 lists
+   four. The measurement found the four leave 19,751 bytes ≈ **4,938 tokens** — 1.2% inside
+   the story's ≤5,000-token budget, and inside it only because this account trades one
+   symbol. `perSymbol` is 76% of what remains and grows with symbol count to the top-ten
+   cap. The two dropped row-sets were confirmed **value by value** to be exact running sums
+   of `dailyPnlRows` and `dailyDealsRows`, so they fall to cut 2's own argument, and
+   dropping them lands the same window at 12,187 bytes ≈ **3,047 tokens, 86.0% removed**.
+2. **A note is written for information loss, not for removal.** Three of the five cuts —
+   `perAccount`, `daily`'s three `cumulative*` columns, and the fifth cut above — remove
+   bytes and no answers, and write nothing. The symbol cut and the heatmap collapse lose
+   something a caller might have wanted, and each writes its own line. This is what makes
+   D10's "`notes` is empty when nothing was cut" hold at all: a note for every removal
+   would leave `notes` permanently non-empty and train a reader to skim past the two lines
+   that change what the numbers can be used for.
+
+**Rationale**: (1) is what US-2.12 §Performance budget already instructs — "If the shaped
+response misses the target, the fix is a further cut with a `notes` line — never a silent
+one." It is not silent: it is this entry, the CHANGELOG's `1.3.0` section, and the story's
+§Implementation notes. It carries no `notes` line for the reason (2) gives. Both running-sum
+claims, and `perAccount`'s claim to be a restatement, were **verified against live data
+rather than inferred from field names** — all 32 of `perAccount.dailyPnlRows` reproduce
+`daily.pnl` exactly with none differing, and the heatmap grid totals 18,743.55 against
+`daily`'s 18,743.55, so the 24-bucket collapse preserves the totals it claims to.
+
+**What this binds**: [US-2.13](sprints/stories/US-2.13-get-equity-timeseries-tool.md) reuses
+the note vocabulary and the write-a-note-only-for-loss rule, not just the `perAccount` drop.
+D10's four-cut list is superseded for `breakdowns` by the five above; D10 itself is
+unchanged (RULE-7).
+
+**Alternatives considered**:
+- **Ship the four cuts and call the budget met** — defensible on the letter (4,938 ≤ 5,000)
+  and rejected on the purpose. The budget's words are "fit **comfortably**", and a 1.2%
+  margin on the most favourable account shape the API can produce is not comfortable.
+- **Write a note for every cut, including the lossless ones** — rejected in (2).
+- **Rank symbols by the sum of their absolute daily P&L** — rejected. A symbol that wins
+  5,000 and loses 5,100 would rank first on the account and nets −100. The criterion is
+  absolute **net** P&L, and `breakdowns.test.ts`'s fixture is built around that pair so the
+  wrong rule fails rather than passes quietly.
+- **Transcribe `perAccount` into the schema even though it is dropped** — rejected.
+  `parse.ts` validates all-or-nothing so malformed data never reaches the model; data this
+  tool discards never reaches the model whatever shape it arrives in, so validating it would
+  only convert an upstream change in a block nobody reads into an outage for the blocks
+  everybody does. It is declared `z.unknown()`.
+
+**Known limitation, recorded rather than fixed**: neither four cuts nor five bring an
+account trading **ten or more symbols** over a comparable window under 5,000 tokens —
+projected ~14,900 tokens at four cuts and ~8,050 at five, since `perSymbol` scales with the
+symbol count up to the cap. The budget is defined on the smoke account and is met there.
+The trigger for a further story is a real account at the top-ten cap; the candidate cut is
+`perSymbol`'s date rows, which pad every calendar day including days with no activity
+(63 rows against `daily`'s 32 on the measured account).
+
+**Impact**: `get_performance_breakdowns` ships in `1.3.0`. The story's ACs are satisfied as
+written; AC-5 through AC-8 describe the four cuts D10 named, and the fifth is additive and
+noteless, so nothing in the story is corrected.
+
+**Date**: 2026-08-11
+**Version**: 1.3.0

@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
+import { BreakdownsOutputSchema } from './tools/performance/breakdowns.js';
 import { PerformanceOutputSchema } from './tools/performance/summary.js';
 import { AccountStrategiesOutputSchema } from './tools/strategies/list-account-strategies.js';
 import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
@@ -624,6 +625,73 @@ const PERFORMANCE = {
   },
 };
 
+/**
+ * A breakdowns response small enough to read, carrying one of everything the
+ * tool cuts: a `perAccount` map, three `cumulative*` columns, eleven symbols —
+ * one past the cap — and a heatmap spanning two dates. The cut rules
+ * themselves are proven in `breakdowns.test.ts`; what this fixture is for is
+ * the wiring, so it only has to be cuttable.
+ */
+const SYMBOL_ROW = (dateKey: string, scale: number) =>
+  Object.fromEntries([
+    ['date', dateKey.slice(5)],
+    ['dateKey', dateKey],
+    ...Array.from({ length: 11 }, (_, index) => [`SYM${index}`, (11 - index) * scale]),
+  ]);
+
+const BREAKDOWNS = {
+  daily: [
+    {
+      date: 'Jul 1',
+      dateKey: '2026-07-01',
+      pnl: 500,
+      volume: 1.5,
+      notionalVolume: 150_000,
+      cumulativePnl: 500,
+      cumulativeVolume: 1.5,
+      cumulativeNotional: 150_000,
+    },
+  ],
+  perAccount: {
+    logins: ['413878201'],
+    dailyPnlRows: [{ date: 'Jul 1', dateKey: '2026-07-01', '413878201': 500 }],
+    dailyVolumeRows: [],
+    dailyNotionalRows: [],
+    cumPnlRows: [],
+    cumVolumeRows: [],
+    cumNotionalRows: [],
+  },
+  perSymbol: {
+    pnlSymbols: Array.from({ length: 11 }, (_, index) => `SYM${index}`),
+    dealsSymbols: Array.from({ length: 11 }, (_, index) => `SYM${index}`),
+    dailyPnlRows: [SYMBOL_ROW('2026-07-01', 100)],
+    dailyDealsRows: [SYMBOL_ROW('2026-07-01', 1)],
+    cumPnlRows: [SYMBOL_ROW('2026-07-01', 100)],
+    cumDealsRows: [SYMBOL_ROW('2026-07-01', 1)],
+  },
+  heatmap: {
+    dates: ['2026-07-01', '2026-07-02'],
+    pnlSeries: [
+      {
+        name: '14:00',
+        data: [
+          { x: '2026-07-01', y: 300 },
+          { x: '2026-07-02', y: 200 },
+        ],
+      },
+    ],
+    tradeCountSeries: [
+      {
+        name: '14:00',
+        data: [
+          { x: '2026-07-01', y: 2 },
+          { x: '2026-07-02', y: 1 },
+        ],
+      },
+    ],
+  },
+};
+
 /** Records every URL the tool asks for, and answers each with the same body. */
 function recordingFetch(calls: string[], body: unknown = PERFORMANCE): typeof fetch {
   return (async (url: string | URL) => {
@@ -798,6 +866,185 @@ describe('get_account_performance', () => {
 
     expect(tool?.description).toMatch(/ISO-4217/);
     expect(tool?.description).toMatch(/not a reporting period/i);
+  });
+});
+
+/**
+ * The wiring `breakdowns.test.ts` cannot reach. The domain module never calls
+ * `accountPath`, never builds a URL and never sees the input schema — those
+ * belong to `registerGetPerformanceBreakdowns`, so the three-segment path, the
+ * query and the error branches are asserted here, through a real client over a
+ * stubbed `fetch`.
+ */
+describe('get_performance_breakdowns', () => {
+  test('builds its three-segment path through accountPath — a traversal accountId never reaches the network', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: '../../admin' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/Invalid path segment/);
+    expect(called).toBe(false);
+  });
+
+  test('reaches performance/breakdowns under the account and returns both channels', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, BREAKDOWNS));
+
+    const result = (await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(calls[0]).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance/breakdowns',
+    );
+    expect(result.isError).toBeFalsy();
+    expect(BreakdownsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('sends from, to and reporting to the URL as query parameters', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, BREAKDOWNS));
+
+    await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: 'abc-123', from: '2026-05-01', to: '2026-05-31', reporting: 'EUR' },
+    });
+
+    const url = new URL(calls[0] ?? '');
+    expect(url.pathname).toBe('/api/v1/accounts/abc-123/performance/breakdowns');
+    expect(url.searchParams.get('from')).toBe('2026-05-01');
+    expect(url.searchParams.get('to')).toBe('2026-05-31');
+    expect(url.searchParams.get('reporting')).toBe('EUR');
+  });
+
+  test('leaves an omitted parameter out of the query string entirely', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, BREAKDOWNS));
+
+    await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: 'abc-123', to: '2026-05-31' },
+    });
+
+    expect(calls[0]).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance/breakdowns?to=2026-05-31',
+    );
+  });
+
+  test('inherits US-2.10\'s date validation rather than declaring a second one', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    // 2026-02-31 has the right shape and is not a day. Both tools reject it
+    // with the same message because both use the same schema object.
+    const result = (await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: 'abc-123', from: '2026-02-31' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('YYYY-MM-DD');
+    expect(called).toBe(false);
+  });
+
+  test('inherits the same reporting rule — a period name is not a currency', async () => {
+    const client = await connect(recordingFetch([], BREAKDOWNS));
+
+    const result = (await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: 'abc-123', reporting: 'monthly' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/ISO-4217/);
+  });
+
+  test('drops perAccount from both channels', async () => {
+    const client = await connect(recordingFetch([], BREAKDOWNS));
+
+    const result = (await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.structuredContent).not.toHaveProperty('perAccount');
+    expect(textOf(result)).not.toContain('413878201');
+  });
+
+  test('carries every note into the text, where a host that shows content alone will see it', async () => {
+    const client = await connect(recordingFetch([], BREAKDOWNS));
+
+    const result = (await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    const { notes } = result.structuredContent as { notes: string[] };
+
+    expect(notes).toHaveLength(2);
+    for (const note of notes) expect(textOf(result)).toContain(note);
+  });
+
+  test('names the performance:read scope on 403', async () => {
+    const forbidden = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Insufficient scope.' } }),
+        { status: 403, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(forbidden);
+
+    const result = (await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('performance:read');
+  });
+
+  test('turns a 404 into the login-versus-id hint', async () => {
+    const missing = (async () =>
+      new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found.' } }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof fetch;
+    const client = await connect(missing);
+
+    const result = (await client.callTool({
+      name: 'get_performance_breakdowns',
+      arguments: { accountId: '413878201' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/list_accounts/);
+    expect(textOf(result)).toMatch(/login/);
+  });
+
+  test('warns the model that the response is shaped, and names the unshaped alternative', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'get_performance_breakdowns');
+
+    // A model that does not know this one is cut will reach for it by default
+    // and read a ten-symbol answer as the whole account.
+    expect(tool?.description).toMatch(/SHAPED/);
+    expect(tool?.description).toMatch(/get_account_performance/);
+    expect(tool?.description).toMatch(/`notes`/);
   });
 });
 
@@ -1103,6 +1350,12 @@ const TOOL_CALLS: {
     arguments: { accountId: 'abc-123' },
     outputSchema: PerformanceOutputSchema,
     successBody: PERFORMANCE,
+  },
+  {
+    name: 'get_performance_breakdowns',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: BreakdownsOutputSchema,
+    successBody: BREAKDOWNS,
   },
 ];
 

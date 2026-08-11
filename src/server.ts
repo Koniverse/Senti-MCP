@@ -3,6 +3,7 @@ import { createClient } from './core/client.js';
 import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
 import { registerListAccounts } from './tools/accounts/list-accounts.js';
 import { registerListBrokers } from './tools/brokers/list-brokers.js';
+import { registerGetPerformanceBreakdowns } from './tools/performance/breakdowns.js';
 import { registerGetAccountPerformance } from './tools/performance/summary.js';
 import { registerListAccountStrategies } from './tools/strategies/list-account-strategies.js';
 import { registerListStrategies } from './tools/strategies/list-strategies.js';
@@ -40,6 +41,7 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
   registerListPendingOrders(server, client);
   registerListDeals(server, client);
   registerGetAccountPerformance(server, client);
+  registerGetPerformanceBreakdowns(server, client);
 
   return server;
 }

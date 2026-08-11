@@ -40,7 +40,7 @@ phase and only this phase.
 |---|---|---|---|---|---|---|
 | US-2.10 | `get_account_performance` tool | EPIC-2 | P1 | 2 | ✅ done (1.1.0) | [link](stories/US-2.10-get-account-performance-tool.md) |
 | US-2.11 | `list_deals` tool | EPIC-2 | P1 | 3 | ✅ done (1.2.0) | [link](stories/US-2.11-list-deals-tool.md) |
-| US-2.12 | `get_performance_breakdowns` tool | EPIC-2 | P1 | 3 | 🟡 in-progress | [link](stories/US-2.12-get-performance-breakdowns-tool.md) |
+| US-2.12 | `get_performance_breakdowns` tool | EPIC-2 | P1 | 3 | 👀 review (1.3.0) | [link](stories/US-2.12-get-performance-breakdowns-tool.md) |
 | US-2.13 | `get_equity_timeseries` tool, and EPIC-2's close | EPIC-2 | P1 | 3 | 🟢 ready | [link](stories/US-2.13-get-equity-timeseries-tool.md) |
 
 **Phase 3: 4 stories / 11 points.** **Sprint total: 15 stories / 42 points.**
@@ -101,6 +101,12 @@ US-2.12 or US-2.13 and could run concurrently with either.
   account-scoped response and both carry `notes`. US-2.12 lands first, so US-2.13 reuses
   its `notes` phrasing rather than inventing a second vocabulary for the same idea — the
   same reasoning that made US-2.9 a mirror of US-2.8.
+  **Shipped 2026-08-11 as `1.3.0`.** What US-2.13 inherits is recorded in
+  [CONTEXT D25](../CONTEXT.md) and is more than the phrasing: **a note records information
+  loss, not removal.** Dropping a running sum or a restatement of data still present writes
+  nothing, because a note for every removal leaves `notes` permanently non-empty and trains
+  a reader to skim past the lines that matter. That rule is what keeps US-2.12 AC-8's empty
+  `notes` — and US-2.13's equivalent — reachable at all.
 - **US-2.13 closes the epic.** Its Task list carries EPIC-2's status flip and the epic's
   §Remaining work removal; no other story should touch them.
 - **Phase 3's releases are Phase 2's acceptance test.** `1.1.0` runs
@@ -118,6 +124,14 @@ US-2.12 or US-2.13 and could run concurrently with either.
   **before** the shaping code is written, and records the number in the story. The story is
   re-pointed at that moment if the number contradicts D10, rather than at review.
   *Owner*: @bluezdot.
+  **Retired 2026-08-11.** Measured: **87,063 bytes ≈ 21,766 tokens** for a 63-day window,
+  extrapolating to ~126,000 over a year — larger than D10's estimate but the same order of
+  magnitude, so the cuts were not re-argued and the 3 points stood. The second half of the
+  risk landed instead: the four cuts left 4,938 tokens against a 5,000 budget, and only
+  because the smoke account trades one symbol. A **fifth** cut — `perSymbol`'s two
+  running-sum row-sets, verified lossless against live data — took it to 3,047
+  ([CONTEXT D25](../CONTEXT.md)). The residue is recorded, not fixed: at ten symbols
+  neither four cuts nor five hold the budget.
 - **The smoke key works, but the account behind it does not cover every branch.** A working
   `SENTI_SMOKE_KEY` arrived 2026-08-10 and `npm run test:smoke` passes against
   `be-dev.sentitrade.xyz` — that discharges Phase 1's first followup. Two gaps survive it,
