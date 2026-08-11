@@ -14,7 +14,8 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | `list_account_strategies` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the strategies currently deployed on one MT5 account, with each deployment's symbol, timeframe and status. |
 | `list_positions` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the positions currently open on one MT5 account, read live from the terminal: symbol, direction, volume, open/current price, stop loss, take profit, swap and floating profit. A `409` means the account's terminal is offline — not that the account holds no positions. |
 | `list_pending_orders` | `accountId` (the `id` from `list_accounts`, not `login`) | Lists the pending limit and stop orders resting on one MT5 account, read live from the terminal: symbol, order type, volume, trigger price, stop loss, take profit and stop-limit price. These are orders that have NOT been filled — for open positions, use `list_positions`. A `409` means the account's terminal is offline — not that the account has no pending orders. |
-| `get_account_performance` | `accountId`, plus optional `from`, `to` (`YYYY-MM-DD`, UTC) and `reporting` (an ISO-4217 currency code, default `USD`) | Summarizes how one MT5 account performed over a date window: net P&L, win rate, profit factor, gross profit and loss, deal counts, costs, cash flow, period ROI and IRR, lifetime IRR, and the live terminal state. Omit `from`/`to` for the last 30 days. Unlike the two tools above there is no `409` — an unreachable terminal arrives as a null `live` block inside a success, and is reported as unreachable rather than as zeroes. |
+| `list_deals` | `accountId`, plus optional `limit` (1–500, default `50`), `cursor`, `entry` (`in` or `out`), `from` and `to` (ISO-8601) | Lists one page of an MT5 account's closed deal history — the fills that already happened: symbol, direction, entry kind, volume, price, realized profit, costs, the linked position and order. **Paginated, and it never pages on its own:** one call is exactly one request, and when more deals exist the answer reports a `cursor` you must pass back to read the next page. For totals over a period use `get_account_performance` rather than adding these rows up. |
+| `get_account_performance` | `accountId`, plus optional `from`, `to` (`YYYY-MM-DD`, UTC) and `reporting` (an ISO-4217 currency code, default `USD`) | Summarizes how one MT5 account performed over a date window: net P&L, win rate, profit factor, gross profit and loss, deal counts, costs, cash flow, period ROI and IRR, lifetime IRR, and the live terminal state. Omit `from`/`to` for the last 30 days. Unlike `list_positions` and `list_pending_orders` there is no `409` — an unreachable terminal arrives as a null `live` block inside a success, and is reported as unreachable rather than as zeroes. |
 
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
@@ -34,7 +35,8 @@ the MT5 account number, not a key.
   exercised by a shipped tool: `accounts:read` (`list_accounts`), `brokers:read`
   (`list_brokers`), `strategies:read` (`list_strategies`,
   `list_account_strategies`), `trading:read` (`list_positions`,
-  `list_pending_orders`) and `performance:read` (`get_account_performance`).
+  `list_pending_orders`, `list_deals`) and `performance:read`
+  (`get_account_performance`).
 
 ## Configuration
 
@@ -77,15 +79,16 @@ No install step — `npx` fetches the published package on first run:
 }
 ```
 
-Restart the client; all seven tools should appear. `npx -y senti-mcp-server`
-resolves to whatever npm's `latest` tag points at — `1.1.0` as of this release,
-the first published version carrying all seven. `1.0.1` carries the six read
-tools without `get_account_performance`, and only `list_accounts` is reachable
-on `0.1.0`, which was published before the others existed, so check
-`npm view senti-mcp-server dist-tags` if a tool you expect is missing.
+Restart the client; all eight tools should appear. `npx -y senti-mcp-server`
+resolves to whatever npm's `latest` tag points at — `1.2.0` as of this release,
+the first published version carrying all eight. `1.1.0` carries seven, without
+`list_deals`; `1.0.1` carries six, without `get_account_performance` as well;
+and only `list_accounts` is reachable on `0.1.0`, which was published before the
+others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
+expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@1.1.0"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@1.2.0"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server
