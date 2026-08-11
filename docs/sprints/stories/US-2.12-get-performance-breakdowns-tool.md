@@ -2,7 +2,8 @@
 id: US-2.12
 title: "get_performance_breakdowns tool"
 epic: EPIC-2
-status: review
+status: done
+version_shipped: 1.3.0
 priority: P1
 points: 3
 sprint: sprint-2026-W33
