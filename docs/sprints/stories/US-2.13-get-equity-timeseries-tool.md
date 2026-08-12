@@ -2,13 +2,13 @@
 id: US-2.13
 title: "get_equity_timeseries tool, and EPIC-2's close"
 epic: EPIC-2
-status: ready
+status: in-progress
 priority: P1
 points: 3
 sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
-updated: 2026-08-10
+updated: 2026-08-12
 ---
 
 ## Goal
