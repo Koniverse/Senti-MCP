@@ -144,8 +144,9 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
 - [docs/sprints/sprint-2026-W33.md](docs/sprints/sprint-2026-W33.md) — **the active
-  sprint** (2026-08-10 → 2026-08-16, three phases): Phase 1 US-2.4 → US-2.9 and Phase 2
-  EPIC-4 both delivered; Phase 3 US-2.10 → US-2.13 close EPIC-2's read path
+  sprint** (2026-08-10 → 2026-08-16, four phases): Phase 1 US-2.4 → US-2.9, Phase 2
+  EPIC-4 and Phase 3 US-2.10 → US-2.13 all delivered; Phase 4 carries EPIC-5's four
+  stories
 - [docs/sprints/sprint-2026-W34.md](docs/sprints/sprint-2026-W34.md) — `planned` for
   2026-08-17 → 2026-08-23 and carrying no scope; its four stories became W33's Phase 3
   ([CONTEXT D22](docs/CONTEXT.md))

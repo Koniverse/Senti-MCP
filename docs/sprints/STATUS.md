@@ -1,18 +1,21 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-12 09:35:01 UTC
-> Total stories: 20
+> Last generated: 2026-08-13 03:46:14 UTC
+> Total stories: 23
 
 ## ⏰ Deadlines (0)
 
 _No stories carry an explicit deadline._
 
-## 📋 Backlog (1)
+## 📋 Backlog (4)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
-| US-5.1 | Re-decide the supported Node floor, now that Node 20 is EOL | EPIC-5 | P2 | 3 | — | bluezdot |
+| US-5.1 | Re-decide the supported Node floor, now that Node 20 is EOL | EPIC-5 | P2 | 3 | sprint-2026-W33 | bluezdot |
+| US-5.2 | release:check guards the Node floor across every artifact that states it | EPIC-5 | P2 | 2 | sprint-2026-W33 | bluezdot |
+| US-5.3 | devDependency currency, and the rule that @types/node tracks the floor | EPIC-5 | P3 | 3 | sprint-2026-W33 | bluezdot |
+| US-5.4 | Decide TypeScript 7, and say why either way | EPIC-5 | P3 | 2 | sprint-2026-W33 | bluezdot |
 
 ## 🟢 Ready (0)
 
@@ -62,7 +65,7 @@ _No stories_
 
 ## Summary
 
-- 📋 **Backlog**: 1
+- 📋 **Backlog**: 4
 - 🟢 **Ready**: 0
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0

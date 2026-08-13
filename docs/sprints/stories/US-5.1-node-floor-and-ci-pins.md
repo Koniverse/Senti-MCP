@@ -5,11 +5,78 @@ epic: EPIC-5
 status: backlog
 priority: P2
 points: 3
-sprint:
+sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
-updated: 2026-08-10
+updated: 2026-08-13
 ---
+
+## Story refresh — 2026-08-13
+
+The maintainer settled the two open questions in a planning pass, and the registry checks
+[EPIC-5](../epics/EPIC-5.md) asks for were run ahead of implementation rather than during
+it. §Background and the AC numbering below are left exactly as written on 2026-08-10; this
+block records what changed.
+
+**Locked:**
+
+- **The floor is `>=22.11.0`** — the first LTS release of the Node 22 "Jod" line, supported
+  until 2027-04-30. The reason is support lifetime, not a new API:
+  [CONTEXT D5](../../CONTEXT.md)'s minimum of 20.6.0 is unchanged and still true.
+- **`>=22.9.0` was rejected**, though it appears in §The candidates as the smallest floor
+  satisfying npm 11's `engines`. It is not itself an LTS release, and the only argument for
+  it is an npm constraint that binds no consumer. 22.11.0 is above it, so the constraint is
+  satisfied anyway.
+- **`>=24.15.0` was rejected** — it buys runway by cutting Node 22 users, a line supported
+  for another 20 months.
+- **The release is `2.0.0`** (AC-6). Narrowing the declared support contract is a breaking
+  change by ecosystem convention even though nothing a consumer runs actually breaks:
+  `engine-strict` defaults to `false`, so `npx` on Node 20 warns `EBADENGINE` and runs. This
+  does not consume a version EPIC-3 needs — write tools behind an opt-in switch are additive.
+- **CI: `gate`, `build`, `verify` → 22.11.0. `publish` stays 24.19.0**, and its
+  `npm install -g npm@11.19.0` step is **deleted** — AC-4's first arm. 24.19.0 bundles npm
+  11.17.0, which is already ≥ 11.5.1.
+
+**Correction to §Background.** "What raising it would simplify" claims that at `>=22.9.0`
+or higher all four jobs can share one pin **and** the global npm install can be deleted.
+That is wrong, and acting on it would break `publish`. The whole Node 22 line bundles npm
+**10.x** — 22.9.0 ships 10.8.3, 22.11.0 ships 10.9.0, 22.22.2 ships 10.9.7. At a Node 22
+floor you get one of the two, never both: either every job shares the 22.11.0 pin and
+`publish` keeps a pinned global npm install, or `publish` stays on 24.x and the step goes
+away. Deleting the step requires ≥ **24.15.0** (npm 11.12.1). The decision above takes the
+second option. Fix this paragraph when the story is implemented.
+
+**AC-2 counts one artifact too many.** It names four files; `AGENTS.md` does not state the
+floor anywhere (`grep -n "20\.6\.0" AGENTS.md` is empty). The live set is three:
+`package.json`, `README.md` §Requirements, and `docs/SETUP.md` §1 — which holds it in three
+separate spots (the prerequisites table row, the `node --version` comment, and the
+`AbortSignal.any` troubleshooting row). Do not add a fourth mention in order to satisfy the
+AC. `AGENTS.md` is still touched by this story, for the version and for the stale
+"Current state" block described below.
+
+**AGENTS.md is stale, and this story fixes it.** Line 20 reads `Current state: 1.3.0`, line
+22 says **Nine** tools, and line 41 says "**One** read operation remains —
+`get_equity_timeseries`". [src/server.ts](../../../src/server.ts) registers **ten** and
+`1.4.0` shipped on 2026-08-12; [US-2.13](US-2.13-get-equity-timeseries-tool.md) closed
+without updating the block. Folded in here because this story has to edit that same line to
+`2.0.0` regardless — scope deliberately widened, and said out loud rather than done quietly.
+
+**Registry evidence, gathered 2026-08-13** (AC-5's check, run early):
+
+| Checked | Result |
+|---|---|
+| `npm view npm@11.17.0 engines` · `npm@11.19.0` | both `^20.17.0 \|\| >=22.9.0` |
+| Bundled npm per Node | 20.6.0 → 9.8.1 · 22.9.0 → 10.8.3 · **22.11.0 → 10.9.0** · 24.15.0 → 11.12.1 · **24.19.0 → 11.17.0** |
+| `v22.11.0` LTS status | first `lts: "Jod"` release on the 22 line |
+| Every dependency's `engines.node` | nothing demands above Node 20 — `@modelcontextprotocol/server@2.0.0` `>=20`, `vitest@3` `^18 \|\| ^20 \|\| >=22`, `typescript` `>=14.17`, `tsx` `>=18`, `zod` undeclared |
+
+That last row largely discharges TASK-5.1.2: no dependency added since D5 has raised the
+real minimum. The task still owns re-checking the *code* for a newer API than
+`AbortSignal.any`, which a dependency scan cannot see.
+
+**Scheduled** into [sprint-2026-W33](../sprint-2026-W33.md) §Phase 4, which also lifted the
+"run it after EPIC-2 closes" constraint in §Cross-story dependencies — EPIC-2 closed
+2026-08-12.
 
 ## Goal
 

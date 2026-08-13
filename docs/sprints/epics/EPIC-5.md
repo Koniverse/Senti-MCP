@@ -3,7 +3,7 @@ id: EPIC-5
 title: "Supported runtime and dependency currency"
 status: backlog
 created: 2026-08-10
-updated: 2026-08-10
+updated: 2026-08-13
 ---
 
 ## Goal
@@ -56,9 +56,13 @@ at all and had no business on the floor.
 - **Anything that changes what the tools *do*.** This epic moves version numbers and the
   prose that states them. A story here that also adds a tool, changes a payload, or edits a
   formatter is two stories.
-- **The MCP SDK's own version**, and dependency upgrades generally, *until* a story here
-  says otherwise. Named in this epic's title as its eventual scope, but the first story is
-  the Node floor and nothing else — see §Stories.
+- **The MCP SDK's own version.** `@modelcontextprotocol/server` was measured current at
+  2.0.0 on 2026-08-13, so there is nothing to decide; when there is, it is a runtime
+  dependency of a published package and deserves its own story rather than a row in a
+  devDeps refresh. Dependency upgrades generally *were* out of scope until a story said
+  otherwise — [US-5.3](../stories/US-5.3-devdependency-currency-and-dependabot.md) and
+  [US-5.4](../stories/US-5.4-decide-typescript-7.md) are that story, added 2026-08-13, and
+  they are bounded to `devDependencies`.
 - **Re-litigating [CONTEXT D5](../../CONTEXT.md).** Its two reasons (`AbortSignal.any`,
   `--env-file`) still hold and still set the *minimum*. What this epic questions is whether
   the minimum is still the right floor now that the line behind it is unsupported — a
@@ -87,12 +91,26 @@ at all and had no business on the floor.
 
 | US | Title | Pri | Points | Status | Sprint |
 |---|---|---|---|---|---|
-| [US-5.1](../stories/US-5.1-node-floor-and-ci-pins.md) | Re-decide the supported Node floor, now that Node 20 is EOL | P2 | 3 | 📋 backlog | — |
+| [US-5.1](../stories/US-5.1-node-floor-and-ci-pins.md) | Re-decide the supported Node floor, now that Node 20 is EOL | P2 | 3 | 📋 backlog | sprint-2026-W33 |
+| [US-5.2](../stories/US-5.2-release-check-guards-the-node-floor.md) | `release:check` guards the Node floor across every artifact that states it | P2 | 2 | 📋 backlog | sprint-2026-W33 |
+| [US-5.3](../stories/US-5.3-devdependency-currency-and-dependabot.md) | devDependency currency, and the rule that `@types/node` tracks the floor | P3 | 3 | 📋 backlog | sprint-2026-W33 |
+| [US-5.4](../stories/US-5.4-decide-typescript-7.md) | Decide TypeScript 7, and say why either way | P3 | 2 | 📋 backlog | sprint-2026-W33 |
 
-Unassigned to a sprint deliberately. The `publish` job is unblocked as of `1.1.0`, so
-nothing here is urgent, and [sprint-2026-W33](../sprint-2026-W33.md) §Phase 3 still carries
-EPIC-2's last three stories against a window that closes 2026-08-16. Scheduling is the
-maintainer's ([CONTEXT D21](../../CONTEXT.md)).
+**10 points.** Scheduled into [sprint-2026-W33](../sprint-2026-W33.md) §Phase 4 on
+2026-08-13 by the maintainer ([CONTEXT D21](../../CONTEXT.md)) — EPIC-2 closed on 2026-08-12
+and the window runs to 2026-08-16. The epic was written unscheduled because the `publish`
+job is unblocked as of `1.1.0` and nothing here was urgent; nothing about that changed, the
+capacity did.
+
+**US-5.1 runs first**, and the other three build on it: US-5.2 guards the number US-5.1
+chooses, US-5.3's `@types/node` rule is stated in terms of the floor's major, and US-5.4
+follows US-5.3 so a red compiler run has one candidate cause rather than two. US-5.3 and
+US-5.4 both touch `package.json` `devDependencies`; whichever lands second rebases.
+
+**Exactly one release comes out of this epic — `2.0.0`, from US-5.1.** The other three
+touch `scripts/`, `devDependencies` and `.github/`, none of which is in `files`, so nothing
+they change reaches a consumer. Phase 2 set that precedent: five EPIC-4 stories closed and
+`VERSION` deliberately did not move.
 
 ## Cross-references
 

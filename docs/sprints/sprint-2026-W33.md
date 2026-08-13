@@ -3,7 +3,7 @@ id: sprint-2026-W33
 status: active
 start: 2026-08-10
 end: 2026-08-16
-goal: "Ship the read-tool substrate and five read tools (delivered), settle and build this repo's package release process (delivered), then close EPIC-2's read path with its last four tools"
+goal: "Ship the read-tool substrate and five read tools (delivered), settle and build this repo's package release process (delivered), close EPIC-2's read path with its last four tools (delivered), then move the supported Node floor off an EOL line"
 ---
 
 ## Sprint scope
@@ -43,7 +43,21 @@ phase and only this phase.
 | US-2.12 | `get_performance_breakdowns` tool | EPIC-2 | P1 | 3 | ✅ done (1.3.0) | [link](stories/US-2.12-get-performance-breakdowns-tool.md) |
 | US-2.13 | `get_equity_timeseries` tool, and EPIC-2's close | EPIC-2 | P1 | 3 | ✅ done (1.4.0) | [link](stories/US-2.13-get-equity-timeseries-tool.md) |
 
-**Phase 3: 4 stories / 11 points.** **Sprint total: 15 stories / 42 points.**
+**Phase 3: 4 stories / 11 points.**
+
+### Phase 4 — Supported runtime and dependency currency (added 2026-08-13)
+
+Node 20 reached end of life on 2026-04-30 and the declared floor still points at it. Move
+the floor, put a gate behind it, and bring the toolchain current.
+
+| US | Title | Epic | Pri | Points | Status | Story file |
+|---|---|---|---|---|---|---|
+| US-5.1 | Re-decide the supported Node floor, now that Node 20 is EOL | EPIC-5 | P2 | 3 | 📋 backlog | [link](stories/US-5.1-node-floor-and-ci-pins.md) |
+| US-5.2 | `release:check` guards the Node floor across every artifact that states it | EPIC-5 | P2 | 2 | 📋 backlog | [link](stories/US-5.2-release-check-guards-the-node-floor.md) |
+| US-5.3 | devDependency currency, and the rule that `@types/node` tracks the floor | EPIC-5 | P3 | 3 | 📋 backlog | [link](stories/US-5.3-devdependency-currency-and-dependabot.md) |
+| US-5.4 | Decide TypeScript 7, and say why either way | EPIC-5 | P3 | 2 | 📋 backlog | [link](stories/US-5.4-decide-typescript-7.md) |
+
+**Phase 4: 4 stories / 10 points.** **Sprint total: 19 stories / 52 points.**
 
 > AC and Tasks live inside each story file. This table is a planning surface only.
 
@@ -451,7 +465,7 @@ smoke walk covers all ten read tools.
 
 ## Cross-references
 
-- [EPIC-2](epics/EPIC-2.md) · [EPIC-3](epics/EPIC-3.md) · [EPIC-4](epics/EPIC-4.md) — Phase 2's epic
+- [EPIC-2](epics/EPIC-2.md) · [EPIC-3](epics/EPIC-3.md) · [EPIC-4](epics/EPIC-4.md) — Phase 2's epic · [EPIC-5](epics/EPIC-5.md) — Phase 4's epic
 - [STATUS.md](STATUS.md) — generated kanban
 - [CONTEXT D6](../CONTEXT.md) — the most recent decision as this sprint opens
 - [CONTEXT D21](../CONTEXT.md) · [CONTEXT D22](../CONTEXT.md) — the sprint-scope decisions behind this file's phases

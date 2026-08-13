@@ -23,7 +23,7 @@ docs/
 └── sprints/
     ├── STATUS.md        ← AUTO-GENERATED kanban (never hand-edit — RULE-5)
     ├── sprint-2026-W32.md   ← closed
-    ├── sprint-2026-W33.md   ← the active sprint (3 phases)
+    ├── sprint-2026-W33.md   ← the active sprint (4 phases)
     ├── sprint-2026-W34.md   ← planned, no committed scope (CONTEXT D22)
     ├── epics/           ← EPIC-N.md
     └── stories/         ← US-X.Y-<slug>.md (canonical AC + Tasks source)
@@ -143,8 +143,8 @@ npx koni-docs --version   # confirm which CLI you actually have
 - [CONTEXT.md](CONTEXT.md) — decision log
 - [sprints/STATUS.md](sprints/STATUS.md) — current kanban (generated)
 - [sprints/sprint-2026-W33.md](sprints/sprint-2026-W33.md) — the active sprint
-  (2026-08-10 → 2026-08-16): Phase 1 read tools and Phase 2 release process delivered,
-  Phase 3 closes EPIC-2's read path
+  (2026-08-10 → 2026-08-16): Phase 1 read tools, Phase 2 release process and Phase 3
+  EPIC-2's read path all delivered; Phase 4 carries [EPIC-5](sprints/epics/EPIC-5.md)
 - [sprints/sprint-2026-W34.md](sprints/sprint-2026-W34.md) — planned, and carrying no
   scope since [CONTEXT D22](CONTEXT.md) pulled its four stories forward
 - [superpowers/specs/2026-08-05-senti-mcp-server-design.md](superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design spec
