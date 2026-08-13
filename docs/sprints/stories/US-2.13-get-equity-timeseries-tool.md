@@ -2,13 +2,14 @@
 id: US-2.13
 title: "get_equity_timeseries tool, and EPIC-2's close"
 epic: EPIC-2
-status: ready
+status: done
 priority: P1
 points: 3
 sprint: sprint-2026-W33
 assignee: bluezdot
 created: 2026-08-10
-updated: 2026-08-10
+updated: 2026-08-12
+version_shipped: 1.4.0
 ---
 
 ## Goal
@@ -65,76 +66,76 @@ Shipped as `1.4.0` ([CONTEXT D14](../../CONTEXT.md)), not the expansion spec's `
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** a call with `accountId`, **When** the request is built,
+- [x] **AC-1** — **Given** a call with `accountId`, **When** the request is built,
   **Then** the path is constructed via `accountPath`, **And** the tool is enrolled in
   `src/server.test.ts`'s table-driven traversal test by a new `TOOL_CALLS` row.
-- [ ] **AC-2** — **Given** `from`, `to` and `reporting`, **When** the request is issued,
+- [x] **AC-2** — **Given** `from`, `to` and `reporting`, **When** the request is issued,
   **Then** all three ride `client.get`'s `query` option using the input-schema shape
   [US-2.10](US-2.10-get-account-performance-tool.md) settled.
-- [ ] **AC-3** — **Given** a response containing `perAccount`, **When** the tool returns,
+- [x] **AC-3** — **Given** a response containing `perAccount`, **When** the tool returns,
   **Then** `perAccount` appears in neither `content` nor `structuredContent`.
-- [ ] **AC-4** — **Given** a `portfolio` series longer than 200 points, **When** it is
+- [x] **AC-4** — **Given** a `portfolio` series longer than 200 points, **When** it is
   downsampled, **Then** the result holds at most 200 points, **And** the first point,
   the last point, and the point of deepest drawdown are all present in it — including
   when the deepest drawdown falls between two sampling strides. This AC is defended by a
   fixture built so that a naive every-Nth stride would drop the trough.
-- [ ] **AC-5** — **Given** a `portfolio` series of 200 points or fewer, **When** the tool
+- [x] **AC-5** — **Given** a `portfolio` series of 200 points or fewer, **When** the tool
   returns, **Then** the series passes through unmodified, **And** `notes` is the empty
   array — no downsampling note is emitted for a downsample that did not happen.
-- [ ] **AC-6** — **Given** a downsampled series, **When** the tool returns, **Then**
+- [x] **AC-6** — **Given** a downsampled series, **When** the tool returns, **Then**
   `notes` states how many points the original held, how many remain, and that the first,
   last and deepest-drawdown points were retained, **And** the same information appears in
   `content`, not only in `structuredContent`.
-- [ ] **AC-7** — **Given** any response, **When** the tool returns, **Then** `caveats` and
+- [x] **AC-7** — **Given** any response, **When** the tool returns, **Then** `caveats` and
   `portfolioCaveats` are present in full — never downsampled, never truncated, never
   summarized.
-- [ ] **AC-8** — **Given** a `403` from the API, **When** the tool returns, **Then**
+- [x] **AC-8** — **Given** a `403` from the API, **When** the tool returns, **Then**
   `isError` is true and the text names the `performance:read` scope.
-- [ ] **AC-9** — **Given** a `404` from the API, **When** the tool returns, **Then** the
+- [x] **AC-9** — **Given** a `404` from the API, **When** the tool returns, **Then** the
   text carries US-2.4's `login`-vs-`id` hint.
-- [ ] **AC-10** — **Given** all ten read operations now have a tool, **When**
+- [x] **AC-10** — **Given** all ten read operations now have a tool, **When**
   `src/server.test.ts`'s table-driven invariant tests run, **Then** all ten are enrolled
   in the key-leakage, `outputSchema`-validation, `readOnlyHint` and traversal tables —
   no tool is registered outside them.
 
 ## Tasks
 
-- [ ] **TASK-2.13.1** — Confirm the response contract against the live OpenAPI document
+- [x] **TASK-2.13.1** — Confirm the response contract against the live OpenAPI document
   (AC: 3, 4, 7)
-  - [ ] Read `https://api.sentitrade.xyz/api/v1/openapi.json` for
+  - [x] Read `https://api.sentitrade.xyz/api/v1/openapi.json` for
         `/accounts/{accountId}/performance/timeseries`: the shape of a `portfolio` point,
         whether `caveats` and `portfolioCaveats` are both present and their types, and
         whether `perAccount` is still returned. The design spec names these from a
         2026-08-05 read
-- [ ] **TASK-2.13.2** — `src/tools/performance/timeseries.ts` domain module
+- [x] **TASK-2.13.2** — `src/tools/performance/timeseries.ts` domain module
   (AC: 3, 4, 5, 6, 7)
-  - [ ] `TimeseriesSchema`, `parseTimeseries` via `parseOrThrow`, `formatTimeseries`
-  - [ ] `downsample(points, max)` — pins first, last and deepest-drawdown, then fills the
+  - [x] `TimeseriesSchema`, `parseTimeseries` via `parseOrThrow`, `formatTimeseries`
+  - [x] `downsample(points, max)` — pins first, last and deepest-drawdown, then fills the
         remaining budget evenly. Unit-tested against a fixture whose trough sits between
         strides
-  - [ ] `notes` phrasing reused from [US-2.12](US-2.12-get-performance-breakdowns-tool.md)
+  - [x] `notes` phrasing reused from [US-2.12](US-2.12-get-performance-breakdowns-tool.md)
         rather than newly invented
-- [ ] **TASK-2.13.3** — Registration and the `1.4.0` release (AC: 1, 2, 8, 9)
-  - [ ] Register through `registerReadTool`; path via `accountPath(args.accountId,
+- [x] **TASK-2.13.3** — Registration and the `1.4.0` release (AC: 1, 2, 8, 9)
+  - [x] Register through `registerReadTool`; path via `accountPath(args.accountId,
         'performance', 'timeseries')`; `scope: 'performance:read'`; no `conflictMeans`
-  - [ ] Tool description states that long windows are downsampled and that the retained
+  - [x] Tool description states that long windows are downsampled and that the retained
         points include the extremes
-  - [ ] `src/server.ts` registration; `TOOL_CALLS` row in `src/server.test.ts`
-  - [ ] `VERSION`, `package.json`, `src/config.ts` `SERVER_VERSION` → `1.4.0` in
+  - [x] `src/server.ts` registration; `TOOL_CALLS` row in `src/server.test.ts`
+  - [x] `VERSION`, `package.json`, `src/config.ts` `SERVER_VERSION` → `1.4.0` in
         lockstep; `docs/CHANGELOG.md` `[1.4.0]`; `README.md` tool-table row naming all
         ten tools
-- [ ] **TASK-2.13.4** — Close EPIC-2 and end sprint W33's Phase 3 (AC: 10)
-  - [ ] Extend `src/smoke.test.ts` with a `get_equity_timeseries` leg, so the smoke walk
+- [x] **TASK-2.13.4** — Close EPIC-2 and end sprint W33's Phase 3 (AC: 10)
+  - [x] Extend `src/smoke.test.ts` with a `get_equity_timeseries` leg, so the smoke walk
         covers all ten read tools
-  - [ ] [EPIC-2](../epics/EPIC-2.md): `status: done`; the four story-index rows flipped;
+  - [x] [EPIC-2](../epics/EPIC-2.md): `status: done`; the four story-index rows flipped;
         §Remaining work replaced with a closing statement that **names the branches
         shipped unexercised against the live service** — US-2.9's `priceStopLimit`
         nullability and the `409` terminal-offline path — rather than closing silently
-  - [ ] [sprint-2026-W33](../sprint-2026-W33.md): Phase 3 scope table flipped, and a
+  - [x] [sprint-2026-W33](../sprint-2026-W33.md): Phase 3 scope table flipped, and a
         **Phase 3 retrospective** section appended beside the Phase 1 and Phase 2 ones.
         Do **not** touch the sprint's `status:` — only the maintainer closes a sprint
         ([CONTEXT D21](../../CONTEXT.md))
-  - [ ] `npm run agile:status` to regenerate [STATUS.md](../STATUS.md) (RULE-5)
+  - [x] `npm run agile:status` to regenerate [STATUS.md](../STATUS.md) (RULE-5)
 
 ## Dev notes
 
@@ -201,18 +202,21 @@ Shipped as `1.4.0` ([CONTEXT D14](../../CONTEXT.md)), not the expansion spec's `
 
 ## Verification commands
 
-> Drafted before the tests exist; **every row is run and confirmed non-vacuous before
-> this story closes** ([LESSONS 2](../../LESSONS.md)). This is the last chance in EPIC-2
-> to ship a dead row.
+> Drafted before the tests existed and **re-run row by row on 2026-08-12 before this
+> story closed** ([LESSONS 2](../../LESSONS.md)). The `Selected` column is the evidence,
+> not the exit code: a `-t` filter that matches nothing reports zero selected tests and
+> still exits 0. Every row below selected at least one test that genuinely ran.
 
-| AC | Command |
-|---|---|
-| AC-3, AC-4, AC-5, AC-6, AC-7 | `npm test -- src/tools/performance/timeseries.test.ts` |
-| AC-1 | `npm test -- src/server.test.ts -t "get_equity_timeseries.*traversal"` |
-| AC-2 | `npm test -- src/server.test.ts -t "get_equity_timeseries.*query"` |
-| AC-8 | `npm test -- src/server.test.ts -t "get_equity_timeseries.*403"` |
-| AC-9 | `npm test -- src/server.test.ts -t "get_equity_timeseries.*404"` |
-| AC-10 | `npm test -- src/server.test.ts` — the four invariant tables run 10 tools each |
+| AC | Command | Selected |
+|---|---|---|
+| AC-3, AC-4, AC-5, AC-6, AC-7 | `npm test -- src/tools/performance/timeseries.test.ts` | 42 passed |
+| AC-1 | `npm test -- src/server.test.ts -t "get_equity_timeseries.*traversal"` | 1 passed / 81 skipped |
+| AC-2 | `npm test -- src/server.test.ts -t "get_equity_timeseries.*query"` | 2 passed / 80 skipped |
+| AC-8 | `npm test -- src/server.test.ts -t "get_equity_timeseries.*403"` | 1 passed / 81 skipped |
+| AC-9 | `npm test -- src/server.test.ts -t "get_equity_timeseries.*404"` | 1 passed / 81 skipped |
+| AC-10 | `npm test -- src/server.test.ts` — the four invariant tables run 10 tools each | 82 passed |
+| Whole suite | `npm test` | 428 passed / 1 skipped |
+| Live | `npm run test:smoke` | 1 passed — 499 raw points → 200 kept |
 
 ## Changelog entry
 
@@ -231,11 +235,64 @@ Shipped as `1.4.0` ([CONTEXT D14](../../CONTEXT.md)), not the expansion spec's `
 
 ## Implementation notes
 
-<!-- Filled during implementation. -->
+**The contract was re-read, and it held.** TASK-2.13.1 read the live OpenAPI document on
+2026-08-12 rather than trusting the design spec's 2026-08-05 read. `perAccount` is still
+returned; `portfolio` points are `{timeMs, balance, equity, drawdownPct}` with all four
+required and none nullable; `caveats` is a map keyed by login and **`portfolioCaveats` is
+a single object, not a map** — a difference worth naming because a schema that assumed
+symmetry would have failed at parse time on every response. The endpoint declares
+400/401/403/404/429/503 and **no 409**, confirming the story's assumption that no
+`conflictMeans` is needed.
+
+**`drawdownPct`'s sign is not settled by the document, so nothing depends on it.** Both
+`deepestDrawdownIndex` and the text's trough lookup rank on `Math.abs`. Under either
+convention a peak is 0 and a trough is the largest magnitude, so a rule that assumed the
+sign would silently start pinning a *peak* the day the API flipped it. A test drives this
+directly: the same fixture with every `drawdownPct` negated must select the same point.
+
+**The naive stride was not merely avoided — it was shown to fail.** Per
+[LESSONS 1](../../LESSONS.md), `downsample`'s body was temporarily replaced with
+`points.filter((_, i) => i % stride === 0)`, `grep`-confirmed to have landed, and run:
+**4 of 13 tests went red** — the last point, the trough, the sign-agnostic trough, and
+the minimum-cap case. Reverted and `grep`-confirmed again before the green run was
+trusted. AC-4's fixture is therefore known to discriminate rather than assumed to.
+
+**The fixture had to defeat two implementations, not one.** The trough sits at index 498
+of 1000. A stride of 5 misses it, and so does an even sample over `[0, 999]` —
+`Math.round(i × 999 / 199)` yields 497 and 502 either side and never 498. Had the trough
+landed on a stride boundary the test would have passed against the very implementation it
+exists to reject.
+
+**Live measurement (2026-08-12, smoke account, 2026-06-10 → 2026-08-12):** the API
+returned **499 points** for a 63-day window; the tool kept **200**. A year would return
+several thousand, which is what the cap is for. The smoke leg re-derives the trough from
+the raw response and asserts all three pinned points survived — so AC-4 is now checked
+against a real curve, not only against the fixture built to break a naive stride.
+
+**One behaviour is deliberately outside the schema's guarantee.** `downsample` assumes
+`max >= 3`; fewer cannot hold three pinned points. `MAX_POINTS` is the only value used in
+production and the tests exercise 3 and 10 as well as 200, so the assumption is stated in
+the doc comment rather than defended by an untested branch.
 
 ## Files modified
 
-<!-- Filled during implementation. -->
+- `src/tools/performance/timeseries.ts` — **new.** `PointSchema`, `CaveatsSchema`,
+  `TimeseriesSchema`, `TimeseriesOutputSchema`, `parseTimeseries`, `deepestDrawdownIndex`,
+  `downsample`, `shapeTimeseries`, `formatTimeseries`, `registerGetEquityTimeseries`,
+  `MAX_POINTS`.
+- `src/tools/performance/timeseries.test.ts` — **new.** 42 tests across `downsample`,
+  `parseTimeseries`, the two cuts, the caveats, and `formatTimeseries`.
+- `src/server.ts` — `registerGetEquityTimeseries` imported and registered; the tenth and
+  last read tool.
+- `src/server.test.ts` — a `get_equity_timeseries` describe block (11 tests), the
+  `TIMESERIES` fixture at 250 points against a cap of 200, and the tenth `TOOL_CALLS` row.
+- `src/smoke.test.ts` — a `get_equity_timeseries` leg over the account's whole history.
+- `src/config.ts`, `VERSION`, `package.json`, `package-lock.json` — `1.4.0` in lockstep
+  ([LESSONS 4](../../LESSONS.md)); confirmed by `npm run release:check`.
+- `docs/CHANGELOG.md` — `## [1.4.0]`.
+- `README.md` — the tenth tool row, the five-scope list, and the version prose.
+- `docs/sprints/epics/EPIC-2.md`, `docs/sprints/sprint-2026-W33.md`,
+  `docs/sprints/STATUS.md` — the epic's close and Phase 3's end.
 
 ## Cross-references
 

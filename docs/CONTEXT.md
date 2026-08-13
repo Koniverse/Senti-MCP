@@ -1269,3 +1269,50 @@ noteless, so nothing in the story is corrected.
 
 **Date**: 2026-08-11
 **Version**: 1.3.0
+
+---
+
+### D26. The deepest drawdown is ranked by magnitude, because the API never declares the sign
+
+**Context**: [US-2.13](sprints/stories/US-2.13-get-equity-timeseries-tool.md)'s downsample
+has one hard requirement — the point of deepest drawdown must survive the cut — and the
+whole of `get_equity_timeseries` turns on being able to identify that point correctly.
+
+TASK-2.13.1 re-read the live OpenAPI document on 2026-08-12 and found `drawdownPct`
+declared as a bare `number` with no `minimum`, no `maximum` and no statement of sign. The
+endpoint description calls it "floating drawdown" and says nothing more. Both conventions
+are in common use: a drawdown of 12.5% below peak is written `12.5` by some services and
+`-12.5` by others, and the smoke account's live response happens to use positive values —
+which proves what the API sends *today*, not what it declares.
+
+**Decision**: rank on `Math.abs(drawdownPct)`, and take the earliest point on a tie.
+
+Under either convention a peak is `0` and a trough is the largest magnitude, so absolute
+value selects the same point without the code ever committing to a sign. The alternative —
+reading the live values and hard-coding `max` — would be correct today and would silently
+start pinning a **peak** the day the API flipped its convention, which is the worst
+available failure: the tool would keep returning 200 well-formed points, one of which is
+now the best moment of the window presented as the worst. Nothing would throw, no schema
+would fail, and the answer would be wrong in the direction that flatters the account.
+
+The same rule is used in two places — `deepestDrawdownIndex` for the downsample and the
+text's trough lookup — and they call the same function rather than each implementing it,
+so they cannot disagree about which point is the trough.
+
+**Alternatives considered**:
+
+- **Assume positive, since that is what the live response sends** — rejected above. The
+  document is the contract; the response is one observation of it.
+- **Validate the sign in the schema and reject responses that disagree** — rejected. It
+  converts a convention change into an outage for a tool that could have kept working, and
+  `parse.ts` validates all-or-nothing, so one flipped sign would take down every call.
+- **Ask the API team to declare it** — not rejected, just not blocking. Worth doing; the
+  code does not need the answer.
+
+**Impact**: `get_equity_timeseries` ships in `1.4.0`. A test negates every `drawdownPct` in
+the fixture and asserts the same point is still selected, so the sign-independence is a
+property under test rather than a comment. Any future tool reading `drawdownPct` —
+EPIC-3's write-path read-backs are the plausible next one — should rank the same way.
+
+**Date**: 2026-08-12
+**Version**: 1.4.0
