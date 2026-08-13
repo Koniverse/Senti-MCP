@@ -1,9 +1,9 @@
 ---
 id: EPIC-2
 title: "Read-only Senti Quant access over MCP"
-status: in-progress
+status: done
 created: 2026-08-05
-updated: 2026-08-10
+updated: 2026-08-12
 ---
 
 ## Goal
@@ -55,7 +55,7 @@ own design spec, not an appendix to this one.
 | 4 | **Tool substrate** | [US-2.4](../stories/US-2.4-tool-substrate-and-layout.md) | `core/` + `tools/<tag>/`; `registerReadTool`, `parseOrThrow`, `accountPath`, `query`, and the `404`/`409` branches every later tool consumes |
 | 5 | **Account-independent reads** | [US-2.5](../stories/US-2.5-list-brokers-tool.md), [US-2.6](../stories/US-2.6-list-strategies-tool.md) | `list_brokers` and `list_strategies` — the cheapest proof a tool registers on the new substrate, neither taking a path parameter |
 | 6 | **Account-scoped reads** | [US-2.7](../stories/US-2.7-list-account-strategies-tool.md), [US-2.8](../stories/US-2.8-list-positions-tool.md), [US-2.9](../stories/US-2.9-list-pending-orders-tool.md) | `list_account_strategies`, `list_positions`, `list_pending_orders` — `accountPath`'s traversal guard, the `404` login/id hint, and the terminal-backed `409` branch |
-| 7 | **Query, pagination, and payload shaping** | [US-2.10](../stories/US-2.10-get-account-performance-tool.md), [US-2.11](../stories/US-2.11-list-deals-tool.md), [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md), [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | The four remaining reads, each opening one axis this epic has not: query parameters, cursor pagination, breakdown shaping, downsampling. Written 2026-08-10 and scoped to [sprint-2026-W33](../sprint-2026-W33.md) §Phase 3 the same day ([CONTEXT D22](../../CONTEXT.md)) — see §Remaining work |
+| 7 | **Query, pagination, and payload shaping** | [US-2.10](../stories/US-2.10-get-account-performance-tool.md), [US-2.11](../stories/US-2.11-list-deals-tool.md), [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md), [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | The four reads that closed the path, each opening one axis the epic had not: query parameters, cursor pagination, breakdown shaping, downsampling. Written 2026-08-10 and scoped to [sprint-2026-W33](../sprint-2026-W33.md) §Phase 3 the same day ([CONTEXT D22](../../CONTEXT.md)) — see §Remaining work |
 
 ### Out of scope
 
@@ -65,9 +65,9 @@ own design spec, not an appendix to this one.
   [design spec](../../superpowers/specs/2026-08-05-senti-mcp-server-design.md) §Security.
 - **The other nine read operations** — deferred past v1, which shipped one tool
   deliberately: replicating a pipe before it is proven multiplies whatever is wrong with
-  it by nine. **Five of the nine have since shipped** in W33 (US-2.5 → US-2.9); the
-  remaining four are in scope for this epic and out of scope only for the releases so
-  far — see §Remaining work.
+  it by nine. **All nine have since shipped** — US-2.5 → US-2.9 in W33 §Phase 1, and
+  US-2.10 → US-2.13 in §Phase 3, the last of them as `1.4.0` on 2026-08-12. Nothing on
+  the read path is out of scope any more; see §Remaining work.
 - **Retry and backoff, response caching, npm publishing** — out of scope for v1 per the
   design spec. Each is a decision, not an omission. **npm publishing has since found its
   home**: the release procedure — cadence, tagging, publishing, and the CI that runs it —
@@ -121,12 +121,12 @@ most likely to break by copying an earlier one:
 | [US-2.10](../stories/US-2.10-get-account-performance-tool.md) | `get_account_performance` tool | P1 | 2 | ✅ done (v1.1.0) | — |
 | [US-2.11](../stories/US-2.11-list-deals-tool.md) | `list_deals` tool | P1 | 3 | ✅ done (v1.2.0) | — |
 | [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md) | `get_performance_breakdowns` tool | P1 | 3 | ✅ done (v1.3.0) | — |
-| [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | `get_equity_timeseries` tool, and EPIC-2's close | P1 | 3 | 🟢 ready (→ 1.4.0) | — |
+| [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | `get_equity_timeseries` tool, and EPIC-2's close | P1 | 3 | ✅ done (v1.4.0) | — |
 
-The version in each Status cell is where that story *first* shipped — or, for the one
-remaining `ready` row, where it is planned to ship ([CONTEXT D14](../../CONTEXT.md)); their
-Plan tasks column is empty because no implementation plan for them exists yet. US-2.10's is
-empty for the same reason and it shipped anyway — see §Remaining work. The whole six-tool
+The version in each Status cell is where that story *first* shipped
+([CONTEXT D14](../../CONTEXT.md)). The last four rows have an empty Plan tasks column
+because no implementation plan for them was ever written; all four shipped anyway — see
+§Remaining work. The whole six-tool
 surface was then promoted together to `1.0.0` and reached the registry as `1.0.1`
 ([CONTEXT D11, D12](../../CONTEXT.md)) — `0.1.0` and `1.0.1` are the only versions ever
 published to npm, and `1.0.0` is deliberately git-only.
@@ -143,14 +143,35 @@ three sprints rather than four.
 
 ## Remaining work
 
-**This epic is `in-progress`: nine of the API's ten `GET` operations have a tool.** The
-one that does not is the reason the status has not flipped:
+**None. This epic is `done` as of 2026-08-12: all ten of the API's `GET` operations have
+a tool**, shipped `1.4.0` by
+[US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md).
 
-| US | Tool | New axis | Pts | Ships |
-|---|---|---|---|---|
-| [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | `get_equity_timeseries` | downsampling | 3 | 1.4.0 |
+### What this close does not claim
 
-Three points. **[US-2.10](../stories/US-2.10-get-account-performance-tool.md) shipped
+`status: done` means every read operation has a tool that parses, shapes and renders the
+real service's response. It does **not** mean every branch of those tools has run against
+the real service. Three have not, and they are stated here rather than left for a reader
+to infer from a green suite:
+
+| Branch | Why it never ran | What would discharge it |
+|---|---|---|
+| The `409` / `conflictMeans` terminal-offline path in `list_positions` and `list_pending_orders` | The smoke account's terminal has been online for every run since the working key arrived on 2026-08-10. Both endpoints returned `200` every time. | One account with an offline terminal. |
+| `get_account_performance`'s `live: null` block | The same condition, signalled a different way — `performance` declares no `409` and nulls the live block inside a `200`. One offline terminal discharges this and the row above together. | As above. |
+| `priceStopLimit`'s and `sl`/`tp`'s `null` arms | The API sends `0`, not `null`, in 10/10 and in the resting order that arrived 2026-08-11. The `null` arm is declared defensively and is untaken. | A row where the API actually sends `null` — or a decision to tighten the schema, which 15 rows from one key does not justify. |
+
+A fourth item is a measurement rather than a branch: **the shaping budget in
+`get_performance_breakdowns` has never been tested on a symbol-rich account.** The smoke
+account trades one symbol, so the top-ten cut is inert on it; projected at ten symbols the
+answer is ~8,050 tokens against a 5,000-token budget. That is recorded, not fixed.
+
+These were true when [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md)
+closed and they are true now. Closing the epic does not make them verified, and no later
+reader should take `done` as a claim that it did.
+
+### How the epic got here
+
+**[US-2.10](../stories/US-2.10-get-account-performance-tool.md) shipped
 `1.1.0` on 2026-08-10**, opening the query-parameter axis and settling for the other two
 performance stories what `from`, `to` and `reporting` accept — `reporting` being an
 ISO-4217 currency code rather than the reporting period its name suggests
@@ -165,12 +186,19 @@ because neither endpoint paginates ([CONTEXT D24](../../CONTEXT.md)).
 only estimate: 21,766 tokens raw, 3,047 shaped. It binds US-2.13 with more than its
 `notes` phrasing — **a note records information loss, not removal**, which is the rule
 that keeps an empty `notes` reachable ([CONTEXT D25](../../CONTEXT.md)).
-**The remaining story was written 2026-08-10 and is `ready`
+**[US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) shipped `1.4.0` on
+2026-08-12**, opening the last axis — downsampling — and closing this epic. It is the
+only tool that had to choose *which* real observations a model sees, and the rule it
+follows is that the first point, the last point and the deepest drawdown are exact rather
+than sampled near: a naive every-Nth stride drops the trough and the final point, and
+returns a curve that reads smoother and shallower than what happened. Measured live the
+same day: 499 points over 63 days, cut to 200.
+**All four stories were written 2026-08-10
 in [sprint-2026-W33](../sprint-2026-W33.md) §Phase 3** (2026-08-10 → 2026-08-16). The
 [expansion spec §Story plan](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
 planned them for W34 (08-17 → 08-23) and they were pulled forward into the running window
 the same day they were written, once EPIC-4 had settled the release procedure their four
-minors depend on ([CONTEXT D22](../../CONTEXT.md)). US-2.13 carries the task that flips
+minors depend on ([CONTEXT D22](../../CONTEXT.md)). US-2.13 carried the task that flipped
 this epic to `done`.
 
 Both open questions this section carried are now settled — the second by US-2.11 in code,
@@ -204,10 +232,21 @@ US-2.11 an undeclared `syncedThrough` field, an absent `409`, and an `entry` par
 whose case disagrees with the response field's ([CONTEXT D24](../../CONTEXT.md)). US-2.12 makes it three data points, and
 sharpens the pattern: its TASK-2.12.1 was a *measurement* rather than a contract check,
 and it is what turned four planned cuts into five before a line of shaping code existed.
-The one that remains is US-2.13, where the equivalent unknown is a downsampling rule that
-has to preserve the deepest drawdown — which neither a contract check nor a measurement
-alone will settle. Writing the plan before it is worth more than it was before any of
-these.
+US-2.13 makes it four, and it is the one that tests the pattern hardest: its unknown was a
+downsampling rule that had to preserve the deepest drawdown, which neither a contract
+check nor a measurement alone settles. What settled it was a third thing — a *mutation*.
+The naive stride was written deliberately, confirmed on disk, and run, and 4 of 13 tests
+went red; only then was the real implementation trusted to be green for the right reason
+([LESSONS 1](../../LESSONS.md)). Its TASK-2.13.1 still earned its place: `portfolioCaveats`
+is a single object where `caveats` is a map, and a schema assuming symmetry would have
+failed on every response.
+
+**Four for four, and the epic closed without one.** That is now a pattern rather than a
+run of luck, and the honest reading is narrower than "plans are unnecessary": every one of
+the four carried a TASK-x.1 that forced a contract check or a measurement *before* code,
+and that task is what a plan would otherwise have supplied. EPIC-3's write path is where
+this stops being transferable — a wrong `POST` is not a wrong answer, it is a trade — so
+the precedent is recorded here to be argued with, not inherited.
 
 ## Live payload findings
 
@@ -230,6 +269,7 @@ working key arrived **2026-08-10**; `npm run test:smoke` passes against
 | Whether the shaping budget holds on a symbol-rich account | **No, and it is recorded rather than fixed.** The smoke account trades one symbol, so the top-ten cut is inert on it. Projected at ten symbols: ~8,050 tokens against a 5,000 budget. Needs an account at the cap to measure, the way the `409` branch needs an offline terminal. |
 | `winRate`, `roi`, `irr` — scale undeclared by any schema | **Percentages, not fractions.** 48 wins of 58 deals returns `82.7586…`. Recorded in `summary.test.ts`'s fixture, since nothing in the API's schema states it. |
 | `performance`'s `live: null` offline branch | **Unexercised live**, for the same reason as the `409` above — the smoke account's terminal is online and returned a full live block. Covered by test only. |
+| `timeseries`' series length — unbounded by the schema | **Measured 2026-08-12.** 499 points for a 63-day window on the smoke account, one point per ~3 hours. Extrapolates to ~2,900 a year. The 200-point cap therefore binds on any window past ~25 days, which is why the three pinned points are a requirement rather than a refinement — on a default 30-day window the cut is already running. |
 | Whether `from`/`to` actually change the answer | **Yes, live-confirmed.** The default window returned 58 closed deals; `2026-07-01 → 2026-07-31` returned 391. The query option US-2.4 built and no tool had used is proven against the real service. |
 
 So the blocker has moved again, and is now a single item: an **offline terminal**. The
@@ -241,8 +281,14 @@ window, against D10's ~70,000-token estimate for a year. See the row added below
 US-2.10 added a third item to that list without resolving either of the first two: the
 offline-terminal gap now costs **two** untested branches rather than one, because
 `performance` signals the same condition a different way (`live: null` inside a `200`,
-no `409`). One account with an offline terminal would discharge both. US-2.13's epic-close
-task is where these get stated rather than glossed.
+no `409`). One account with an offline terminal would discharge both.
+
+**US-2.13 did not discharge them, and did not pretend to.** `timeseries` declares no `409`
+either, so the last story of the epic added no new coverage of the offline path and no new
+`null`-arm evidence. What it added is one more measurement (the row above) and the
+statement in §Remaining work that says plainly what `status: done` does not cover. That
+statement is the deliverable of TASK-2.13.4 — the alternative was closing the epic in
+silence and letting a later reader infer live coverage that does not exist.
 
 ## Cross-references
 

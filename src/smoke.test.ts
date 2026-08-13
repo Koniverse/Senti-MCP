@@ -12,6 +12,12 @@ import {
   shapeBreakdowns,
 } from './tools/performance/breakdowns.js';
 import { formatPerformance, parsePerformance } from './tools/performance/summary.js';
+import {
+  formatTimeseries,
+  MAX_POINTS,
+  parseTimeseries,
+  shapeTimeseries,
+} from './tools/performance/timeseries.js';
 import { formatDeals, parseDeals } from './tools/trading/deals.js';
 import { capOrders, formatOrders, parseOrders } from './tools/trading/orders.js';
 import { capPositions, formatPositions, parsePositions } from './tools/trading/positions.js';
@@ -202,5 +208,49 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
     // `structuredContent`.
     for (const note of shaped.notes) expect(breakdownsText).toContain(note);
     expect(shaped.perSymbol.pnlSymbols.length).toBeLessThanOrEqual(10);
+
+    // `timeseries` declares no 409 either, and it is the second tool with a
+    // payload budget rather than a latency one. Same widest window, for the
+    // same reason: the 200-point cap has to hold on the longest series this
+    // account can produce, not on a convenient month.
+    const rawTimeseries = await client.get(accountPath(first.id, 'performance', 'timeseries'), {
+      scope: 'performance:read',
+      query: widest,
+    });
+    const series = parseTimeseries(rawTimeseries);
+    const shapedSeries = shapeTimeseries(series);
+    const seriesText = formatTimeseries(shapedSeries, widest);
+
+    console.error(
+      `[smoke] timeseries ${widest.from} → ${widest.to}: ${series.portfolio.length} raw ` +
+        `point(s) → ${shapedSeries.portfolio.length} kept`,
+    );
+
+    expect(seriesText.length).toBeGreaterThan(0);
+    expect(shapedSeries.portfolio.length).toBeLessThanOrEqual(MAX_POINTS);
+    expect(shapedSeries).not.toHaveProperty('perAccount');
+    for (const note of shapedSeries.notes) expect(seriesText).toContain(note);
+
+    // AC-4 against live data rather than against a fixture built to defeat a
+    // naive stride. Whatever shape the real curve has, the three points a
+    // trader asks about are the ones that survived.
+    const raw = series.portfolio;
+    const firstPoint = raw[0];
+    const lastPoint = raw[raw.length - 1];
+
+    if (firstPoint && lastPoint) {
+      const deepest = raw.reduce((trough, point) =>
+        Math.abs(point.drawdownPct) > Math.abs(trough.drawdownPct) ? point : trough,
+      );
+
+      expect(shapedSeries.portfolio[0]).toEqual(firstPoint);
+      expect(shapedSeries.portfolio[shapedSeries.portfolio.length - 1]).toEqual(lastPoint);
+      expect(shapedSeries.portfolio).toContainEqual(deepest);
+    }
+
+    // The API's own qualifications, through the live path: never shortened,
+    // whatever else this tool cut.
+    expect(shapedSeries.portfolioCaveats).toEqual(series.portfolioCaveats);
+    expect(shapedSeries.caveats).toEqual(series.caveats);
   }, 60_000);
 });

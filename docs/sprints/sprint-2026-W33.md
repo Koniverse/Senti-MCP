@@ -34,14 +34,14 @@ phase and only this phase.
 
 **Phase 2: 5 stories / 16 points.**
 
-### Phase 3 — EPIC-2's four remaining read tools
+### Phase 3 — EPIC-2's four remaining read tools (closed 2026-08-12)
 
 | US | Title | Epic | Pri | Points | Status | Story file |
 |---|---|---|---|---|---|---|
 | US-2.10 | `get_account_performance` tool | EPIC-2 | P1 | 2 | ✅ done (1.1.0) | [link](stories/US-2.10-get-account-performance-tool.md) |
 | US-2.11 | `list_deals` tool | EPIC-2 | P1 | 3 | ✅ done (1.2.0) | [link](stories/US-2.11-list-deals-tool.md) |
 | US-2.12 | `get_performance_breakdowns` tool | EPIC-2 | P1 | 3 | ✅ done (1.3.0) | [link](stories/US-2.12-get-performance-breakdowns-tool.md) |
-| US-2.13 | `get_equity_timeseries` tool, and EPIC-2's close | EPIC-2 | P1 | 3 | 🟡 in-progress | [link](stories/US-2.13-get-equity-timeseries-tool.md) |
+| US-2.13 | `get_equity_timeseries` tool, and EPIC-2's close | EPIC-2 | P1 | 3 | ✅ done (1.4.0) | [link](stories/US-2.13-get-equity-timeseries-tool.md) |
 
 **Phase 3: 4 stories / 11 points.** **Sprint total: 15 stories / 42 points.**
 
@@ -149,7 +149,10 @@ US-2.12 or US-2.13 and could run concurrently with either.
   between 08-10 and 08-11, and it carries `priceStopLimit: 0` — not `null`. So US-2.9's
   zero case is now live-verified and only its `null` arm is test-only. The terminal is
   still online, so the `409`/`conflictMeans` branch remains unexercised against the real
-  service; that half stands, and US-2.13's epic-close task still has to state it.
+  service; that half stands. **Stated at close, 2026-08-12.** US-2.13's TASK-2.13.4 wrote it
+  into [EPIC-2](epics/EPIC-2.md) §Remaining work as a three-row table of branches that
+  shipped unexercised, so the risk is discharged as *recorded* rather than as *resolved* —
+  the terminal is still online and the `409` branch has still never run.
 - **An account with no deal history makes US-2.11's pagination untestable live.** *Impact*:
   `nextCursor` only appears when a second page exists; a smoke account with fewer than
   `limit` deals exercises the empty-cursor path and nothing else. *Mitigation*: the cursor
@@ -381,6 +384,70 @@ tarball is unchanged at 42 entries.
   `release.yml` ([EPIC-4](epics/EPIC-4.md) §Out of scope). Both defects above reached `main`
   because nothing runs on a push or a pull request. That is now an argument with evidence
   behind it rather than a preference.
+
+## Phase 3 retrospective — EPIC-2's four remaining read tools
+
+All four stories closed between 2026-08-10 and 2026-08-12, 11 points, four additive minors
+(`1.1.0` → `1.4.0`). **EPIC-2 is `done`: all ten `GET` operations of the Senti Quant Public
+API now have a tool.** Suite went 16 files / 232 tests to **20 / 429, 1 skipped**; the
+smoke walk covers all ten read tools.
+
+### What went well
+
+- **Every story's TASK-x.1 earned its place, four for four.** A contract check or a
+  measurement before any code: `reporting` is a currency not a period (US-2.10), an
+  undeclared `syncedThrough` and an absent `409` (US-2.11), 21,766 tokens that turned four
+  planned cuts into five (US-2.12), and `portfolioCaveats` being a single object where
+  `caveats` is a map (US-2.13). In every case the story's own specification was incomplete
+  and the check is what caught it — before code, not at review.
+- **The one claim that could have shipped silently wrong was attacked directly.** US-2.13's
+  downsample had to keep the deepest drawdown, and the naive every-Nth stride that breaks
+  it is also the obvious implementation. Rather than assume the test would catch it, the
+  stride was written on purpose, `grep`-confirmed on disk, and run: 4 of 13 tests went red,
+  and only then was the real implementation trusted ([LESSONS 1](../LESSONS.md)). The
+  fixture is now known to discriminate rather than assumed to.
+- **`notes` held its shape across two tools that cut very differently.** US-2.12 removes
+  redundancy; US-2.13 removes real observations. [CONTEXT D25](../CONTEXT.md)'s rule — a
+  note records information *loss*, not removal — is what let both drop `perAccount`
+  silently while still emitting exactly one note when something was genuinely lost, and it
+  is why an empty `notes` still means something.
+- **Four stories shipped with no implementation plan and none of them wobbled.** That is a
+  pattern now rather than a run of luck, and [EPIC-2](epics/EPIC-2.md) §Remaining work
+  records the narrower reading: what substituted for the plan was each story's TASK-x.1.
+
+### What didn't
+
+- **The Verification-commands tables were still drafted before their tests existed.**
+  Every US-2.13 row was written during planning, naming files and `-t` filters that did not
+  yet exist — the exact setup [LESSONS 2](../LESSONS.md) was written about after Phase 1
+  shipped three dead rows. They happened to be right this time, but "happened to be right"
+  is not the property the lesson asks for. What actually protected the story was running
+  each row and reading its *count* before closing; the counts are now recorded in the table
+  itself, which is the durable half of the fix.
+- **The epic closes with the same live gap it has carried since 2026-08-10.** The
+  `409`/`conflictMeans` branch and `performance`'s `live: null` block have never run against
+  the real service, because one smoke account with an online terminal cannot produce them.
+  Three sprints of work did not move this, and no story could have — it needs an account,
+  not code.
+- **A payload budget is recorded as breached rather than met.** `get_performance_breakdowns`
+  projects to ~8,050 tokens against a 5,000-token budget on a ten-symbol account. It was
+  measured on a one-symbol account, so the cut that would matter is inert on the only data
+  available. The number is honest and the budget is still wrong.
+
+### Followups
+
+- **An offline terminal and a symbol-rich account are now the only things blocking three
+  recorded gaps.** They are not code work and no story can be pointed at them; whoever can
+  produce either should run `npm run test:smoke` against it and update
+  [EPIC-2](epics/EPIC-2.md) §Live payload findings. This is the third sprint carrying this
+  item.
+- **Draft a Verification-commands table only after its tests exist.** Leave the command cell
+  empty during planning rather than filling it with a plausible guess. Recording the
+  selected-test count beside each row, as US-2.13 now does, is what makes the table
+  evidence instead of intent.
+- **EPIC-3's write path does not inherit this phase's no-plan precedent.** Four for four is
+  real, but every one of those four was a read whose worst failure is a wrong answer. A
+  wrong `POST` is a trade. The precedent is recorded to be argued with, not applied.
 
 ## Cross-references
 

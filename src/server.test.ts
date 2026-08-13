@@ -5,6 +5,7 @@ import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 import { BreakdownsOutputSchema } from './tools/performance/breakdowns.js';
 import { PerformanceOutputSchema } from './tools/performance/summary.js';
+import { MAX_POINTS, TimeseriesOutputSchema } from './tools/performance/timeseries.js';
 import { AccountStrategiesOutputSchema } from './tools/strategies/list-account-strategies.js';
 import { StrategiesOutputSchema } from './tools/strategies/list-strategies.js';
 import { DealsOutputSchema } from './tools/trading/deals.js';
@@ -1049,6 +1050,221 @@ describe('get_performance_breakdowns', () => {
 });
 
 /**
+ * A timeseries long enough that the tool has to cut it — 250 points against a
+ * cap of 200. `timeseries.test.ts` proves which points survive; this fixture
+ * exists so the wiring can be checked against a response that is genuinely
+ * downsampled rather than one that passes straight through.
+ */
+const TIMESERIES_POINTS = Array.from({ length: 250 }, (_, index) => ({
+  timeMs: Date.UTC(2026, 4, 1) + index * 3_600_000,
+  balance: 10_000,
+  equity: 10_000 - index,
+  drawdownPct: index === 137 ? 31.5 : index % 3,
+}));
+
+const TIMESERIES = {
+  portfolio: TIMESERIES_POINTS,
+  perAccount: { '413878201': TIMESERIES_POINTS },
+  caveats: {
+    '413878201': {
+      equityUnavailable: false,
+      drawdownUnavailable: false,
+      balanceOnly: true,
+      isSoftDeleted: false,
+    },
+  },
+  portfolioCaveats: {
+    equityUnavailable: false,
+    drawdownUnavailable: false,
+    balanceOnly: false,
+    isSoftDeleted: false,
+  },
+};
+
+/**
+ * The wiring `timeseries.test.ts` cannot reach. The domain module never calls
+ * `accountPath`, never builds a URL and never sees the input schema — those
+ * belong to `registerGetEquityTimeseries`, so the three-segment path, the query
+ * and the error branches are asserted here, through a real client over a
+ * stubbed `fetch`.
+ */
+describe('get_equity_timeseries', () => {
+  test('builds its three-segment path through accountPath — a traversal accountId never reaches the network', async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: '../../admin' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/Invalid path segment/);
+    expect(called).toBe(false);
+  });
+
+  test('reaches performance/timeseries under the account and returns both channels', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, TIMESERIES));
+
+    const result = (await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(calls[0]).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance/timeseries',
+    );
+    expect(result.isError).toBeFalsy();
+    expect(TimeseriesOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('sends from, to and reporting to the URL as query parameters', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, TIMESERIES));
+
+    await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: 'abc-123', from: '2026-05-01', to: '2026-05-31', reporting: 'EUR' },
+    });
+
+    const url = new URL(calls[0] ?? '');
+    expect(url.pathname).toBe('/api/v1/accounts/abc-123/performance/timeseries');
+    expect(url.searchParams.get('from')).toBe('2026-05-01');
+    expect(url.searchParams.get('to')).toBe('2026-05-31');
+    expect(url.searchParams.get('reporting')).toBe('EUR');
+  });
+
+  test('leaves an omitted parameter out of the query string entirely', async () => {
+    const calls: string[] = [];
+    const client = await connect(recordingFetch(calls, TIMESERIES));
+
+    await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: 'abc-123', to: '2026-05-31' },
+    });
+
+    expect(calls[0]).toBe(
+      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance/timeseries?to=2026-05-31',
+    );
+  });
+
+  test("inherits US-2.10's date validation rather than declaring a third one", async () => {
+    let called = false;
+    const watching = (async () => {
+      called = true;
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const client = await connect(watching);
+
+    const result = (await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: 'abc-123', from: '2026-02-31' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('YYYY-MM-DD');
+    expect(called).toBe(false);
+  });
+
+  test('drops perAccount from both channels', async () => {
+    const client = await connect(recordingFetch([], TIMESERIES));
+
+    const result = (await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.structuredContent).not.toHaveProperty('perAccount');
+    expect(textOf(result)).not.toMatch(/perAccount/);
+  });
+
+  test('caps the series it returns and records the cut in notes', async () => {
+    const client = await connect(recordingFetch([], TIMESERIES));
+
+    const result = (await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    const { portfolio, notes } = result.structuredContent as {
+      portfolio: unknown[];
+      notes: string[];
+    };
+
+    expect(portfolio).toHaveLength(MAX_POINTS);
+    expect(notes).toHaveLength(1);
+    for (const note of notes) expect(textOf(result)).toContain(note);
+  });
+
+  test('returns the API caveats through the wire untouched', async () => {
+    const client = await connect(recordingFetch([], TIMESERIES));
+
+    const result = (await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    const { caveats, portfolioCaveats } = result.structuredContent as Record<string, unknown>;
+
+    expect(caveats).toEqual(TIMESERIES.caveats);
+    expect(portfolioCaveats).toEqual(TIMESERIES.portfolioCaveats);
+  });
+
+  test('names the performance:read scope on 403', async () => {
+    const forbidden = (async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Insufficient scope.' } }),
+        { status: 403, headers: { 'content-type': 'application/json' } },
+      )) as unknown as typeof fetch;
+    const client = await connect(forbidden);
+
+    const result = (await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: 'abc-123' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('performance:read');
+  });
+
+  test('turns a 404 into the login-versus-id hint', async () => {
+    const missing = (async () =>
+      new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found.' } }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof fetch;
+    const client = await connect(missing);
+
+    const result = (await client.callTool({
+      name: 'get_equity_timeseries',
+      arguments: { accountId: '413878201' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/list_accounts/);
+    expect(textOf(result)).toMatch(/login/);
+  });
+
+  test('tells the model the series is downsampled and which points always survive', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'get_equity_timeseries');
+
+    // A model that does not know the curve was thinned will read a 200-point
+    // answer as every observation the account has.
+    expect(tool?.description).toMatch(/downsampl/i);
+    expect(tool?.description).toMatch(/deepest drawdown/i);
+    expect(tool?.description).toMatch(/`notes`/);
+  });
+});
+
+/**
  * The wiring `deals.test.ts` cannot reach. The domain module never calls
  * `accountPath`, never builds a URL and never sees the input schema — all three
  * belong to `registerListDeals`, so the query, limit-bound and one-request
@@ -1356,6 +1572,12 @@ const TOOL_CALLS: {
     arguments: { accountId: 'abc-123' },
     outputSchema: BreakdownsOutputSchema,
     successBody: BREAKDOWNS,
+  },
+  {
+    name: 'get_equity_timeseries',
+    arguments: { accountId: 'abc-123' },
+    outputSchema: TimeseriesOutputSchema,
+    successBody: TIMESERIES,
   },
 ];
 

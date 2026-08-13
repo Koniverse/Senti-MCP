@@ -15,6 +15,70 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [1.4.0] — 2026-08-12 — `get_equity_timeseries`: the last read tool, and a curve that keeps its extremes
+
+The tenth tool, and the one that **completes the read path** — every `GET` operation the
+Senti Quant Public API exposes now has a tool.
+`GET /accounts/{accountId}/performance/timeseries` answers "how has my equity moved" and
+"what was my worst drawdown", and it answers with a point per interval: a series that
+grows without bound as the window widens. Measured live on 2026-08-12, a 63-day window
+returned **499 points**. A year would return several thousand.
+
+So the series is cut to at most **200 points** — and the cut is where this tool could
+have gone quietly wrong. Taking every Nth point is the obvious implementation, and on
+most windows it drops the trough of the deepest drawdown and the final point, returning
+a curve that reads **smoother and shallower than what actually happened**. That is the
+same class of error as rendering a null balance as `0`: well-formed, and wrong in the
+direction that flatters the account. `downsample` therefore samples evenly and then
+repairs the sample, evicting the nearest interior point to make room for the trough, so
+that **the first point, the last point and the point of deepest drawdown are exact** —
+never approximated by a neighbour. A fixture whose trough sits deliberately between two
+strides is what holds that claim ([US-2.13](sprints/stories/US-2.13-get-equity-timeseries-tool.md)
+AC-4), and the live smoke walk re-checks it against the real curve rather than the
+fixture.
+
+`caveats` and `portfolioCaveats` are returned **in full, in both channels**. They are the
+API's own statements about which figures it could not reconstruct — precisely the content
+a tool whose job is to summarize must not summarize.
+
+### Added
+- **`get_equity_timeseries` — an account's equity curve and drawdown over time**
+  (`src/tools/performance/timeseries.ts`). `TimeseriesSchema`, `parseTimeseries`,
+  `shapeTimeseries`, `formatTimeseries`, and `downsample`. `from`, `to` and `reporting`
+  reach the URL through `client.get`'s `query` using
+  [US-2.10](sprints/stories/US-2.10-get-account-performance-tool.md)'s
+  `PerformanceInputSchema`, so the date and ISO-4217 rules are inherited rather than
+  restated for a third time. `perAccount` is dropped (an account-scoped endpoint
+  returning a one-entry per-account map), `portfolio` is downsampled to at most 200
+  points pinning the three extremes, and every downsample is recorded in `notes` —
+  empty when the series was short enough to return whole.
+- A `get_equity_timeseries` leg in `src/smoke.test.ts`, so the live walk now covers all
+  ten read tools. It asks for the account's whole history rather than a convenient month
+  and re-derives the trough from the raw response, so AC-4 is checked against live data
+  and not only against the fixture built to defeat a naive stride.
+
+### Changed
+- **EPIC-2's read path is complete**: all ten `GET` operations of the Senti Quant Public
+  API now have a tool. The write path stays closed until EPIC-3 opens with its own design
+  spec — `registerReadTool`'s hard-coded `readOnlyHint: true` and `server.test.ts`'s four
+  table-driven invariants (now ten rows each) are what keep it closed by construction
+  rather than by intent.
+- `README.md` gains the tenth tool row and now states that `1.4.0` is the first published
+  version carrying all ten.
+- [EPIC-2](sprints/epics/EPIC-2.md) closes with a **three-row table of branches that
+  shipped unexercised against the live service** — the `409` terminal-offline path,
+  `performance`'s `live: null` block, and the `null` arms of `priceStopLimit` / `sl` / `tp`
+  — rather than closing in silence. `status: done` means every read operation has a tool,
+  not that every branch has run against the real API.
+- [CONTEXT D26](CONTEXT.md): the deepest drawdown is ranked by **magnitude**, because the
+  OpenAPI document declares `drawdownPct` a bare `number` and never states its sign. Under
+  either convention a peak is 0 and a trough is the largest magnitude, so the code commits
+  to neither — and a test negates the whole fixture to keep it that way.
+- [LESSONS 8](LESSONS.md): a fixture that only defeats the *naive* implementation stops
+  testing once you write yours. AC-4's trough was nearly placed at index 497, which the
+  shipped sampler produces exactly — the test would have passed with the pinning logic
+  deleted. It sits at 498, and a mutation run proves it discriminates.
+
 ## [1.3.0] — 2026-08-11 — `get_performance_breakdowns`: the largest payload, cut down and traced
 
 The ninth tool, and the first that returns materially less than the API gave it.

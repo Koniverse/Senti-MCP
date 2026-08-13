@@ -337,3 +337,45 @@ machine and impossible on a runner, found only when the branch finally executed.
 written, reviewed and merged with the defect visible in the file. The cheap check for the
 next one: for every pinned version in CI, name the constraint it has to satisfy and confirm
 the pin satisfies it — `npm view <pkg>@<ver> engines` costs seconds.
+
+---
+
+## 8. A fixture that only defeats the *naive* implementation stops testing the moment you write yours
+
+**What happened (v1.4.0, sprint-2026-W33)**:
+[US-2.13](sprints/stories/US-2.13-get-equity-timeseries-tool.md) AC-4 asks for a fixture
+"built so that a naive every-Nth stride would drop the trough" — the deepest drawdown must
+survive `downsample`, and the obvious implementation loses it. 1000 points cut to 200 is a
+stride of 5, so any index not divisible by 5 satisfies the AC as written. Index **497** was
+the first candidate.
+
+497 is a trap. The implementation that actually shipped samples evenly with
+`Math.round(i × 999 / 199)`, and at `i = 99` that expression rounds to **exactly 497** —
+the trough would have been kept *by the ordinary sampling*, never by the code that pins it.
+The test would have passed with the pinning logic deleted. The fixture moved to **498**,
+which neither a stride of 5 nor the round-based sampler produces.
+
+**Why**: an AC phrased against the implementation you are avoiding says nothing about the
+implementation you are writing. "A naive stride would drop it" is a property of the naive
+stride; what the test needs is a case that **only the pinning code can pass**. Those are
+different sets, and they overlap enough that a plausible fixture lands in the gap by
+coincidence. The failure is silent in the worst way: the test is green, it is green for the
+right-looking reason, and it stays green after you delete the feature it exists to defend.
+
+**How to avoid**:
+- **Choose the discriminating case against *both* implementations** — the one you are
+  rejecting and the one you are writing. Compute where your own sampler lands before
+  fixing the fixture's constant, not after.
+- **Then prove it by mutation** ([1](#1-a-green-suite-after-a-mutation-is-not-evidence-the-mutation-landed)):
+  write the naive implementation on purpose, `grep`-confirm it landed, and watch the test
+  go red. Here that turned 13 green tests into **4 red** — the last point, the trough, the
+  sign-agnostic trough, and the minimum-cap case. A fixture that survives its own mutation
+  test is discriminating; one that has only been reasoned about is not.
+- The general form: whenever an AC is written as "implementation X would fail this", treat
+  that as the *floor* for the fixture, never the specification.
+
+**Pattern**: this is [2](#2-a-storys-verification-commands-row-is-a-claim-and--t-that-matches-nothing-exits-0)'s
+failure one level up. There, a filter selected zero tests and exited 0; here, a test selects
+real assertions and exercises none of the code under test. Both are green runs that report
+on something other than what the author meant, and in both the fix is to read what actually
+ran rather than what was intended to run.
