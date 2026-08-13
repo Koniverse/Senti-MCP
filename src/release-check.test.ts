@@ -65,8 +65,8 @@ Nothing publishable.
 
 const README_OK = `# senti-mcp-server
 
-- Node.js >= 20.6.0 — \`AbortSignal.any()\` landed in 20.3.0, and
-  \`npm run test:smoke\` uses \`node --env-file\`, added in 20.6.0
+- Node.js >= 22.11.0 — the first Node 22 LTS, supported until 2027-04-30.
+  \`AbortSignal.any()\` landed in 20.3.0 and still sets the code's minimum
 
 \`npx -y senti-mcp-server\` resolves to whatever npm's \`latest\` tag points at —
 \`1.1.0\` as of this release.

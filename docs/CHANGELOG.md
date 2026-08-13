@@ -15,6 +15,61 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.0.0] — 2026-08-13 — the supported Node floor moves off an end-of-life line
+
+**No tool changed. No payload changed. Nothing a consumer runs behaves differently.**
+This release contains one number: `engines.node` moves from `>=20.6.0` to `>=22.11.0`,
+and it is a major because narrowing a declared support contract is a breaking change by
+convention — not because the diff is large.
+
+Node 20 reached end of life on **2026-04-30**. The floor
+[CONTEXT D5](CONTEXT.md) set was still pointing at it, which meant this package
+advertised support for a runtime nobody is patching. **22.11.0** is the first LTS
+release of the Node 22 "Jod" line and is supported until **2027-04-30**.
+
+The reason is support lifetime, **not** a new API — a floor is raised for a stated
+reason, never for tidiness. Re-checked across all of `src/` and `scripts/` on
+2026-08-13: the newest runtime APIs in use are still `AbortSignal.timeout` (17.3.0),
+`AbortSignal.any` (20.3.0) and `node --env-file` (20.6.0), and no dependency demands
+above Node 20. **D5's minimum is unchanged and still true**; this floor sits above it
+for a different reason.
+
+**What it costs you, measured rather than asserted.** `engine-strict` defaults to
+`false`, so below the floor npm **warns and installs**: on Node 20.19.4 the `2.0.0`
+tarball produced `npm warn EBADENGINE`, exit code 0, and the installed binary then
+served `tools/list` with all ten tools. Only `engine-strict=true` turns that into
+`npm error code EBADENGINE` and refuses. If you are on Node 20 and not ready to move,
+**pin `senti-mcp-server@1.4.0`** — it carries the same ten tools and is the last
+version declaring the old floor.
+
+### Changed
+- **The supported Node floor is now `>=22.11.0`**, up from `>=20.6.0`
+  ([CONTEXT D27](CONTEXT.md),
+  [US-5.1](sprints/stories/US-5.1-node-floor-and-ci-pins.md)). `package.json`
+  `engines.node`, `README.md` §Requirements and [docs/SETUP.md](SETUP.md) §1 carry the
+  same number in the same commit — a floor stated in three places and enforced in one is
+  the [LESSONS 4](LESSONS.md) shape.
+  [US-5.2](sprints/stories/US-5.2-release-check-guards-the-node-floor.md) is the story
+  that puts `release:check` behind it.
+- **`gate`, `build` and `verify` in `.github/workflows/release.yml` re-pin from 20.6.0
+  to 22.11.0**, so the floor stays *proven* rather than asserted: the suite runs on
+  exactly it, and the built tarball is installed and its binary spawned on exactly it.
+  Both were confirmed green on 22.11.0 before the pins were pushed.
+- **`publish` stays on Node 24.19.0 and its `npm install -g npm@11.19.0` step is
+  deleted.** 24.19.0 bundles npm 11.17.0, already above OIDC trusted publishing's
+  11.5.1, so the requirement is now satisfied by the runtime pin instead of being
+  restated in a comment above a step — the exact shape [LESSONS 7](LESSONS.md) warns
+  about. Raising the floor to Node 22 does **not** let all four jobs share one pin, as
+  was first assumed: the whole Node 22 line bundles npm **10.x** (22.11.0 ships 10.9.0),
+  so a Node 22 floor buys either one shared pin *or* the deleted step, never both.
+- Every version pinned in `release.yml` was re-checked against the constraint it has to
+  satisfy — [LESSONS 7](LESSONS.md)'s cheap `npm view <pkg>@<ver> engines`, applied to
+  every pin rather than only the one that broke. The results are recorded in
+  [US-5.1](sprints/stories/US-5.1-node-floor-and-ci-pins.md) §Implementation notes.
+- `AGENTS.md`'s "Current state" block is brought current: it still read `1.3.0`, **nine**
+  tools, and "one read operation remains", three days after `1.4.0` shipped the tenth
+  and EPIC-2 closed.
+
 ## [1.4.0] — 2026-08-12 — `get_equity_timeseries`: the last read tool, and a curve that keeps its extremes
 
 The tenth tool, and the one that **completes the read path** — every `GET` operation the

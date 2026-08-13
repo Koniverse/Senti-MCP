@@ -1316,3 +1316,93 @@ EPIC-3's write-path read-backs are the plausible next one — should rank the sa
 
 **Date**: 2026-08-12
 **Version**: 1.4.0
+
+---
+
+## Phase 4 — Supported runtime and dependency currency (2026-08-13)
+
+### D27. Raise the supported Node floor to 22.11.0, because Node 20 is end of life
+
+**Context**: [D5](#d5-raise-the-supported-node-floor-to-2060) set `engines.node` to
+`>=20.6.0` for two API reasons, and both still hold. What changed is not the code but
+the calendar: **Node 20 reached end of life on 2026-04-30** and receives no further
+security patches. The declared floor therefore named an unsupported line — a
+support-lifetime question, not a compatibility bug, which is why this is a new entry
+rather than a revision of D5.
+
+[LESSONS 7](LESSONS.md) is what surfaced it. The `publish` job was pinned to that same
+consumer floor and could not host any npm capable of OIDC trusted publishing. `1.1.0`
+fixed that job alone and deliberately left the support policy untouched, so that a CI
+unblock and a policy change did not ride in one commit.
+[US-5.1](sprints/stories/US-5.1-node-floor-and-ci-pins.md) is the second half.
+
+**Decision**: `engines.node` is `>=22.11.0` — the first LTS release of the Node 22
+"Jod" line, supported until **2027-04-30**. `README.md` §Requirements and
+[SETUP.md](SETUP.md) §1 state the same number, and `gate`, `build` and `verify` in
+`.github/workflows/release.yml` run on exactly it. Released as **`2.0.0`**.
+
+**Rationale**: the reason is support lifetime, not a new API. Nothing in this codebase
+needs newer than 20.6.0 — re-checked on 2026-08-13 across all of `src/` and `scripts/`,
+and the newest runtime APIs in use remain `AbortSignal.timeout` (17.3.0),
+`AbortSignal.any` (20.3.0) and `node --env-file` (20.6.0). No dependency raises it
+either: `@modelcontextprotocol/server@2.0.0` declares `>=20`, `vitest@3`
+`^18 || ^20 || >=22`, `tsx` `>=18`, and `zod` declares nothing. **D5's minimum is
+unchanged and still true; this floor sits above it for a different reason.** A floor is
+raised for a stated reason, never for tidiness — an EOL date is such a reason, and
+"newer is better" is not.
+
+22.11.0 rather than 22.0.0 or 22.9.0 because it is the point at which the 22 line
+became LTS, which is the property the decision actually rests on.
+
+**Alternatives considered**:
+- **`>=20.17.0`** — rejected. It is the smallest edit that would have prevented
+  LESSONS 7, and rejecting it is deliberate rather than an oversight: it still names a
+  line that went EOL on 2026-04-30, so it buys the npm constraint without buying the
+  support lifetime that is the whole point.
+- **`>=22.9.0`** — rejected. It is the smallest floor satisfying npm 11's
+  `engines.node` (`^20.17.0 || >=22.9.0`), but it is not itself an LTS release, and the
+  only argument for it is an npm constraint that binds **no consumer**. 22.11.0 is above
+  it, so that constraint is satisfied anyway.
+- **`>=24.15.0`** — rejected. It buys runway to 2028-04-30, and pays for it by cutting
+  off the Node 22 line 20 months before that line's own EOL. The cost is real users, for
+  time this package does not need yet.
+- **Leave it at `>=20.6.0` and say why** — a legitimate outcome of the story
+  (AC-2's second clause), rejected here. The code would keep working, but the package
+  would be advertising support for a runtime nobody is patching, and CI would keep
+  proving the floor on that runtime.
+
+**What it costs a consumer, measured rather than assumed**: `engine-strict` defaults to
+`false`, so this is a **warning, not a wall**. Packing `2.0.0` and installing the
+tarball into a clean directory on Node **20.19.4** produced
+`npm warn EBADENGINE Unsupported engine … required: { node: '>=22.11.0' }`, exit code
+**0**, four packages added — and the installed binary then spawned and answered
+`tools/list` with all ten tools. Only `engine-strict=true` turns it into
+`npm error code EBADENGINE` and refuses the install. So nothing a consumer runs
+actually breaks below the floor; what changes is the declared contract and what CI
+tests.
+
+**Why `2.0.0` and not `1.5.0`**: narrowing a declared support contract is a breaking
+change by ecosystem convention, and AC-6 exists precisely so the release type is chosen
+from the contract rather than defaulted from the size of the diff. This consumes no
+version [EPIC-3](sprints/epics/EPIC-3.md) needs — write tools behind an opt-in switch
+are additive and can ship as `2.1.0`.
+
+**Impact**: `gate`, `build` and `verify` move from 20.6.0 to 22.11.0, so the floor stays
+*proven* rather than asserted — the suite runs on exactly it and the tarball is
+installed and spawned on exactly it. `publish` **stays on 24.19.0** and its
+`npm install -g npm@11.19.0` step is **deleted**: 24.19.0 bundles npm 11.17.0, already
+above OIDC's 11.5.1. This is the correction the story's refresh block records — the
+whole Node 22 line bundles npm **10.x** (22.11.0 ships 10.9.0), so a Node 22 floor does
+**not** let all four jobs share one pin. At a Node 22 floor you get either one shared
+pin with a global npm install kept, or `publish` on 24.x with the step gone; deleting
+the step requires ≥ 24.15.0 (npm 11.12.1). The second option is taken, which removes a
+moving part instead of maintaining one.
+
+The Node floor is stated in three places and enforced in one, which is the
+[LESSONS 4](LESSONS.md) shape — a version string nothing reads drifts.
+[US-5.2](sprints/stories/US-5.2-release-check-guards-the-node-floor.md) is the story
+that puts `release:check` behind it, and it is now the only thing standing between this
+number and the next silent drift.
+
+**Date**: 2026-08-13
+**Version**: 2.0.0

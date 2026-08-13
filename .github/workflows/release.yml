@@ -72,7 +72,7 @@ jobs:
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 20.6.0
+          node-version: 22.11.0
           cache: npm
 
       - run: npm ci
@@ -91,7 +91,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 20.6.0
+          node-version: 22.11.0
           cache: npm
       - run: npm ci
       # No SENTI_API_KEY and no SENTI_SMOKE_KEY are set, deliberately. The suite
@@ -109,7 +109,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 20.6.0
+          node-version: 22.11.0
           cache: npm
       - run: npm ci
       # Packs, installs into a clean directory, spawns the installed binary and
@@ -138,40 +138,36 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          # Deliberately NOT the 20.6.0 floor `gate`, `build` and `verify` pin.
+          # Deliberately NOT the 22.11.0 floor `gate`, `build` and `verify` pin.
           #
-          # That floor is a claim about what a CONSUMER can run (CONTEXT D5:
-          # AbortSignal.any needs 20.3.0, test:smoke's --env-file needs 20.6.0),
-          # and it is proven by `build` running the suite on it and `verify`
-          # installing the tarball and spawning the binary on it. This job
-          # serves no consumer — it packs and uploads — and its Node version is
-          # invisible in what ships, because tsc emits per tsconfig
-          # (target ES2022), not per host.
+          # That floor is a claim about what a CONSUMER can run (CONTEXT D27:
+          # the first Node 22 LTS, supported to 2027-04-30; D5's two APIs —
+          # AbortSignal.any at 20.3.0, test:smoke's --env-file at 20.6.0 — still
+          # set the code's minimum and are below it), and it is proven by
+          # `build` running the suite on it and `verify` installing the tarball
+          # and spawning the binary on it. This job serves no consumer — it
+          # packs and uploads — and its Node version is invisible in what ships,
+          # because tsc emits per tsconfig (target ES2022), not per host.
           #
-          # It has to be higher, because the floor cannot host the tooling this
-          # job needs: OIDC trusted publishing requires npm >= 11.5.1, and every
-          # npm 11.x and 12.x declares engines.node ^20.17.0 || >=22.9.0 (12.x:
-          # ^22.22.2 || ^24.15.0 || >=26.0.0). On Node 20.6.0 the newest
-          # installable npm is 10.x, which cannot do OIDC — so this job was
-          # unsatisfiable as written, for every npm version, not just today's.
-          # It went unnoticed because the v9.9.9 rehearsal failed at the gate by
-          # design and never reached this job. See LESSONS 7.
+          # It has to be higher, because the floor still cannot host the tooling
+          # this job needs. OIDC trusted publishing requires npm >= 11.5.1, and
+          # the WHOLE Node 22 line bundles npm 10.x — 22.11.0 ships 10.9.0,
+          # whose OIDC support does not exist. Raising the floor to Node 22
+          # therefore does NOT let all four jobs share one pin: at a Node 22
+          # floor you either keep a pinned `npm install -g` step here, or you
+          # stay on Node 24. Deleting the step needs >= 24.15.0 (npm 11.12.1).
           #
-          # 24.19.0 bundles npm 11.17.0, so the pin below is a floor-raise on an
-          # already-adequate npm rather than a rescue.
+          # 24.19.0 bundles npm 11.17.0, already >= 11.5.1, so this job needs no
+          # global npm install at all — the step that used to pin npm@11.19.0
+          # was deleted in 2.0.0 (US-5.1 AC-4, first arm). The requirement is
+          # now satisfied by the runtime pin rather than restated in a comment
+          # above a step, which is the shape LESSONS 7 warns about.
+          #
+          # Raise this deliberately, in a commit that says why: a bump that
+          # dropped the bundled npm below 11.5.1 would silently un-OIDC the job.
           node-version: 24.19.0
           cache: npm
           registry-url: https://registry.npmjs.org
-
-      # npm 11.5.1+ is required for OIDC trusted publishing.
-      #
-      # Pinned, never `npm@latest`. This workflow pins third-party actions by
-      # commit SHA precisely because a mutable reference is a write path into a
-      # package with one maintainer; `npm@latest` was the same mutable reference
-      # wearing different clothes, and it rolled to npm 12 — whose Node floor is
-      # higher again — on the first day this step ever ran. Raise this
-      # deliberately, in a commit that says why.
-      - run: npm install -g npm@11.19.0
 
       - run: npm ci
 

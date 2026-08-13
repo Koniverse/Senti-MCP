@@ -36,7 +36,7 @@ Some prose mentioning \`list_accounts\` in passing.
 
 ## Requirements
 
-- Node.js >= 20.6.0
+- Node.js >= 22.11.0
 `;
 
 const HEALTHY = [

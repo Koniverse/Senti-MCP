@@ -13,11 +13,11 @@ nothing was ever published.
 
 | Requirement | Why |
 |---|---|
-| **Node.js ≥ 20.6.0** | `AbortSignal.any()`, on the path of every tool call, landed in 20.3.0; `npm run test:smoke` uses `node --env-file`, added in 20.6.0. On 20.0–20.2 the server starts and `tools/list` succeeds, then every `list_accounts` call fails with `TypeError: AbortSignal.any is not a function`. |
+| **Node.js ≥ 22.11.0** | The first LTS release of the Node 22 "Jod" line, supported until 2027-04-30. This is a **support-lifetime** floor, not an API one ([CONTEXT D27](CONTEXT.md)): the newest API in use is still `AbortSignal.any()` (20.3.0), on the path of every tool call, and `npm run test:smoke` uses `node --env-file` (20.6.0). So the code runs on 20.6.0–22.10.x and npm only warns `EBADENGINE` there — but that range receives no security patches and CI does not test it. Below 20.3.0 it genuinely breaks: the server starts, `tools/list` succeeds, then every `list_accounts` call fails with `TypeError: AbortSignal.any is not a function`. |
 | **A Senti Quant API key** | `sq_live_…`. As of v0.2.0 the tool surface needs five read scopes — see §3. Created in the [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). |
 
 ```bash
-node --version    # must be >= 20.6.0
+node --version    # must be >= 22.11.0
 ```
 
 ## 2. Install
@@ -164,7 +164,7 @@ Restart the client; `list_accounts` should appear in its tool list.
 | `SENTI_API_KEY is required…`, exit 1 | No key in the environment. The MCP client's `env` block is separate from your shell. |
 | `Senti API rejected the credentials (401)` | Key does not match the environment `SENTI_API_BASE_URL` targets (see §3), or it was revoked. |
 | `Senti API returned 403 … missing the \`<scope>\` scope` | The key is valid but lacks that scope — `accounts:read`, `brokers:read`, `strategies:read`, `performance:read`, or `trading:read`, depending on which tool was called. There is no key-introspection endpoint, so this is caught only when the tool runs, not at startup. Create a new key with all five scopes; scopes are fixed at creation. |
-| `TypeError: AbortSignal.any is not a function` | Node older than 20.3.0. See §1. |
+| `TypeError: AbortSignal.any is not a function` | Node older than 20.3.0 — well below the ≥ 22.11.0 floor. See §1. |
 | Client shows no tools / fails to connect | Something wrote to stdout and corrupted the JSON-RPC stream. Diagnostics must go to stderr only. |
 | `SENTI_API_BASE_URL must not carry a query string or fragment` | Exactly that — a query or fragment cannot survive being joined to an endpoint path. |
 | `SENTI_API_BASE_URL must use https: or http:` | A scheme this client cannot fetch (`file:`, `foo:bar`, …), almost always a typo. |

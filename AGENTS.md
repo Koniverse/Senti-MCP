@@ -17,34 +17,42 @@ Trading. An MCP host cannot call it directly: something has to own the API key, 
 typed tools whose descriptions let a model choose correctly, and turn API errors into
 text a model can act on. This server is that something.
 
-**Current state: `1.3.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
+**Current state: `2.0.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
 `1.0.1` is the version that carried it to the registry
-([CONTEXT D11, D12](docs/CONTEXT.md)). **Nine** tools are registered in `src/server.ts`:
+([CONTEXT D11, D12](docs/CONTEXT.md)). **Ten** tools are registered in `src/server.ts`:
 `list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
 `list_positions`, `list_pending_orders`, `list_deals`, `get_account_performance`,
-`get_performance_breakdowns` — covering nine of the API's 10 `GET` operations.
-`list_accounts` shipped first, in v0.1.0, tracked as
+`get_performance_breakdowns`, `get_equity_timeseries` — **the API's 10 `GET`
+operations, complete**. `list_accounts` shipped first, in v0.1.0, tracked as
 [US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md) and proven against the
 live API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md); the
 next five closed out [sprint-2026-W33](docs/sprints/sprint-2026-W33.md)'s Phase 1,
 tracked as [US-2.4](docs/sprints/stories/US-2.4-tool-substrate-and-layout.md) through
-[US-2.9](docs/sprints/stories/US-2.9-list-pending-orders-tool.md); Phase 3 has since
-added `get_account_performance` in `1.1.0`
-([US-2.10](docs/sprints/stories/US-2.10-get-account-performance-tool.md)) and
+[US-2.9](docs/sprints/stories/US-2.9-list-pending-orders-tool.md); Phase 3 added the
+last four — `get_account_performance` in `1.1.0`
+([US-2.10](docs/sprints/stories/US-2.10-get-account-performance-tool.md)),
 `list_deals` in `1.2.0`
 ([US-2.11](docs/sprints/stories/US-2.11-list-deals-tool.md), the first paginated tool —
 one call is one request, and it never drains a cursor: [CONTEXT D24](docs/CONTEXT.md)),
-and `get_performance_breakdowns` in `1.3.0`
+`get_performance_breakdowns` in `1.3.0`
 ([US-2.12](docs/sprints/stories/US-2.12-get-performance-breakdowns-tool.md), the first
 tool that returns materially less than the API gave it — five cuts, and a `notes` line
-only for the two that lose something: [CONTEXT D25](docs/CONTEXT.md)).
-**One** read operation remains — `get_equity_timeseries`. The
-[read-tool expansion spec](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
-put it in W34; it was pulled forward into the same W33 window as its **Phase 3** on
-2026-08-10 ([CONTEXT D22](docs/CONTEXT.md)), and EPIC-2 stays `in-progress` until it
-ships. Read the
+only for the two that lose something: [CONTEXT D25](docs/CONTEXT.md)), and
+`get_equity_timeseries` in `1.4.0`
+([US-2.13](docs/sprints/stories/US-2.13-get-equity-timeseries-tool.md), whose
+downsample pins the first point, the last point and the deepest drawdown, ranked by
+magnitude because the API never declares the sign: [CONTEXT D26](docs/CONTEXT.md)).
+**EPIC-2 closed `done` on 2026-08-12** with the read path complete.
+
+`2.0.0` itself ships no tool. It is a **support-policy** release: the Node floor moved
+from `>=20.6.0` to `>=22.11.0` because Node 20 reached end of life on 2026-04-30
+([CONTEXT D27](docs/CONTEXT.md),
+[US-5.1](docs/sprints/stories/US-5.1-node-floor-and-ci-pins.md)). Narrowing a declared
+support contract is a major bump by convention even though nothing a consumer runs
+actually breaks. Read the
 [v1 design spec](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) and the
-expansion spec above before touching anything under `src/`.
+[read-tool expansion spec](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
+before touching anything under `src/`.
 
 ### The read/write split
 
@@ -244,7 +252,7 @@ npm run test:smoke        # one live call; needs SENTI_SMOKE_KEY in .env.local
 `npm test` builds `dist/` on the way through — `src/index.test.ts` spawns the real
 built entry point, because that is the artifact US-2.2 AC-18 is a claim about.
 
-A clean run is **19 files / 376 tests, 1 skipped** (the opt-in smoke test) as of `1.3.0`. If you see
+A clean run is **20 files / 429 tests, 1 skipped** (the opt-in smoke test) as of `2.0.0`. If you see
 roughly double that, you have a leftover git worktree under `.claude/worktrees/` being
 collected as a second copy of the suite — `git worktree list` is the only routine command
 that shows it, since the path is gitignored. `vitest.config.ts` scopes collection to

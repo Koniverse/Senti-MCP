@@ -24,9 +24,12 @@ the MT5 account number, not a key.
 
 ## Requirements
 
-- Node.js ≥ 20.6.0 — `AbortSignal.any()`, which every tool call goes through,
-  landed in 20.3.0, and `npm run test:smoke` uses `node --env-file`, added in
-  20.6.0
+- Node.js ≥ 22.11.0 — the first LTS release of the Node 22 "Jod" line, supported
+  until 2027-04-30. The floor is a **support-lifetime** choice, not an API one:
+  the newest runtime feature this server actually uses is `AbortSignal.any()`
+  (Node 20.3.0), on the path of every tool call, and `npm run test:smoke` uses
+  `node --env-file` (20.6.0). Raised from `≥ 20.6.0` in v2.0.0 because Node 20
+  reached end of life on 2026-04-30 ([CONTEXT D27](docs/CONTEXT.md))
 - A Senti Quant API key (`sq_live_…`). As of v0.2.0 the tool surface needs five
   read scopes: `accounts:read`, `brokers:read`, `strategies:read`,
   `performance:read`, `trading:read` — create one with all five at the
@@ -83,9 +86,11 @@ No install step — `npx` fetches the published package on first run:
 
 Restart the client; all ten tools should appear — every `GET` operation the
 Senti Quant Public API exposes now has one. `npx -y senti-mcp-server` resolves to
-whatever npm's `latest` tag points at — `1.4.0` as of this release, the first
-published version carrying all ten. `1.3.0` carries nine, without
-`get_equity_timeseries`; `1.2.0` carries eight, without
+whatever npm's `latest` tag points at — `2.0.0` as of this release, which carries
+the same ten tools as `1.4.0` and differs from it only in requiring Node ≥ 22.11.0.
+`1.4.0` is the last version declaring the old `≥ 20.6.0` floor and is the one to
+pin if you are stuck on Node 20; it carries all ten tools. `1.3.0` carries nine,
+without `get_equity_timeseries`; `1.2.0` carries eight, without
 `get_performance_breakdowns` as well; `1.1.0` carries seven, without `list_deals`
 on top of that; `1.0.1` carries six, without `get_account_performance` too;
 and only `list_accounts` is reachable on `0.1.0`, which was published before the
@@ -93,7 +98,7 @@ others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
 expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@1.4.0"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@2.0.0"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server
