@@ -1,18 +1,17 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-13 04:20:12 UTC
+> Last generated: 2026-08-13 07:45:45 UTC
 > Total stories: 23
 
 ## ⏰ Deadlines (0)
 
 _No stories carry an explicit deadline._
 
-## 📋 Backlog (3)
+## 📋 Backlog (2)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
-| US-5.2 | release:check guards the Node floor across every artifact that states it | EPIC-5 | P2 | 2 | sprint-2026-W33 | bluezdot |
 | US-5.3 | devDependency currency, and the rule that @types/node tracks the floor | EPIC-5 | P3 | 3 | sprint-2026-W33 | bluezdot |
 | US-5.4 | Decide TypeScript 7, and say why either way | EPIC-5 | P3 | 2 | sprint-2026-W33 | bluezdot |
 
@@ -28,7 +27,7 @@ _No stories_
 
 _No stories_
 
-## ✅ Done (20)
+## ✅ Done (21)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
@@ -52,6 +51,7 @@ _No stories_
 | US-4.4 | Verify the tarball before it is published | EPIC-4 | P1 | 3 | sprint-2026-W33 | bluezdot |
 | US-4.5 | .github/workflows/release.yml — tag-triggered publish | EPIC-4 | P1 | 5 | sprint-2026-W33 | bluezdot |
 | US-5.1 | Re-decide the supported Node floor, now that Node 20 is EOL | EPIC-5 | P2 | 3 | sprint-2026-W33 | bluezdot |
+| US-5.2 | release:check guards the Node floor across every artifact that states it | EPIC-5 | P2 | 2 | sprint-2026-W33 | bluezdot |
 
 ## 🚫 Blocked (0)
 
@@ -65,11 +65,11 @@ _No stories_
 
 ## Summary
 
-- 📋 **Backlog**: 3
+- 📋 **Backlog**: 2
 - 🟢 **Ready**: 0
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0
-- ✅ **Done**: 20
+- ✅ **Done**: 21
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 

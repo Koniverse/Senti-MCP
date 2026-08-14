@@ -76,6 +76,9 @@ Walk every applicable item before committing.
 [ ] assignee is a GitHub login, never git user.name (RULE-15)
 [ ] Frontmatter ID fields are bare IDs, never prose (RULE-17)
 [ ] New env var → SETUP.md + .env.example in the SAME commit (RULE-11)
+[ ] Node floor changed? → package.json engines.node + README.md §Requirements +
+    docs/SETUP.md §1, SAME commit. `npm run release:check` compares all three
+    (it is NOT a version string, so no other check sees it)
 [ ] `due` changed? → CONTEXT.md entry in the SAME commit, old → new → why (RULE-18)
 [ ] Shipping a version? → walk RELEASE.md instead of stopping here. `npm run release:check`
     and `npm run release:verify-pack` must both exit 0 BEFORE the tag is pushed

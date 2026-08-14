@@ -81,6 +81,11 @@ Four files must move together. `src/config.test.ts` catches three of them on eve
 `release:check` catches all four plus the tag at release time. koni-docs checks only
 `VERSION` and `package.json`.
 
+The **Node floor** is a second set of files that must move together — `package.json`
+`engines.node`, `README.md` §Requirements and `docs/SETUP.md` §1 — and it is not a version
+string, so none of the checks above sees it. `release:check` compares those three too; see
+§Step 5.
+
 ### Step 3 — Write the CHANGELOG section
 
 Copy the story's `## Changelog entry` block into [docs/CHANGELOG.md](CHANGELOG.md) under a
@@ -110,11 +115,23 @@ npm run release:verify-pack    # packs, installs into a clean dir, spawns the bi
 ```
 
 `release:check` verifies the five version strings agree (`VERSION`, `package.json`,
-`package-lock.json`, `SERVER_VERSION`, and the tag), the CHANGELOG section exists,
-`Unreleased` is clear, `README.md` carries no contradicting version claim, the tag does not
-already exist, the tree is clean, and `HEAD` is on `main`. `release:verify-pack` proves the
-tarball actually installs and answers `tools/list`. Both must exit `0`. §6 explains each
-failure.
+`package-lock.json`, `SERVER_VERSION`, and the tag), **the Node floor agrees across the
+three artifacts that state it**, the CHANGELOG section exists, `Unreleased` is clear,
+`README.md` carries no contradicting version claim, the tag does not already exist, the
+tree is clean, and `HEAD` is on `main`. `release:verify-pack` proves the tarball actually
+installs and answers `tools/list`. Both must exit `0`. §6 explains each failure.
+
+**The Node floor check** ([US-5.2](sprints/stories/US-5.2-release-check-guards-the-node-floor.md))
+treats `package.json` `engines.node` as canonical and compares every floor claim in
+`README.md` and `docs/SETUP.md` against it — an artifact that states a *different* floor
+fails, and so does one that states **no** floor at all. A floor claim is a semver
+immediately preceded by `>=` or `≥` on a line mentioning Node; that operator is what
+separates the floor from the other Node versions in the same prose (`AbortSignal.any`'s
+20.3.0 is written "landed in 20.3.0", never ">= 20.3.0"). The practical consequence when
+you next move the floor: prose *about* an old floor must not use the operator form — write
+"the old 20.6.0 floor", not "the old `>= 20.6.0` floor", or the gate reads history as a
+contradiction. CI pins in `.github/workflows/` are deliberately **not** checked: they bind
+nobody outside CI and `publish` differs from the floor on purpose ([LESSONS 7](LESSONS.md)).
 
 ### Step 6 — Commit, then tag, then push
 
@@ -214,6 +231,9 @@ with an authentication error, check this first.
 | no `## [X.Y.Z]` section | Step 3 was skipped. |
 | `## [Unreleased]` is not clear | Content belonging to this release is still in `Unreleased`, or work that is not part of this release is sitting in the tree. Decide which. |
 | README names a different version | Step 4. This is the check standing in for [D12](CONTEXT.md); it scans version-bearing claims only and cannot tell you the prose is *accurate*, only that it is not *contradictory*. |
+| Node floor — artifact states a different floor | The floor half-landed: `package.json` `engines.node` moved and `README.md` or `docs/SETUP.md` did not, or the reverse. The message names the file, the line, the value found and the value expected. Note `docs/SETUP.md` states it in three separate spots. |
+| Node floor — artifact states no floor at all | A file stopped claiming the floor entirely, which the gate treats as a failure rather than a vacuous pass ([LESSONS 2](LESSONS.md)). Also fires if a *historical* mention was rewritten into the operator form — write "the old 20.6.0 floor", not "the old `>= 20.6.0` floor". |
+| Node floor — no `engines.node` | `package.json` lost its `engines` block. It is the canonical floor; the other two artifacts are copies of it. |
 | tag already exists | This version was already released. npm will never accept the number again — pick the next one. |
 | working tree dirty / not on `main` | A tag is a claim about a commit; make it the reviewed one. |
 

@@ -111,6 +111,90 @@ else
       `First, line ${readmeOffenders[0].n}: ${readmeOffenders[0].line.trim()}`,
   );
 
+/**
+ * The Node floor is stated in three artifacts and, before US-5.2, was compared
+ * by nothing — the LESSONS 4 shape that let `package-lock.json` sit eight
+ * releases behind its version string. `package.json` `engines.node` is the
+ * canonical value and the other two are copies of it, because `engines.node` is
+ * the only one of the three that a tool other than a human ever reads.
+ *
+ * What counts as a floor claim is deliberately narrow, and the narrowness is
+ * the contract: a semver immediately preceded by a floor operator (`>=` or the
+ * unicode `≥`), on a line that mentions Node. Both halves earn their place.
+ *
+ *   - **The operator** is what separates the floor from every other Node
+ *     version in the same prose. `AbortSignal.any` is always written "landed in
+ *     20.3.0" or "older than 20.3.0", never ">= 20.3.0"; the floor is always
+ *     written with the operator. Keying on "a Node-shaped version number"
+ *     instead would make SETUP.md's prerequisites row permanently disagree with
+ *     itself, since that one cell names 22.11.0, 20.3.0 and 20.6.0 together.
+ *   - **The Node mention** keeps a different package's floor from being read as
+ *     this one's. `publish` needs npm >= 11.5.1 (LESSONS 7); if that sentence
+ *     ever reaches README or SETUP it is not a Node floor.
+ *
+ * The cost of that contract is that prose *about* a past floor must not use the
+ * operator form — write "the old 20.6.0 floor", not "the old `>= 20.6.0`
+ * floor". That is a real constraint on two sentences in README.md and it is
+ * cheaper than a matcher that tries to tell history from policy.
+ *
+ * Not checked here, on purpose: `node-version:` in `.github/workflows/*`. Those
+ * pins bind nobody outside CI and `publish` differs from the floor deliberately
+ * — demanding agreement would encode the exact conflation LESSONS 7 is about.
+ */
+const FLOOR_CLAIM = /(?:≥|>=)\s*v?(\d+\.\d+\.\d+)/g;
+
+const engineRange = JSON.parse(read('package.json')).engines?.node;
+const floor = engineRange?.match(/\d+\.\d+\.\d+/)?.[0];
+
+if (!floor) {
+  fail(
+    'Node floor',
+    `package.json has no engines.node to compare against — it is the canonical floor ` +
+      `and README.md / docs/SETUP.md are copies of it. Found: ${engineRange ?? '(no engines.node)'}`,
+  );
+} else {
+  const floorProblems = [];
+
+  for (const rel of ['README.md', 'docs/SETUP.md']) {
+    const claims = [];
+    read(rel)
+      .split('\n')
+      .forEach((line, i) => {
+        if (!/node/i.test(line)) return;
+        for (const m of line.matchAll(FLOOR_CLAIM)) claims.push({ n: i + 1, found: m[1], line });
+      });
+
+    /**
+     * A file that states no floor at all is a failure, not a silent pass. A
+     * pattern that matches nothing reports success otherwise, which is the
+     * same failure mode as a `vitest -t` filter that selects zero tests and
+     * still exits 0 (LESSONS 2).
+     */
+    if (claims.length === 0) {
+      floorProblems.push(
+        `${rel} states no Node floor at all — expected ${floor}. A file that quietly stopped claiming the floor is how the floor drifts.`,
+      );
+      continue;
+    }
+
+    for (const c of claims) {
+      if (c.found !== floor) {
+        floorProblems.push(`${rel}:${c.n} states ${c.found}, expected ${floor} — ${c.line.trim()}`);
+      }
+    }
+  }
+
+  if (floorProblems.length === 0) {
+    pass('Node floor', `${floor} in package.json, README.md and docs/SETUP.md`);
+  } else {
+    fail(
+      'Node floor',
+      `package.json engines.node is "${engineRange}". ${floorProblems.length} artifact problem(s) — ` +
+        `the floor must move in every file or none. First: ${floorProblems[0]}`,
+    );
+  }
+}
+
 const git = (...a) => {
   const r = spawnSync('git', ['-C', root, ...a], { encoding: 'utf8' });
   return { ok: r.status === 0, out: (r.stdout ?? '').trim() };

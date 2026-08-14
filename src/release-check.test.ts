@@ -41,6 +41,9 @@ interface FixtureOptions {
   serverVersion?: string;
   changelog?: string;
   readme?: string;
+  setup?: string;
+  /** `null` writes a package.json with no `engines` key at all. */
+  engines?: string | null;
   branch?: string;
   dirty?: boolean;
   tag?: string;
@@ -74,6 +77,28 @@ const README_OK = `# senti-mcp-server
 Pin it with \`["-y", "senti-mcp-server@1.1.0"]\`.
 `;
 
+/**
+ * The floor appears in `SETUP.md` twice on purpose — the prerequisites row and
+ * the `node --version` comment — because the real file states it in three
+ * separate spots and a check that only ever saw one of them would pass a
+ * half-landed edit. The `20.3.0` on the prerequisites row is the
+ * `AbortSignal.any` version, deliberately NOT the floor: it is the case that
+ * proves the matcher keys on the floor operator rather than on "a Node-looking
+ * version number".
+ */
+const SETUP_OK = `# SETUP.md — local development
+
+## 1. Prerequisites
+
+| Requirement | Why |
+|---|---|
+| **Node.js >= 22.11.0** | The first Node 22 LTS, supported until 2027-04-30. \`AbortSignal.any()\` landed in 20.3.0 and still sets the code's real minimum. |
+
+\`\`\`bash
+node --version    # must be >= 22.11.0
+\`\`\`
+`;
+
 async function git(cwd: string, ...args: string[]): Promise<void> {
   await run('git', args, { cwd });
 }
@@ -86,6 +111,8 @@ async function fixture(options: FixtureOptions = {}): Promise<string> {
     serverVersion = '1.1.0',
     changelog = CHANGELOG_OK,
     readme = README_OK,
+    setup = SETUP_OK,
+    engines = '>=22.11.0',
     branch = 'main',
     dirty = false,
     tag,
@@ -97,7 +124,10 @@ async function fixture(options: FixtureOptions = {}): Promise<string> {
   await mkdir(path.join(dir, 'src'), { recursive: true });
   await mkdir(path.join(dir, 'docs'), { recursive: true });
   await writeFile(path.join(dir, 'VERSION'), `${versionFile}\n`);
-  await writeFile(path.join(dir, 'package.json'), `${JSON.stringify({ name: 'senti-mcp-server', version: pkgVersion }, null, 2)}\n`);
+  await writeFile(
+    path.join(dir, 'package.json'),
+    `${JSON.stringify({ name: 'senti-mcp-server', version: pkgVersion, ...(engines === null ? {} : { engines: { node: engines } }) }, null, 2)}\n`,
+  );
   await writeFile(
     path.join(dir, 'package-lock.json'),
     `${JSON.stringify({ name: 'senti-mcp-server', version: lockVersion, lockfileVersion: 3, packages: { '': { name: 'senti-mcp-server', version: lockVersion } } }, null, 2)}\n`,
@@ -107,6 +137,7 @@ async function fixture(options: FixtureOptions = {}): Promise<string> {
     `export const SERVER_NAME = 'senti-mcp-server';\nexport const SERVER_VERSION = '${serverVersion}';\n`,
   );
   await writeFile(path.join(dir, 'docs', 'CHANGELOG.md'), changelog);
+  await writeFile(path.join(dir, 'docs', 'SETUP.md'), setup);
   await writeFile(path.join(dir, 'README.md'), readme);
 
   await git(dir, 'init', '-b', branch);
@@ -273,6 +304,125 @@ describe('release:check — README, the only prose in the tarball', () => {
     const result = await gate(root, '1.1.0');
 
     expect(result.code).toBe(0);
+  });
+});
+
+/**
+ * The Node floor is stated in three artifacts and, before US-5.2, compared by
+ * nothing — the [LESSONS 4] shape that let `package-lock.json` sit eight
+ * releases behind its version string.
+ *
+ * `package.json` `engines.node` is the canonical value and the other two are
+ * copies, because `engines.node` is the only one of the three that a tool other
+ * than a human ever reads.
+ */
+describe('release:check — the Node floor', () => {
+  test('passes when package.json, README and SETUP all state the same floor', async () => {
+    const root = await fixture();
+    const result = await gate(root, '1.1.0');
+
+    expect(result.code).toBe(0);
+    expect(result.output).toMatch(/Node floor.*22\.11\.0/);
+  });
+
+  test('fails naming README.md, the expected floor and the one found', async () => {
+    const readme = README_OK.replace('>= 22.11.0', '>= 20.6.0');
+    const root = await fixture({ readme });
+    const result = await gate(root, '1.1.0');
+
+    expect(result.code).not.toBe(0);
+    expect(result.output).toMatch(/README\.md/);
+    expect(result.output).toMatch(/22\.11\.0/);
+    expect(result.output).toMatch(/20\.6\.0/);
+  });
+
+  test('fails naming docs/SETUP.md when only the prerequisites row was updated', async () => {
+    // The half-landed edit this whole story exists to catch: one of SETUP.md's
+    // spots moved and the other did not.
+    const setup = SETUP_OK.replace('node --version    # must be >= 22.11.0', 'node --version    # must be >= 20.6.0');
+    const root = await fixture({ setup });
+    const result = await gate(root, '1.1.0');
+
+    expect(result.code).not.toBe(0);
+    expect(result.output).toMatch(/SETUP\.md/);
+    expect(result.output).toMatch(/20\.6\.0/);
+  });
+
+  /**
+   * AC-3. A pattern that matches nothing must not report success — the same
+   * failure mode as a `vitest -t` filter that selects no tests and exits 0
+   * ([LESSONS 2]).
+   */
+  test('fails when README states no floor at all rather than passing vacuously', async () => {
+    const readme = README_OK.replace(/- Node\.js >= 22\.11\.0[^]*?minimum\n/, '');
+    const root = await fixture({ readme });
+    const result = await gate(root, '1.1.0');
+
+    expect(result.code).not.toBe(0);
+    expect(result.output).toMatch(/README\.md/);
+  });
+
+  test('fails when SETUP states no floor at all', async () => {
+    const root = await fixture({ setup: '# SETUP.md\n\nNothing about runtimes here.\n' });
+    const result = await gate(root, '1.1.0');
+
+    expect(result.code).not.toBe(0);
+    expect(result.output).toMatch(/SETUP\.md/);
+  });
+
+  test('fails when package.json declares no engines.node to compare against', async () => {
+    const root = await fixture({ engines: null });
+    const result = await gate(root, '1.1.0');
+
+    expect(result.code).not.toBe(0);
+    expect(result.output).toMatch(/engines\.node/);
+  });
+
+  /**
+   * The discrimination guard, and the reason the matcher keys on the floor
+   * operator rather than on any Node-shaped version. `20.3.0` is the
+   * `AbortSignal.any` version — it is written "landed in 20.3.0", never
+   * ">= 20.3.0", and reading it as a floor claim would make every artifact
+   * permanently disagree with itself.
+   */
+  test('does not read the AbortSignal.any version as a floor claim', async () => {
+    const root = await fixture();
+    const result = await gate(root, '1.1.0');
+
+    expect(result.code).toBe(0);
+    expect(result.output).not.toMatch(/20\.3\.0/);
+  });
+
+  test('does not read a non-Node requirement as a Node floor', async () => {
+    // `publish` needs npm >= 11.5.1 (LESSONS 7). If that sentence ever reaches
+    // README or SETUP it is not a Node floor and must not fail the gate.
+    const readme = `${README_OK}\nOIDC trusted publishing requires npm >= 11.5.1.\n`;
+    const root = await fixture({ readme });
+    const result = await gate(root, '1.1.0');
+
+    expect(result.code).toBe(0);
+  });
+
+  test('accepts the unicode >= sign, which is what the real artifacts use', async () => {
+    const readme = README_OK.replace('>= 22.11.0', '≥ 22.11.0');
+    const setup = SETUP_OK.replace(/>= 22\.11\.0/g, '≥ 22.11.0');
+    const root = await fixture({ readme, setup });
+    const result = await gate(root, '1.1.0');
+
+    expect(result.code).toBe(0);
+  });
+
+  /**
+   * AC-4 / [LESSONS 5]: every other case here reaches its fixture through
+   * `--root`, which is the one flag the release workflow never passes.
+   */
+  test('enforces the floor through the invocation the workflow actually uses', async () => {
+    const readme = README_OK.replace('>= 22.11.0', '>= 20.6.0');
+    const root = await fixture({ readme });
+    const result = await gateInCwd(root, '1.1.0', '--ci');
+
+    expect(result.code).not.toBe(0);
+    expect(result.output).toMatch(/README\.md/);
   });
 });
 

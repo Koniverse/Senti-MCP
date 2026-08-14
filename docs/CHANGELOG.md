@@ -13,7 +13,41 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ## [Unreleased]
 
-Nothing pending.
+Nothing publishable — `VERSION` deliberately does not move. `files` in `package.json`
+allowlists `dist` and non-test `src`, so none of the below reaches the tarball
+(`npm pack --dry-run`: 54 entries, unchanged) — the gate lives in `scripts/`, which is
+not in `files`, and the new tests are excluded by `!src/**/*.test.ts`. The entries fold
+into whichever release ships next, which is exactly what `release:check`'s "Unreleased is
+clear" rule asks for at that point.
+
+### Added
+- **`release:check` now guards the Node floor.** It compares `package.json`
+  `engines.node` — the canonical value — against every floor claim in `README.md` and
+  `docs/SETUP.md`, and fails when they disagree **or when an artifact states no floor at
+  all**. The floor was stated in three places and compared by nothing, which is the
+  [LESSONS 4](LESSONS.md) shape that let `package-lock.json` sit eight releases behind its
+  version string ([US-5.2](sprints/stories/US-5.2-release-check-guards-the-node-floor.md)).
+
+  A floor claim is defined narrowly and the narrowness is the contract: a semver
+  immediately preceded by `>=` or `≥`, on a line mentioning Node. The operator is what
+  separates the floor from the other Node versions in the same prose — `AbortSignal.any`'s
+  `20.3.0` is written "landed in 20.3.0", never ">= 20.3.0", so it is excluded without
+  being special-cased. The practical consequence when the floor next moves: prose *about*
+  an old floor must not use the operator form — "the old 20.6.0 floor", not "the old
+  `>= 20.6.0` floor". Two README sentences were rephrased accordingly; no claim changed
+  meaning. CI pins in `.github/workflows/` are deliberately not checked, because they bind
+  nobody outside CI and `publish` differs from the floor on purpose
+  ([LESSONS 7](LESSONS.md)).
+
+  Ten tests, watched go red before the implementation existed, plus a mutation of the real
+  `docs/SETUP.md` — `grep`-confirmed on disk before the red result was believed
+  ([LESSONS 1](LESSONS.md)) — proving the gate names the exact file, line and both values.
+
+### Changed
+- [docs/RELEASE.md](RELEASE.md) §Step 2 and §Step 5 describe the floor as a second set of
+  files that must move together, and the `release:check` failure table gains three rows.
+  [docs/README.md](README.md)'s pre-commit checklist gains a floor item — a floor change is
+  not a version bump, so nothing else in that list would have caught one.
 
 ## [2.0.0] — 2026-08-13 — the supported Node floor moves off an end-of-life line
 

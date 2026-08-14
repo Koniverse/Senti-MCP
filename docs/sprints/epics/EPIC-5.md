@@ -92,7 +92,7 @@ at all and had no business on the floor.
 | US | Title | Pri | Points | Status | Sprint |
 |---|---|---|---|---|---|
 | [US-5.1](../stories/US-5.1-node-floor-and-ci-pins.md) | Re-decide the supported Node floor, now that Node 20 is EOL | P2 | 3 | ✅ done (2.0.0) | sprint-2026-W33 |
-| [US-5.2](../stories/US-5.2-release-check-guards-the-node-floor.md) | `release:check` guards the Node floor across every artifact that states it | P2 | 2 | 📋 backlog | sprint-2026-W33 |
+| [US-5.2](../stories/US-5.2-release-check-guards-the-node-floor.md) | `release:check` guards the Node floor across every artifact that states it | P2 | 2 | ✅ done | sprint-2026-W33 |
 | [US-5.3](../stories/US-5.3-devdependency-currency-and-dependabot.md) | devDependency currency, and the rule that `@types/node` tracks the floor | P3 | 3 | 📋 backlog | sprint-2026-W33 |
 | [US-5.4](../stories/US-5.4-decide-typescript-7.md) | Decide TypeScript 7, and say why either way | P3 | 2 | 📋 backlog | sprint-2026-W33 |
 
