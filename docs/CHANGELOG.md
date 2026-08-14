@@ -43,7 +43,36 @@ clear" rule asks for at that point.
   `docs/SETUP.md` — `grep`-confirmed on disk before the red result was believed
   ([LESSONS 1](LESSONS.md)) — proving the gate names the exact file, line and both values.
 
+- **`.github/dependabot.yml`** — weekly npm updates with minor and patch grouped into one
+  PR, so currency stops depending on someone remembering to run `npm outdated`
+  ([US-5.3](sprints/stories/US-5.3-devdependency-currency-and-dependabot.md)). Two `ignore`
+  entries, each carrying the reason it exists **and** the condition under which it should be
+  removed: `@types/node` majors (see below) and `typescript` majors (TypeScript 7 is a native
+  compiler rewrite and gets its own decision in
+  [US-5.4](sprints/stories/US-5.4-decide-typescript-7.md), rather than riding into `main`
+  inside a grouped refresh).
+
+  Its header states plainly what a green Dependabot PR does **not** prove: no workflow runs
+  on a pull request here — `release.yml` fires on a `v*` tag and nothing else — so those PRs
+  arrive with no typecheck, no test run and no tarball verification, and the file lists the
+  commands to run locally instead. Enabling the bot without saying so would ship a false
+  signal.
+
 ### Changed
+- **Development toolchain brought current**: `vitest` 3.2.7 → 4.1.10 and `tsx` 4.23.6 →
+  4.23.12 (in-range, lockfile only — `package.json`'s `^4.19.0` did not move). The suite is
+  **unchanged at 20 files / 439 tests, 1 skipped**, measured against a baseline taken
+  immediately before the bump: a count that dropped would have meant a silently-skipped
+  suite rather than a clean upgrade. `vitest.config.ts`'s `src/`-anchored `include`
+  ([CONTEXT D13](CONTEXT.md)) was re-proven under the major by planting a decoy test under
+  `.claude/worktrees/` and confirming it is still not collected — a major version is exactly
+  when a default changes underneath you.
+- **`@types/node` deliberately stays on the Node floor's major** and is now a written rule
+  rather than a pin that looks like neglect ([CONTEXT D28](CONTEXT.md)). Types newer than the
+  floor let `tsc` accept calls to APIs the supported runtime does not have: the build stays
+  green and the failure lands on the **user**, at run time — the same shape
+  [CONTEXT D5](CONTEXT.md) raised the floor to fix. `npm outdated` will keep reporting
+  `@types/node` as behind, and that output is now expected.
 - [docs/RELEASE.md](RELEASE.md) §Step 2 and §Step 5 describe the floor as a second set of
   files that must move together, and the `release:check` failure table gains three rows.
   [docs/README.md](README.md)'s pre-commit checklist gains a floor item — a floor change is

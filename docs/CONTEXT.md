@@ -1406,3 +1406,68 @@ number and the next silent drift.
 
 **Date**: 2026-08-13
 **Version**: 2.0.0
+
+---
+
+### D28. `@types/node` tracks the Node floor's major, not the newest release
+
+**Context**: [US-5.3](sprints/stories/US-5.3-devdependency-currency-and-dependabot.md)
+brought the development toolchain current. Every line in `npm outdated` wanted to move
+except one: `@types/node`, installed at 22.20.1 with 26.2.0 available — the largest gap in
+the table and the one that looks most like neglect.
+
+**Decision**: `@types/node`'s **major must equal the major of `package.json`
+`engines.node`**, and it is upgraded when — and only when — the floor moves. With the floor
+at `>=22.11.0` ([D27](#d27-raise-the-supported-node-floor-to-22110-because-node-20-is-end-of-life))
+the correct pin is `^22.10.0`, which is what it already was. This entry turns that
+coincidence into a rule, and `.github/dependabot.yml` ignores `@types/node` majors so the
+bot cannot quietly undo it.
+
+**Rationale**: types describe the runtime you are compiling *against*, and the whole point
+of a floor is a promise about the oldest runtime a user may have. Compiling against
+`@types/node@26` while `engines.node` promises Node 22 lets `tsc` accept a call to an API
+that does not exist on the runtime this package claims to support. The build stays green and
+the failure lands on the **user**, at run time.
+
+That is precisely the failure shape [D5](#d5-raise-the-supported-node-floor-to-2060)
+was written about: the server starts, `tools/list` succeeds, and only an actual tool call
+throws `TypeError: … is not a function`. D5 fixed one instance by raising the floor; this
+entry removes the mechanism that would reintroduce it from the other direction — not by
+lowering the runtime, but by raising what the compiler believes exists.
+
+**The corollary that makes it a rule rather than a pin**: when the floor next moves, the
+types major moves *with it, in the same commit*. A floor raised to Node 24 with
+`@types/node` left at 22 is the mirror defect — the compiler then rejects APIs the supported
+runtime does have, which is merely annoying rather than dangerous, but it is still the two
+numbers disagreeing.
+
+**Alternatives considered**:
+
+- **Track latest, like every other devDependency** — rejected above. It is the default
+  behaviour and it is wrong here, which is exactly why it needs writing down.
+- **Leave the pin bare and let the next person work it out** — rejected. An unexplained old
+  pin is indistinguishable from an unmaintained one, and the next person to read
+  `npm outdated` will helpfully "fix" it. The `ignore` block enforces it; this entry is the
+  reason the `ignore` block is allowed to exist.
+- **Pin exactly (`22.20.1`) rather than by caret** — rejected. The constraint is on the
+  *major*; patch and minor updates within it are pure improvement and are what the bot is
+  for.
+
+**A related trap, found while implementing and worth recording**: `vitest@4` depends on
+`vite` at `^6.0.0 || ^7.0.0 || ^8.0.0`, and **vite 7 and 8 declare
+`engines.node: ^20.19.0 || >=22.12.0` — which the 22.11.0 floor does not satisfy** (vite 6's
+`^18 || ^20 || >=22.0.0` does). npm resolved vite **6.4.3** here, so the upgrade landed
+clean and `npm ci` is deterministic from the lockfile; but the margin is one patch release
+wide, and nothing in the repository would notice it closing. Any future bump that moves the
+`vite` under `vitest` must have its `engines.node` re-checked against the floor —
+[LESSONS 7](LESSONS.md)'s cheap check, applied to a transitive dependency because that is
+where this one hides. Recorded in `dependabot.yml`'s header comment, where the bump will
+actually arrive.
+
+**Impact**: no version is cut — `@types/node` is a devDependency and the tarball is
+unchanged at 54 entries. The rule binds [EPIC-5](sprints/epics/EPIC-5.md)'s future floor
+moves and is the reason `npm outdated` will keep showing `@types/node` as behind. That
+output is now expected rather than a to-do.
+
+**Date**: 2026-08-14
+**Version**: unreleased (devDependencies only)

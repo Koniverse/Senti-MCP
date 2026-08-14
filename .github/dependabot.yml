@@ -1,0 +1,89 @@
+# Dependabot version updates for senti-mcp-server.
+# Added by US-5.3 (EPIC-5), so that dependency currency stops being something a
+# person has to remember to check.
+#
+# READ THIS BEFORE MERGING ONE OF ITS PULL REQUESTS
+# =================================================
+#
+# **A green Dependabot PR here proves almost nothing.** No workflow runs on a
+# pull request in this repository — `release.yml` is triggered by `push` on a
+# `v*` tag and by nothing else. So a PR opened by this bot gets no typecheck, no
+# test run, and no tarball verification; the only checks it can show are the
+# ones GitHub adds on its own. Two defects already reached `main` through that
+# gap (sprint-2026-W33 §Phase 2 retrospective §Followups).
+#
+# Until a push/PR workflow exists, treat every PR from this bot as unverified
+# and run the suite locally before merging:
+#
+#     git fetch origin && git checkout <dependabot-branch>
+#     npm ci && npm run typecheck && npm test && npm run release:verify-pack
+#
+# Adding that workflow is EPIC-4's open followup, not this file's job. The
+# trigger to go do it is the first Dependabot PR that merges broken.
+#
+# THE FLOOR IS A CONSTRAINT ON DEPENDENCIES, NOT ONLY ON USERS
+# ============================================================
+#
+# `package.json` `engines.node` is `>=22.11.0` (CONTEXT D27). Every version this
+# bot proposes has to be able to run on it — LESSONS 7's cheap check,
+# `npm view <pkg>@<ver> engines`, before merging rather than after.
+#
+# The live example, measured 2026-08-14: `vitest@4` depends on `vite` at
+# `^6.0.0 || ^7.0.0 || ^8.0.0`, and **vite 7 and 8 declare
+# `engines.node: ^20.19.0 || >=22.12.0` — which 22.11.0 does not satisfy**.
+# Only vite 6 (`^18 || ^20 || >=22.0.0`) does. npm resolves vite 6.4.3 today, so
+# the tree is fine and `npm ci` is deterministic from the lockfile — but the
+# margin is one patch release wide and it is a TRANSITIVE dependency, so it will
+# never appear in a PR title. When a PR touches `vitest`, check what `vite` came
+# with it:
+#
+#     npm ls vite --all
+#
+# See CONTEXT D28 for the full note.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      # RULE-14: this repo's commit prefixes. Without this Dependabot writes
+      # "Bump x from a to b", which is not one of them.
+      prefix: chore
+      include: scope
+
+    groups:
+      # One PR for the routine drift instead of one per package. Majors stay
+      # ungrouped and arrive alone, because a major is a decision and deserves
+      # to be reviewed as one.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+    ignore:
+      # `@types/node`'s major tracks the Node FLOOR's major, never the newest
+      # release (CONTEXT D28). Types newer than the floor let `tsc` accept calls
+      # to APIs the supported runtime does not have: the build stays green and
+      # the failure lands on the user at run time, which is the same shape
+      # CONTEXT D5 raised the floor to fix.
+      #
+      # This is NOT neglect, and `npm outdated` showing @types/node behind is
+      # expected. Remove this entry only in the commit that raises
+      # `engines.node` to the next major — the two move together.
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
+
+      # TypeScript 7 is a native compiler rewrite, not a routine bump.
+      # US-5.4 owns that decision explicitly so it cannot ride into `main`
+      # inside a grouped devDependency refresh. Minor and patch updates within
+      # TypeScript 5 are not ignored and still arrive normally.
+      #
+      # Remove this entry in the commit that acts on US-5.4's decision, if that
+      # decision is to upgrade.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major

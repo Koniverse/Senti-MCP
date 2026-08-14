@@ -54,7 +54,7 @@ the floor, put a gate behind it, and bring the toolchain current.
 |---|---|---|---|---|---|---|
 | US-5.1 | Re-decide the supported Node floor, now that Node 20 is EOL | EPIC-5 | P2 | 3 | ✅ done (2.0.0) | [link](stories/US-5.1-node-floor-and-ci-pins.md) |
 | US-5.2 | `release:check` guards the Node floor across every artifact that states it | EPIC-5 | P2 | 2 | ✅ done | [link](stories/US-5.2-release-check-guards-the-node-floor.md) |
-| US-5.3 | devDependency currency, and the rule that `@types/node` tracks the floor | EPIC-5 | P3 | 3 | 📋 backlog | [link](stories/US-5.3-devdependency-currency-and-dependabot.md) |
+| US-5.3 | devDependency currency, and the rule that `@types/node` tracks the floor | EPIC-5 | P3 | 3 | ✅ done | [link](stories/US-5.3-devdependency-currency-and-dependabot.md) |
 | US-5.4 | Decide TypeScript 7, and say why either way | EPIC-5 | P3 | 2 | 📋 backlog | [link](stories/US-5.4-decide-typescript-7.md) |
 
 **Phase 4: 4 stories / 10 points.** **Sprint total: 19 stories / 52 points.**
