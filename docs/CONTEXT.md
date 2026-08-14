@@ -1471,3 +1471,87 @@ output is now expected rather than a to-do.
 
 **Date**: 2026-08-14
 **Version**: unreleased (devDependencies only)
+
+---
+
+### D29. Adopt TypeScript 7, because the emit is byte-identical and the build is ~3.6× faster
+
+**Context**: `typescript` sat at 5.9.3 with 7.0.2 available.
+[US-5.3](sprints/stories/US-5.3-devdependency-currency-and-dependabot.md) deliberately
+pushed it out of the routine devDependency refresh and had `dependabot.yml` ignore its
+majors, because TypeScript 7 is the **native port of the compiler** — a rewrite — and a
+compiler rewrite arriving inside a grouped bump is how a toolchain changes without anyone
+deciding it. [US-5.4](sprints/stories/US-5.4-decide-typescript-7.md) is that decision.
+
+What makes this repo's exposure wider than a typechecker bump: **`tsc` is the build.**
+`npm run build` is `rm -rf dist && tsc && chmod +x dist/index.js`, `bin` points into
+`dist/`, and `files` publishes it. A typechecker disagreement is a red run someone fixes;
+an *emit* difference is shipped JavaScript nobody read.
+
+**Decision**: upgrade to `typescript@^7.0.0` (7.0.2 in the lockfile). The `typescript`
+majors `ignore` in `.github/dependabot.yml` is removed, as its own comment instructed.
+
+**Rationale** — measured on Node 22.11.0, not assumed:
+
+| Evidence | Result |
+|---|---|
+| `tsc --noEmit` (`tsconfig.json`) | exit 0 |
+| `tsc --noEmit -p tsconfig.test.json` | exit 0 |
+| **`dist/**/*.js`, 17 files** | **byte-identical** to the 5.9.3 build (`shasum` every file) |
+| `dist/**/*.js.map`, 17 files | 3 differ — enumerated below |
+| `npm test` | `20 files / 439 tests, 1 skipped` — unchanged |
+| typecheck wall time | ~1428 ms → **~503 ms** (2.8×) |
+| full `npm run build` | ~1412 ms → **~393 ms** (3.6×) |
+
+The bar US-5.4 set was that *the argument for moving has to be made* — a compiler that emits
+the same JavaScript and typechecks the same code buys nothing on its own, the same way
+[EPIC-5](sprints/epics/EPIC-5.md) refuses a floor raised for tidiness. **The ~3× is that
+argument**: it is a stated, measured reason rather than "newer is better", and it lands on
+the inner loop every contributor pays and on every CI job that builds.
+
+**The three sourcemap differences, enumerated rather than waved past** (AC-2 treats an
+unexplained emit difference as blocking). The files are `core/client.js.map`,
+`core/errors.js.map` and `server.js.map`, and they are **exactly** the three source files
+that use a parameter default or a parameter property —
+`createClient(config, deps: ClientDeps = {})`, `createServer(config, deps: ServerDeps = {})`,
+and `ApiError`'s `constructor(message, public status, public code)`. Every other file's map
+is identical. The generated JavaScript at those sites is character-for-character the same
+(`export function createServer(config, deps = {}) {`, `constructor(message, status, code)`
+with `this.status = status`); what changed is only which **source positions** the segments
+attribute the generated fields and defaults to. No runtime behaviour and no public API is
+affected. `.js.map` is inside `files`, so the published tarball does change — in debug
+metadata only, and it stays at 54 entries.
+
+**The typecheck was proven to discriminate, not merely to exit 0.** Two mutations were
+planted under 7.0.2, each `grep`-confirmed on disk before its result was believed
+([LESSONS 1](LESSONS.md)): a type error in `src/core/errors.ts` was caught by
+`tsconfig.json` (`TS2322`), and a type error in `src/core/parse.test.ts` was **not** seen by
+`tsconfig.json` — tests are excluded from the build config, as intended — and **was** caught
+by `tsconfig.test.json` (`TS2322`). So both surfaces still mean what they meant, and the two
+green runs above are evidence rather than silence.
+
+**Alternatives considered**:
+
+- **Defer, keep 5.9.3** — the story's AC-5 path and a legitimate close. Rejected because the
+  evidence came back uniformly clean *and* carried a concrete benefit; deferring would have
+  been declining a measured 3× for novelty risk alone, on a 2-dependency type surface with
+  no framework and no ambient module augmentation.
+- **Upgrade but pin exactly (`7.0.2`, no caret)** — rejected. Every other devDependency uses
+  a caret range, and an exact pin here would buy protection against 7.x patches, which are
+  the releases most likely to *fix* a young compiler.
+- **`^7.0.2` rather than `^7.0.0`** — cosmetic; normalised to the round form the rest of the
+  block uses. The caret is identical in effect and the lockfile pins 7.0.2 either way.
+
+**The residual risk, stated rather than glossed**: 7.0.2 is a days-old major of a rewritten
+compiler, and [US-5.3](sprints/stories/US-5.3-devdependency-currency-and-dependabot.md)
+established that **nothing runs on a pull request here**, so a future emit regression would
+not be caught before a tag. Two things bound it: `release:verify-pack` installs the built
+tarball and spawns the binary on every release, and the check that produced this entry —
+build under both compilers, `shasum` every `.js` — is cheap enough to repeat on the next
+compiler major. That method is the durable part of this decision.
+
+**Impact**: no version is cut. `typescript` is a devDependency, and while `dist/` is
+rebuilt, all executable output is unchanged. This closes **EPIC-5**'s fourth and last story.
+
+**Date**: 2026-08-14
+**Version**: unreleased (devDependencies only)

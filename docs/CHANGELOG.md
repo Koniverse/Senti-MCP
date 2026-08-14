@@ -73,6 +73,27 @@ clear" rule asks for at that point.
   green and the failure lands on the **user**, at run time — the same shape
   [CONTEXT D5](CONTEXT.md) raised the floor to fix. `npm outdated` will keep reporting
   `@types/node` as behind, and that output is now expected.
+- **`typescript` 5.9.3 → 7.0.2** — the native compiler port
+  ([CONTEXT D29](CONTEXT.md),
+  [US-5.4](sprints/stories/US-5.4-decide-typescript-7.md)). `tsc` is this repo's **build**,
+  not only its typechecker — `bin` points into `dist/` and `files` publishes it — so the
+  emit was compared before the decision rather than after: **all 17 `dist/**/*.js` files are
+  byte-identical** to the 5.9.3 build, verified by checksumming every file in both trees.
+
+  Three `.js.map` files differ — `core/client`, `core/errors` and `server`, which are
+  exactly the three sources using a parameter default or a parameter property — and only in
+  which source positions the generated defaults and field assignments are attributed to. The
+  JavaScript at those sites is character-for-character the same. `.js.map` ships, so the
+  tarball does change in debug metadata; it stays at 54 entries and nothing that runs is
+  affected.
+
+  Typecheck is clean on **both** tsconfigs, and each was mutation-tested to confirm it still
+  catches errors — a new compiler exiting 0 proves it ran, not that it checked. The reason
+  to move is measured rather than assumed: typecheck `~1428 ms → ~503 ms`, full build
+  `~1412 ms → ~393 ms` (**~3.6×**). Without a number like that the decision would have been
+  to stay, since a compiler emitting the same JavaScript buys nothing on its own.
+- `.github/dependabot.yml` drops the `typescript` majors `ignore` added one story earlier,
+  which is what its own comment instructed the deciding commit to do.
 - [docs/RELEASE.md](RELEASE.md) §Step 2 and §Step 5 describe the floor as a second set of
   files that must move together, and the `release:check` failure table gains three rows.
   [docs/README.md](README.md)'s pre-commit checklist gains a floor item — a floor change is

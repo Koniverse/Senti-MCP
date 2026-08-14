@@ -1,9 +1,9 @@
 ---
 id: EPIC-5
 title: "Supported runtime and dependency currency"
-status: backlog
+status: done
 created: 2026-08-10
-updated: 2026-08-13
+updated: 2026-08-14
 ---
 
 ## Goal
@@ -94,7 +94,7 @@ at all and had no business on the floor.
 | [US-5.1](../stories/US-5.1-node-floor-and-ci-pins.md) | Re-decide the supported Node floor, now that Node 20 is EOL | P2 | 3 | ✅ done (2.0.0) | sprint-2026-W33 |
 | [US-5.2](../stories/US-5.2-release-check-guards-the-node-floor.md) | `release:check` guards the Node floor across every artifact that states it | P2 | 2 | ✅ done | sprint-2026-W33 |
 | [US-5.3](../stories/US-5.3-devdependency-currency-and-dependabot.md) | devDependency currency, and the rule that `@types/node` tracks the floor | P3 | 3 | ✅ done | sprint-2026-W33 |
-| [US-5.4](../stories/US-5.4-decide-typescript-7.md) | Decide TypeScript 7, and say why either way | P3 | 2 | 📋 backlog | sprint-2026-W33 |
+| [US-5.4](../stories/US-5.4-decide-typescript-7.md) | Decide TypeScript 7, and say why either way | P3 | 2 | ✅ done | sprint-2026-W33 |
 
 **10 points.** Scheduled into [sprint-2026-W33](../sprint-2026-W33.md) §Phase 4 on
 2026-08-13 by the maintainer ([CONTEXT D21](../../CONTEXT.md)) — EPIC-2 closed on 2026-08-12
@@ -111,6 +111,36 @@ US-5.4 both touch `package.json` `devDependencies`; whichever lands second rebas
 touch `scripts/`, `devDependencies` and `.github/`, none of which is in `files`, so nothing
 they change reaches a consumer. Phase 2 set that precedent: five EPIC-4 stories closed and
 `VERSION` deliberately did not move.
+
+## Closed 2026-08-14 — 10/10 points
+
+That plan held exactly: `2.0.0` was the only release, and US-5.2 through US-5.4 moved no
+version. **§Goal and §Business context above are left as written on 2026-08-10** and should
+be read as the state that opened the epic, not the state now — "Today the floor is Node
+20.6.0" was true then and is what the epic existed to change.
+
+What is true now:
+
+| Then | Now | Where it is recorded |
+|---|---|---|
+| Floor `>=20.6.0`, an EOL line | **`>=22.11.0`**, first Node 22 LTS, supported to 2027-04-30 | [D27](../../CONTEXT.md), shipped as `2.0.0` |
+| Floor stated in 3 places, compared by nothing | `release:check` fails when they disagree **or when one states no floor** | [US-5.2](../stories/US-5.2-release-check-guards-the-node-floor.md) |
+| `publish` carried a pinned global npm install | Step deleted; Node 24.19.0's bundled npm 11.17.0 satisfies OIDC | [D27](../../CONTEXT.md) |
+| Currency checked by whoever remembered | Dependabot, weekly and grouped, with reasoned `ignore`s | [US-5.3](../stories/US-5.3-devdependency-currency-and-dependabot.md) |
+| `@types/node` behind, looking like neglect | A written rule: it tracks the **floor's** major | [D28](../../CONTEXT.md) |
+| `typescript` 5.9.3, TS 7 undecided | **7.0.2**, adopted on measured evidence — emit byte-identical, build ~3.6× faster | [D29](../../CONTEXT.md) |
+
+**The invariant that did the most work** was *every version pinned names the constraint it
+satisfies*, and it kept paying after the story that motivated it. US-5.1 used it to catch
+that a Node 22 floor cannot delete `publish`'s npm install (the whole 22 line bundles npm
+10.x). US-5.3 used it to find that `vite` 7 and 8 require Node `>=22.12.0` — **one patch
+release above this epic's own floor** — a transitive dependency that will never appear in a
+PR title. Neither was visible without running `npm view <pkg>@<ver> engines`.
+
+**What this epic did not close**: nothing runs on a pull request, so Dependabot's PRs and any
+future compiler regression arrive unverified. That is EPIC-4's followup, named in
+[US-5.3](../stories/US-5.3-devdependency-currency-and-dependabot.md) §AC-6 and in
+`dependabot.yml`'s header rather than left for someone to discover.
 
 ## Cross-references
 

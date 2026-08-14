@@ -77,13 +77,13 @@ updates:
         update-types:
           - version-update:semver-major
 
-      # TypeScript 7 is a native compiler rewrite, not a routine bump.
-      # US-5.4 owns that decision explicitly so it cannot ride into `main`
-      # inside a grouped devDependency refresh. Minor and patch updates within
-      # TypeScript 5 are not ignored and still arrive normally.
+      # NOTE: `typescript` majors were ignored here between US-5.3 and US-5.4,
+      # so that TypeScript 7 — the native compiler rewrite — could not ride into
+      # `main` inside a grouped devDependency refresh. US-5.4 made that decision
+      # (upgrade; CONTEXT D29) and the entry was removed with it, which is
+      # exactly what its comment said to do. TypeScript now tracks normally.
       #
-      # Remove this entry in the commit that acts on US-5.4's decision, if that
-      # decision is to upgrade.
-      - dependency-name: typescript
-        update-types:
-          - version-update:semver-major
+      # The reason it needed a decision at all still applies to the NEXT compiler
+      # major: `tsc` is this repo's build, not only its typechecker, so a major
+      # can change `dist/` — the published artifact. D29 records the method for
+      # checking that (build both, `shasum` every `.js`), and it is cheap.
