@@ -114,10 +114,22 @@ they change reaches a consumer. Phase 2 set that precedent: five EPIC-4 stories 
 
 ## Closed 2026-08-14 — 10/10 points
 
-That plan held exactly: `2.0.0` was the only release, and US-5.2 through US-5.4 moved no
-version. **§Goal and §Business context above are left as written on 2026-08-10** and should
-be read as the state that opened the epic, not the state now — "Today the floor is Node
-20.6.0" was true then and is what the epic existed to change.
+**That plan held for the stories and then changed at the end: the epic produced *two*
+releases, not one.** US-5.2, US-5.3 and US-5.4 each closed cutting no version, exactly as
+planned — but rather than leave their entries sitting in `## [Unreleased]` until some future
+feature shipped, the maintainer chose on 2026-08-14 to cut **`2.0.1`** for them.
+
+That is a change to the §Stories plan above, so it is recorded rather than quietly absorbed.
+It costs a patch number and buys a clean `[Unreleased]`; it is honest semver because
+[docs/RELEASE.md](../../RELEASE.md) §Step 1 measures against the *tool surface*, which none
+of the three touched. The evidence that `2.0.1` is genuinely a no-op for consumers was taken
+before the decision, by comparing the published `2.0.0` tarball against the new build: **all
+17 `dist/**/*.js` byte-identical**, with only three `.js.map`, two README sentences and
+`package.json`'s `devDependencies` differing.
+
+**§Goal and §Business context above are left as written on 2026-08-10** and should be read
+as the state that opened the epic, not the state now — "Today the floor is Node 20.6.0" was
+true then and is what the epic existed to change.
 
 What is true now:
 

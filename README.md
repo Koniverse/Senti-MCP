@@ -86,8 +86,10 @@ No install step — `npx` fetches the published package on first run:
 
 Restart the client; all ten tools should appear — every `GET` operation the
 Senti Quant Public API exposes now has one. `npx -y senti-mcp-server` resolves to
-whatever npm's `latest` tag points at — `2.0.0` as of this release, which carries
+whatever npm's `latest` tag points at — `2.0.1` as of this release, which carries
 the same ten tools as `1.4.0` and differs from it only in requiring Node ≥ 22.11.0.
+`2.0.0` is identical to `2.0.1` in everything that runs; the patch carries only
+build-toolchain and documentation changes.
 `1.4.0` is the last version declaring the old 20.6.0 floor and is the one to
 pin if you are stuck on Node 20; it carries all ten tools. `1.3.0` carries nine,
 without `get_equity_timeseries`; `1.2.0` carries eight, without
@@ -98,7 +100,7 @@ others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
 expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@2.0.0"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@2.0.1"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server

@@ -17,7 +17,7 @@ Trading. An MCP host cannot call it directly: something has to own the API key, 
 typed tools whose descriptions let a model choose correctly, and turn API errors into
 text a model can act on. This server is that something.
 
-**Current state: `2.0.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
+**Current state: `2.0.1`.** `1.0.0` is the stable-surface cut and is tagged git-only;
 `1.0.1` is the version that carried it to the registry
 ([CONTEXT D11, D12](docs/CONTEXT.md)). **Ten** tools are registered in `src/server.ts`:
 `list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
@@ -44,12 +44,15 @@ downsample pins the first point, the last point and the deepest drawdown, ranked
 magnitude because the API never declares the sign: [CONTEXT D26](docs/CONTEXT.md)).
 **EPIC-2 closed `done` on 2026-08-12** with the read path complete.
 
-`2.0.0` itself ships no tool. It is a **support-policy** release: the Node floor moved
-from `>=20.6.0` to `>=22.11.0` because Node 20 reached end of life on 2026-04-30
-([CONTEXT D27](docs/CONTEXT.md),
+**Neither `2.0.0` nor `2.0.1` ships a tool.** `2.0.0` is a **support-policy** release: the
+Node floor moved from `>=20.6.0` to `>=22.11.0` because Node 20 reached end of life on
+2026-04-30 ([CONTEXT D27](docs/CONTEXT.md),
 [US-5.1](docs/sprints/stories/US-5.1-node-floor-and-ci-pins.md)). Narrowing a declared
 support contract is a major bump by convention even though nothing a consumer runs
-actually breaks. Read the
+actually breaks. `2.0.1` then carried [EPIC-5](docs/sprints/epics/EPIC-5.md)'s remaining
+three stories — the `release:check` floor gate, Dependabot with the `@types/node` rule
+([D28](docs/CONTEXT.md)), and TypeScript 7 ([D29](docs/CONTEXT.md)) — none of which cut a
+version of its own; all 17 `dist/**/*.js` files in it are byte-identical to `2.0.0`. Read the
 [v1 design spec](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) and the
 [read-tool expansion spec](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)
 before touching anything under `src/`.

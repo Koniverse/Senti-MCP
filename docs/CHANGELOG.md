@@ -13,12 +13,25 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ## [Unreleased]
 
-Nothing publishable — `VERSION` deliberately does not move. `files` in `package.json`
-allowlists `dist` and non-test `src`, so none of the below reaches the tarball
-(`npm pack --dry-run`: 54 entries, unchanged) — the gate lives in `scripts/`, which is
-not in `files`, and the new tests are excluded by `!src/**/*.test.ts`. The entries fold
-into whichever release ships next, which is exactly what `release:check`'s "Unreleased is
-clear" rule asks for at that point.
+Nothing pending.
+
+## [2.0.1] — 2026-08-14 — the floor gets a gate, and the toolchain catches up
+
+**Nothing that runs has changed.** All **17 `dist/**/*.js` files are byte-identical** to
+what `2.0.0` published — verified by checksumming every file in both tarballs, not by
+reading the diff. No tool was added, removed or altered; no payload, argument or
+`structuredContent` shape moved. A consumer on `2.0.0` gains no behaviour by upgrading.
+
+What this release actually carries is the work of
+[EPIC-5](sprints/epics/EPIC-5.md)'s last three stories, none of which cut a version of its
+own: a gate that stops the Node floor drifting, a dependency bot, and a compiler decision.
+Against the published `2.0.0` tarball exactly four things differ — three `.js.map` files
+(source-position attribution, from the new compiler), two reworded sentences in
+`README.md`, and the `devDependencies` block of `package.json`, which npm does not install
+for consumers.
+
+It is a **patch** because [docs/RELEASE.md](RELEASE.md) §Step 1 measures semver against the
+*tool surface* rather than the diff size, and the tool surface is untouched.
 
 ### Added
 - **`release:check` now guards the Node floor.** It compares `package.json`
