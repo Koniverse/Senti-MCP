@@ -1,6 +1,6 @@
 ---
 id: sprint-2026-W33
-status: active
+status: closed
 start: 2026-08-10
 end: 2026-08-16
 goal: "Ship the read-tool substrate and five read tools (delivered), settle and build this repo's package release process (delivered), close EPIC-2's read path with its last four tools (delivered), then move the supported Node floor off an EOL line"
@@ -462,6 +462,110 @@ smoke walk covers all ten read tools.
 - **EPIC-3's write path does not inherit this phase's no-plan precedent.** Four for four is
   real, but every one of those four was a read whose worst failure is a wrong answer. A
   wrong `POST` is a trade. The precedent is recorded to be argued with, not applied.
+
+## Phase 4 retrospective — supported runtime and dependency currency
+
+All four stories closed between 2026-08-13 and 2026-08-14, 10 points, and
+[EPIC-5](epics/EPIC-5.md) is `done`. **The floor moved off an EOL line: `>=20.6.0` →
+`>=22.11.0`**, the first Node 22 LTS, supported to 2027-04-30 ([CONTEXT D27](../CONTEXT.md),
+shipped as `2.0.0`). The other three stories cut no version of their own and were then
+released together as **`2.0.1`** — a patch whose 17 `dist/**/*.js` files are byte-identical
+to `2.0.0`'s. Suite went 428 passed to **438 passed, 1 skipped (439)**.
+
+### What went well
+
+- **EPIC-5's own invariant — *every version pinned names the constraint it satisfies* —
+  paid twice beyond the incident that motivated it.** US-5.1 used it to catch that the whole
+  Node 22 line bundles npm **10.x**, so a Node 22 floor cannot let all four CI jobs share one
+  pin; `publish` stayed on 24.19.0 and its global `npm install` step was deleted instead of
+  maintained. US-5.3 used it to find that `vite` 7 and 8 declare `engines.node`
+  `>=22.12.0` — **one patch release above this epic's own floor** — inside a transitive
+  dependency of `vitest` that no PR title would ever mention. Both cost seconds
+  (`npm view <pkg>@<ver> engines`) and neither was visible any other way.
+- **The breaking-change claim was measured rather than assumed.** `2.0.0` narrows a support
+  contract, so the obvious move is to call it breaking and stop. Instead the cost was priced:
+  `2.0.0` was packed, installed into a clean directory on Node **20.19.4**, and produced
+  `npm warn EBADENGINE`, **exit 0**, four packages added — and the installed binary then
+  spawned and answered `tools/list` with all ten tools. `engine-strict` defaults to `false`,
+  so nothing a consumer runs breaks below the floor. The major was still cut, but from the
+  *contract* ([D27](../CONTEXT.md)) rather than from a breakage nobody had checked for.
+- **US-5.2 was sequenced so its first real exercise is the *next* floor move.** Written
+  before US-5.1 the check would have been authored against a number about to change, and
+  tested by the one edit whose author was already thinking about it. Written second, it was
+  proven on the real repository instead: `docs/SETUP.md:20` mutated to the old floor,
+  `grep`-confirmed on disk, gate red, reverted, `grep`-confirmed again, gate green,
+  `git diff --stat` empty ([LESSONS 1](../LESSONS.md)). The story also records that **3 of
+  its first 10 test runs passed vacuously** — asserting exit 0 against a script with no floor
+  check in it — which is what a check that does nothing looks like, written down rather than
+  glossed.
+- **TypeScript 7 was decided on evidence, and the evidence included the part nobody looks
+  at.** `tsc` *is* the build here, so an emit difference is shipped JavaScript nobody read.
+  Every `dist/**/*.js` was checksummed under both compilers — 17 files byte-identical — and
+  the three `.js.map` files that did differ were traced to the exact three source constructs
+  behind them (two parameter defaults and one set of parameter properties) rather than waved
+  past. The argument for moving was then a measured ~3.6× build and ~2.8× typecheck, not
+  novelty ([D29](../CONTEXT.md)).
+
+### What didn't
+
+- **[LESSONS 2](../LESSONS.md)'s trap was hit again — inside the story whose whole job is to
+  stop a number drifting unnoticed.** The first `-t` filter drafted for US-5.2's verification
+  table, `"Node floor > fails naming"`, selected **zero** tests and **exited 0**. It was
+  caught only because Phase 3's own followup demanded a *count* per row. The followup worked;
+  the reflex it was meant to install did not, one day later.
+- **The floor gate's strictness was paid for in prose, by two sentences written the day
+  before.** US-5.1's README lines "Raised from `≥ 20.6.0` in v2.0.0" and "the last version
+  declaring the old `≥ 20.6.0` floor" made the new gate fail on the real repository the
+  moment it existed, and were rephrased off the operator form. The alternative — teach the
+  matcher tense and intent — was rejected for good reasons, but the result is a constraint on
+  how history may be written that no reader discovers until the gate fails on them.
+- **This phase added Dependabot while the gap that verifies its output stayed open.**
+  Nothing in this repository runs on a pull request. Weekly grouped dependency PRs now
+  arrive into that, and `typescript@7.0.2` is a days-old major of a rewritten compiler. The
+  phase increased the inbound volume and did not narrow the verification gap; both facts are
+  recorded ([US-5.3](stories/US-5.3-devdependency-currency-and-dependabot.md) §AC-6,
+  `dependabot.yml`'s header, [EPIC-5](epics/EPIC-5.md) §What this epic did not close), which
+  is not the same as fixed.
+- **The epic's plan said one release and produced two.** [EPIC-5](epics/EPIC-5.md) §Stories
+  stated flatly that "exactly one release comes out of this epic — `2.0.0`", and three
+  stories later `2.0.1` was cut to clear `[Unreleased]`. The change is recorded under
+  §Closed 2026-08-14 rather than absorbed, but the plan was wrong exactly where it was most
+  confident.
+
+### Followups
+
+- **A workflow on `pull_request` is now the highest-value unbuilt thing in this repo.** It is
+  named in three places — EPIC-4's Phase 2 followups, US-5.3 §AC-6, and `dependabot.yml`'s
+  header comment — and owned by no story. Two facts arriving this phase make it concrete
+  rather than tidy: a bot that opens PRs weekly, and a rewritten compiler whose emit
+  regression would otherwise be caught no earlier than a tag.
+- **The next floor move is the first exercise of three rules that are written but untested
+  together.** `release:check` must pass across `package.json`, `README.md` and `SETUP.md`;
+  `@types/node`'s major moves in the *same commit* ([D28](../CONTEXT.md)); and any `vite`
+  pulled in under `vitest` has its `engines.node` re-checked against the new floor. Whoever
+  moves it next should expect to find which of the three is under-specified.
+- **Re-run the compiler comparison, not the verdict, at the next TypeScript major.** Build
+  under both, `shasum` every `.js`, enumerate any map that differs. [D29](../CONTEXT.md)'s
+  durable half is the method; `7.0.2` is just what it returned this time.
+- **An offline terminal and a symbol-rich account still block three recorded EPIC-2 gaps.**
+  Carried unchanged from Phase 3 — no story can be pointed at it, and it is now the fourth
+  sprint carrying the item.
+
+## Sprint close — 2026-08-17
+
+Window elapsed 2026-08-16; closed by the maintainer on 2026-08-17
+([CONTEXT D21](../CONTEXT.md) rule 2).
+
+**19 stories / 52 points, all `done`; four phases, three epics closed
+([EPIC-2](epics/EPIC-2.md), [EPIC-4](epics/EPIC-4.md), [EPIC-5](epics/EPIC-5.md)); fourteen
+releases, `0.2.0` → `2.0.1`.** Scope grew three times inside the window under
+[CONTEXT D21](../CONTEXT.md) rule 1 — Phase 2 on 08-10, Phase 3 on 08-10, Phase 4 on 08-13 —
+and every phase's table, total and retrospective is left as written rather than reconciled
+into agreement.
+
+**Nothing carries to [sprint-2026-W34](sprint-2026-W34.md).** No story in the corpus sits at
+`backlog`, `ready`, `in-progress`, `review` or `blocked`. The four §Followups above are the
+open work, and none of them has a story yet.
 
 ## Cross-references
 
