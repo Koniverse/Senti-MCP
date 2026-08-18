@@ -1555,3 +1555,159 @@ rebuilt, all executable output is unchanged. This closes **EPIC-5**'s fourth and
 
 **Date**: 2026-08-14
 **Version**: unreleased (devDependencies only)
+
+---
+
+## Phase 12 — Sprint file shape (2026-08-17)
+
+### D30. A sprint file carries one scope table; mid-sprint scope is a row, not a section
+
+**Context**:
+[D21](#d21-a-sprints-scope-stays-open-only-the-maintainer-opens-or-closes-one) settled that
+a sprint's scope stays open all week, and its §What is protected clause specified *how* new
+scope lands: the original table "survives verbatim under a `### Phase 1` heading with its
+own total", and each later tranche "gets its own scope table, its own total, and its own
+retrospective section". [D22](#d22-pull-epic-2s-four-remaining-read-tools-out-of-w34-and-into-the-running-sprint)
+applied it a second time, and a fourth tranche followed on 08-13.
+[sprint-2026-W33](sprints/sprint-2026-W33.md) ended the window at 584 lines with **four**
+scope tables, four totals, and a fifth number (`19 stories / 52 points`) reachable only by
+adding the other four. Asking that file the one question a scope table exists to answer —
+*what was in this sprint* — required reading four tables and summing them.
+
+**Decision**: **one scope table per sprint file.** Work that joins mid-window is appended as
+a row, annotated in the Title cell with `_(added YYYY-MM-DD)_`, and the sprint `goal:` is
+extended by a clause. No new `###` scope section, no second table, no per-tranche total. The
+file's single `**Total:**` line is the sprint's scope, and it may show its addends
+(`15 + 16 + 11 + 10`) rather than hiding the history that produced them.
+
+This **supersedes D21's §What is protected clause on scope tables only**. Everything else in
+D21 stands unchanged: scope stays open (rule 1), only the maintainer opens or closes a
+sprint (rule 2), and a closed tranche's *retrospective* is still never rewritten to
+accommodate a later one.
+
+Applied immediately to `sprint-2026-W33` (four tables → one, 19 rows) and to
+`sprint-2026-W32`, whose retrospective was reshaped to the template's
+What went well / What didn't / Followups headings so both files read the same way. Every
+retrospective's prose is preserved.
+
+**Rationale**: because the phase sections were solving a problem the row annotation already
+solves. D21 introduced them to keep a written record from being silently rewritten, and that
+concern is real — but it attaches to the *retrospective*, which is an interpretation written
+at a point in time, not to the *scope table*, which is a live list of what is in the sprint.
+A table gains a row; nothing prior is falsified by it. Meanwhile the per-tranche split cost
+the file its answer to the simplest question asked of it, and the cost compounds: four
+tranches produced four tables, and nothing about the rule stops a fifth.
+
+The koni-docs sprint template already specifies exactly this shape — a canonical scope table
+plus [§Inline title annotations](../.agents/skills/koni-docs/references/templates/sprint.md)
+(`_(added 2026-05-25)_`, `_(closed mid-sprint v0.1.12)_`), documented there as the
+*senti_quant pattern*. So the phase-table convention was a local divergence from the
+framework, adopted for a reason that turned out to be narrower than the rule written for it.
+
+**What is protected, and how**: no retrospective is touched in content. W33's four
+retrospective sections keep their `Phase N` headings, their scope notes, and their text
+byte-for-byte; §Phase 3 — plan, dependencies, and risks is likewise left as written. What
+replaces the four table headings is a four-way mapping under the scope table, naming which
+rows each retrospective measures — the information the headings carried, moved rather than
+dropped. W32's retrospective sentences are preserved verbatim and only regrouped under the
+three template headings; the paragraph labels they lose (`What was harder than expected.`,
+`Carried forward.`, `Next sprint.`) map to `What didn't` and `Followups`.
+
+**Alternatives considered**:
+- **Keep four tables, add a summary table on top** — rejected: five tables to answer a
+  question that wants one, and the summary is a fifth place the point total can drift.
+- **Add a `Phase` column to the merged table** — rejected: it preserves a grouping whose
+  only remaining consumer is the retrospective mapping, which one note under the table
+  states more directly. It would also invite the next tranche to be a phase again.
+- **Flatten the retrospectives too** — offered to the maintainer and declined. Four retros
+  written days apart measure different work with different evidence; merging them produces
+  one voice that never existed and loses which run each finding came from.
+- **Leave W33 as the historical record and apply the new shape from W34 onward** —
+  rejected: W34 is empty, so the rule would sit untested until scope arrives, and the file
+  most in need of the fix would keep the shape the fix exists to remove.
+
+**Impact**: `sprint-2026-W33` has one scope table of 19 rows summing to 52 points, and goes
+from 584 to 567 lines. The 17-line drop is the honest measure of what this decision buys:
+the win is *one* table rather than a shorter file, because every retrospective and every
+phase-scoped prose section was kept. No story file, epic, or story status changes, and
+`koni-docs status` regenerates `STATUS.md` byte-identical but for its timestamp — verified,
+and expected, since the CLI reads story frontmatter rather than sprint tables.
+`sprint-2026-W32` gains the annotation note and the template's retrospective headings. This
+is the standing shape for every future sprint file in this repo: **adding a story to a
+sprint means adding a row and extending the goal, never adding a section.**
+
+**Date**: 2026-08-17
+**Version**: unreleased (documentation only)
+
+---
+
+### D31. A sprint file carries no plan of its own; W33's relocated Phase 3 plan is removed
+
+**Context**: [D30](#d30-a-sprint-file-carries-one-scope-table-mid-sprint-scope-is-a-row-not-a-section)
+merged [sprint-2026-W33](sprints/sprint-2026-W33.md)'s four scope tables into one and
+deliberately left every prose section standing, because
+[EPIC-6](sprints/epics/EPIC-6.md)'s question 3 — *where does each displaced kind of content
+go* — was unanswered. The maintainer then asked the question that answers it: W32 and W33
+do not inline their implementation plans, so **why does one tranche have a 127-line plan,
+dependency list and risk register in the sprint file when the other three have nothing?**
+
+The answer is in the history rather than in any convention. `sprint-2026-W34` was opened
+(`9591770`) as a complete sprint file for those four stories, with its own §Phased plan,
+§Dependencies and sequencing constraints and §Risks & dependencies. When
+[D22](#d22-pull-epic-2s-four-remaining-read-tools-out-of-w34-and-into-the-running-sprint)
+moved the scope into W33 (`94bb34f`), those sections moved with it — W34 lost 137 lines,
+W33 gained 129 — and were renamed `## Phase 3 — plan, dependencies, and risks` because
+W33's own §Phased plan and §Dependencies headings were already taken by its opening six
+stories. So the asymmetry is a heading collision from a scope move, not a decision anyone
+made about what a sprint file should hold.
+
+**Decision**: delete the section. A sprint file states scope, goal, and what the window
+taught; the plan for how the work is sequenced belongs to the epic and the stories.
+
+**Rationale**: because the section's own content says so. Every substantive finding in it —
+the 87,063-byte / 21,766-token measurement, the ~126,000-a-year extrapolation, the
+4,938 → 3,047 token result of the fifth cut, `priceStopLimit: 0` on a live resting order,
+the `nextCursor` proven at `limit: 2`, `syncedThrough`, `reporting` as ISO-4217 — was
+checked against the rest of the corpus before anything was removed, and every one of them
+appears in **two to four** other files: [EPIC-2](sprints/epics/EPIC-2.md), the US-2.10 →
+US-2.13 story files, [D23–D25](#d23-reporting-is-a-currency-code-and-it-is-validated-by-shape-rather-than-by-enum),
+and `CHANGELOG.md`. This is the first time
+[EPIC-6](sprints/epics/EPIC-6.md) §Business context's central claim — "almost none of it is
+information absent from EPIC-2 or from US-2.10 through US-2.13" — has been *tested* rather
+than asserted, and it held.
+
+**What is protected, and how**: this extends
+[D30](#d30-a-sprint-file-carries-one-scope-table-mid-sprint-scope-is-a-row-not-a-section)'s
+supersession of D21 from scope tables to **this** relocated plan block, and no further.
+D21's two rules are untouched, and so is every retrospective in the file — including the
+§Phase 3 retrospective, which is where the removed risks' *outcomes* already lived: that the
+four stories shipped with no implementation plan and none wobbled, that the payload budget
+is recorded as breached, that the `409` branch never ran. What the deletion does lose,
+stated rather than glossed: four plan-time day estimates (`~0.5 day`, three × `~1.5 days`)
+and the sentence that US-2.11 could have run concurrently with US-2.12 or US-2.13. Those
+exist nowhere else. They are estimates and a concurrency option for work that is finished,
+so nothing reads them, which is [LESSONS 4](LESSONS.md)'s definition of a copy that will
+drift.
+
+**Alternatives considered**:
+- **Move the block into [EPIC-2](sprints/epics/EPIC-2.md)** — rejected: EPIC-2 is `done` and
+  already carries every finding in it. Moving a duplicate into a closed epic is filing, not
+  relocation.
+- **Keep the two window-scoped risks** — "four days of window remain, and 11 points against
+  them" and "no implementation plan exists for these four stories yet". Rejected: both are
+  discharged, and the §Phase 3 retrospective states each outcome in a sentence that is
+  better than the risk it answers.
+- **Remove W33's and W32's §Phased plan and §Dependencies sections in the same pass** —
+  **not decided here.** Those are short, were written for the sprint they sit in rather than
+  relocated into it, and are a different question from a 127-line register that arrived by
+  accident. Left for [EPIC-6](sprints/epics/EPIC-6.md) question 3's remaining half.
+
+**Impact**: `sprint-2026-W33` goes 567 → 444 lines and holds no plan section that was not
+written for it. Delivered by
+[US-6.2](sprints/stories/US-6.2-remove-the-relocated-plan-block.md).
+[EPIC-6](sprints/epics/EPIC-6.md) question 3 is answered for the relocated block and open
+for everything else; question 5 is untouched — this convention is still prose, enforced by
+nothing.
+
+**Date**: 2026-08-17
+**Version**: unreleased (documentation only)

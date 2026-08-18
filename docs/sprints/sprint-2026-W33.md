@@ -1,192 +1,52 @@
 ---
 id: sprint-2026-W33
 status: closed
-start: 2026-08-10
-end: 2026-08-16
-goal: "Ship the read-tool substrate and five read tools (delivered), settle and build this repo's package release process (delivered), close EPIC-2's read path with its last four tools (delivered), then move the supported Node floor off an EOL line"
+start: 2026-08-10T00:00:00.000Z
+end: 2026-08-16T00:00:00.000Z
+goal: 'Close EPIC-2''s read path — the substrate and all nine remaining GET tools — build this repo''s package release process, and move the supported Node floor off an EOL line'
 ---
-
 ## Sprint scope
 
-### Phase 1 — Read-tool substrate and five tools (closed 2026-08-07)
+| US      | Title                                                                                           | Epic   | Pri | Points | Status | Story file                                                      |
+| ------- | ----------------------------------------------------------------------------------------------- | ------ | --- | ------ | ------ | --------------------------------------------------------------- |
+| US-2.4  | Tool substrate and directory layout                                                             | EPIC-2 | P1  | 5      | ✅ done | [link](stories/US-2.4-tool-substrate-and-layout.md)             |
+| US-2.5  | `list_brokers` tool                                                                             | EPIC-2 | P1  | 2      | ✅ done | [link](stories/US-2.5-list-brokers-tool.md)                     |
+| US-2.6  | `list_strategies` tool                                                                          | EPIC-2 | P1  | 2      | ✅ done | [link](stories/US-2.6-list-strategies-tool.md)                  |
+| US-2.7  | `list_account_strategies` tool                                                                  | EPIC-2 | P1  | 2      | ✅ done | [link](stories/US-2.7-list-account-strategies-tool.md)          |
+| US-2.8  | `list_positions` tool                                                                           | EPIC-2 | P1  | 2      | ✅ done | [link](stories/US-2.8-list-positions-tool.md)                   |
+| US-2.9  | `list_pending_orders` tool                                                                      | EPIC-2 | P1  | 2      | ✅ done | [link](stories/US-2.9-list-pending-orders-tool.md)              |
+| US-4.1  | The release contract and `docs/RELEASE.md` *(added 2026-08-10)*                                 | EPIC-4 | P1  | 3      | ✅ done | [link](stories/US-4.1-release-contract-and-runbook.md)          |
+| US-4.2  | `npm run release:check` — the pre-tag gate *(added 2026-08-10)*                                 | EPIC-4 | P1  | 3      | ✅ done | [link](stories/US-4.2-release-check-gate.md)                    |
+| US-4.3  | Backfill the six missing tags and `v0.1.0`'s Release *(added 2026-08-10)*                       | EPIC-4 | P2  | 2      | ✅ done | [link](stories/US-4.3-backfill-tags-and-releases.md)            |
+| US-4.4  | Verify the tarball before it is published *(added 2026-08-10)*                                  | EPIC-4 | P1  | 3      | ✅ done | [link](stories/US-4.4-tarball-verification.md)                  |
+| US-4.5  | `.github/workflows/release.yml` — tag-triggered publish *(added 2026-08-10)*                    | EPIC-4 | P1  | 5      | ✅ done | [link](stories/US-4.5-release-workflow.md)                      |
+| US-2.10 | `get_account_performance` tool *(added 2026-08-10)*                                             | EPIC-2 | P1  | 2      | ✅ done | [link](stories/US-2.10-get-account-performance-tool.md)         |
+| US-2.11 | `list_deals` tool *(added 2026-08-10)*                                                          | EPIC-2 | P1  | 3      | ✅ done | [link](stories/US-2.11-list-deals-tool.md)                      |
+| US-2.12 | `get_performance_breakdowns` tool *(added 2026-08-10)*                                          | EPIC-2 | P1  | 3      | ✅ done | [link](stories/US-2.12-get-performance-breakdowns-tool.md)      |
+| US-2.13 | `get_equity_timeseries` tool, and EPIC-2's close *(added 2026-08-10)*                           | EPIC-2 | P1  | 3      | ✅ done | [link](stories/US-2.13-get-equity-timeseries-tool.md)           |
+| US-5.1  | Re-decide the supported Node floor, now that Node 20 is EOL *(added 2026-08-13)*                | EPIC-5 | P2  | 3      | ✅ done | [link](stories/US-5.1-node-floor-and-ci-pins.md)                |
+| US-5.2  | `release:check` guards the Node floor across every artifact that states it *(added 2026-08-13)* | EPIC-5 | P2  | 2      | ✅ done | [link](stories/US-5.2-release-check-guards-the-node-floor.md)   |
+| US-5.3  | devDependency currency, and the rule that `@types/node` tracks the floor *(added 2026-08-13)*   | EPIC-5 | P3  | 3      | ✅ done | [link](stories/US-5.3-devdependency-currency-and-dependabot.md) |
+| US-5.4  | Decide TypeScript 7, and say why either way *(added 2026-08-13)*                                | EPIC-5 | P3  | 2      | ✅ done | [link](stories/US-5.4-decide-typescript-7.md)                   |
 
-| US | Title | Epic | Pri | Points | Status | Story file |
-|---|---|---|---|---|---|---|
-| US-2.4 | Tool substrate and directory layout | EPIC-2 | P1 | 5 | ✅ done | [link](stories/US-2.4-tool-substrate-and-layout.md) |
-| US-2.5 | `list_brokers` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.5-list-brokers-tool.md) |
-| US-2.6 | `list_strategies` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.6-list-strategies-tool.md) |
-| US-2.7 | `list_account_strategies` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.7-list-account-strategies-tool.md) |
-| US-2.8 | `list_positions` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.8-list-positions-tool.md) |
-| US-2.9 | `list_pending_orders` tool | EPIC-2 | P1 | 2 | ✅ done | [link](stories/US-2.9-list-pending-orders-tool.md) |
-
-**Phase 1: 6 stories / 15 points — all delivered.** The §Retrospective below measures this
-phase and only this phase.
-
-### Phase 2 — The package release process (added 2026-08-10)
-
-| US | Title | Epic | Pri | Points | Status | Story file |
-|---|---|---|---|---|---|---|
-| US-4.1 | The release contract and `docs/RELEASE.md` | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.1-release-contract-and-runbook.md) |
-| US-4.2 | `npm run release:check` — the pre-tag gate | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.2-release-check-gate.md) |
-| US-4.3 | Backfill the six missing tags and `v0.1.0`'s Release | EPIC-4 | P2 | 2 | ✅ done | [link](stories/US-4.3-backfill-tags-and-releases.md) |
-| US-4.4 | Verify the tarball before it is published | EPIC-4 | P1 | 3 | ✅ done | [link](stories/US-4.4-tarball-verification.md) |
-| US-4.5 | `.github/workflows/release.yml` — tag-triggered publish | EPIC-4 | P1 | 5 | ✅ done | [link](stories/US-4.5-release-workflow.md) |
-
-**Phase 2: 5 stories / 16 points.**
-
-### Phase 3 — EPIC-2's four remaining read tools (closed 2026-08-12)
-
-| US | Title | Epic | Pri | Points | Status | Story file |
-|---|---|---|---|---|---|---|
-| US-2.10 | `get_account_performance` tool | EPIC-2 | P1 | 2 | ✅ done (1.1.0) | [link](stories/US-2.10-get-account-performance-tool.md) |
-| US-2.11 | `list_deals` tool | EPIC-2 | P1 | 3 | ✅ done (1.2.0) | [link](stories/US-2.11-list-deals-tool.md) |
-| US-2.12 | `get_performance_breakdowns` tool | EPIC-2 | P1 | 3 | ✅ done (1.3.0) | [link](stories/US-2.12-get-performance-breakdowns-tool.md) |
-| US-2.13 | `get_equity_timeseries` tool, and EPIC-2's close | EPIC-2 | P1 | 3 | ✅ done (1.4.0) | [link](stories/US-2.13-get-equity-timeseries-tool.md) |
-
-**Phase 3: 4 stories / 11 points.**
-
-### Phase 4 — Supported runtime and dependency currency (added 2026-08-13)
-
-Node 20 reached end of life on 2026-04-30 and the declared floor still points at it. Move
-the floor, put a gate behind it, and bring the toolchain current.
-
-| US | Title | Epic | Pri | Points | Status | Story file |
-|---|---|---|---|---|---|---|
-| US-5.1 | Re-decide the supported Node floor, now that Node 20 is EOL | EPIC-5 | P2 | 3 | ✅ done (2.0.0) | [link](stories/US-5.1-node-floor-and-ci-pins.md) |
-| US-5.2 | `release:check` guards the Node floor across every artifact that states it | EPIC-5 | P2 | 2 | ✅ done | [link](stories/US-5.2-release-check-guards-the-node-floor.md) |
-| US-5.3 | devDependency currency, and the rule that `@types/node` tracks the floor | EPIC-5 | P3 | 3 | ✅ done | [link](stories/US-5.3-devdependency-currency-and-dependabot.md) |
-| US-5.4 | Decide TypeScript 7, and say why either way | EPIC-5 | P3 | 2 | ✅ done | [link](stories/US-5.4-decide-typescript-7.md) |
-
-**Phase 4: 4 stories / 10 points.** **Sprint total: 19 stories / 52 points.**
+**Total: 19 stories / 52 points** — 15 + 16 + 11 + 10 across the four tranches this window
+absorbed. The six unannotated rows are the scope this sprint opened with, closed 2026-08-07
+ahead of its own window; the `*(added …)*` rows joined it mid-window under
+[CONTEXT D21](../CONTEXT.md) rule 1. The 08-13 tranche was opened by a date rather than a
+design: Node 20 reached end of life on 2026-04-30 and the declared floor still pointed at it.
 
 > AC and Tasks live inside each story file. This table is a planning surface only.
-
-## Phase 3 — plan, dependencies, and risks
-
-Four tools, four additive minors: `get_account_performance` (`1.1.0`), `list_deals`
-(`1.2.0`), `get_performance_breakdowns` (`1.3.0`), `get_equity_timeseries` (`1.4.0`) —
-the versions [CONTEXT D14](../CONTEXT.md) assigns. Closing them closes EPIC-2's read path,
-and US-2.13 flips [EPIC-2](epics/EPIC-2.md) to `done`.
-
-Still out of scope: all seven write operations ([EPIC-3](epics/EPIC-3.md)), retry and
-backoff, and response caching.
-
-### Phase 3 sequencing
-
-1. **Query parameters** (~0.5 day): US-2.10 `get_account_performance` (`1.1.0`). The first
-   tool to pass `query` to `client.get` — the option has existed since US-2.4 and no tool
-   has used it (`grep -rn 'query:' src/tools/` returns nothing). Cheapest possible story to
-   prove `from`/`to`/`reporting` round-trip and that `undefined` is dropped rather than
-   serialized. Also the first tool in a new `tools/performance/` folder.
-2. **Cursor pagination** (~1.5 days): US-2.11 `list_deals` (`1.2.0`). The
-   `cursor`/`nextCursor` contract and the no-automatic-drain rule. Independent of steps
-   3–4: it lands in `tools/trading/`, beside `positions.ts` and `orders.ts`.
-3. **Payload shaping** (~1.5 days): US-2.12 `get_performance_breakdowns` (`1.3.0`). The
-   four cuts from the spec's §Payload policy, and the `notes` trace that keeps a model from
-   reading a truncated `daily` as a complete one. The largest payload in the API, and the
-   only story here whose sizing rests on a number nobody has measured yet.
-4. **Downsampling, and EPIC-2's close** (~1.5 days): US-2.13 `get_equity_timeseries`
-   (`1.4.0`). Downsample `portfolio` to ≤ 200 points while pinning the first, the last, and
-   the deepest drawdown. Its close flips EPIC-2 to `done`.
-
-Ordered by dependency where one exists and by cost where none does. US-2.10 is first
-because `query` is a precondition for both shaping stories; US-2.11 shares no code with
-US-2.12 or US-2.13 and could run concurrently with either.
-
-### Phase 3 dependencies and sequencing constraints
-
-- **US-2.10 blocks US-2.12 and US-2.13 on the `query` path only.** All three send
-  `from`/`to`/`reporting`. Whatever US-2.10 settles about validating those inputs — the
-  date format the input schema accepts, the `reporting` enum's members — the other two copy
-  rather than re-derive. Nothing else about US-2.10 is load-bearing for them.
-  **Settled, 2026-08-10** ([CONTEXT D23](../CONTEXT.md)): `from`/`to` are UTC `YYYY-MM-DD`
-  and are validated for *existence*, not only shape, so `2026-02-31` is refused before any
-  request. `reporting` has no enum members to copy — it is an **ISO-4217 currency code**,
-  not a reporting period, validated as `/^[A-Z]{3}$/`. Both stories import the shape from
-  `tools/performance/summary.ts` rather than redeclaring it.
-- **US-2.11 depends on nothing else in this phase.** It builds on US-2.4's `accountPath`
-  and `registerReadTool`, both shipped, and on US-2.8/US-2.9's `tools/trading/`
-  conventions. It is the story to start first if two people are working.
-  **Shipped 2026-08-11 as `1.2.0`**, and it bound nothing for US-2.12 or US-2.13 —
-  neither endpoint paginates. What it settled is recorded in
-  [CONTEXT D24](../CONTEXT.md): one request per call, no `409` branch on `deals`, and the
-  `syncedThrough` field no design artifact anticipated.
-- **US-2.12 and US-2.13 are the shaping pair.** Both drop `perAccount` from an
-  account-scoped response and both carry `notes`. US-2.12 lands first, so US-2.13 reuses
-  its `notes` phrasing rather than inventing a second vocabulary for the same idea — the
-  same reasoning that made US-2.9 a mirror of US-2.8.
-  **Shipped 2026-08-11 as `1.3.0`.** What US-2.13 inherits is recorded in
-  [CONTEXT D25](../CONTEXT.md) and is more than the phrasing: **a note records information
-  loss, not removal.** Dropping a running sum or a restatement of data still present writes
-  nothing, because a note for every removal leaves `notes` permanently non-empty and trains
-  a reader to skim past the lines that matter. That rule is what keeps US-2.12 AC-8's empty
-  `notes` — and US-2.13's equivalent — reachable at all.
-- **US-2.13 closes the epic.** Its Task list carries EPIC-2's status flip and the epic's
-  §Remaining work removal; no other story should touch them.
-- **Phase 3's releases are Phase 2's acceptance test.** `1.1.0` runs
-  [US-4.5](stories/US-4.5-release-workflow.md)'s workflow for the first time on a version
-  that is not a rehearsal. A failure in `build`, `verify`, `publish` or `announce` is
-  EPIC-4's defect, not US-2.10's — see §Phase 2 retrospective §Followups.
-
-### Phase 3 risks & dependencies
-
-- **`get_performance_breakdowns`'s payload weight is an estimate, not a measurement.**
-  *Impact*: [CONTEXT D10](../CONTEXT.md)'s ~70,000-token figure is what sized US-2.12 at 3
-  points and what justifies four separate cuts. If the live response is an order of
-  magnitude smaller, the cuts are over-engineering; if larger, 10 symbols may not be enough.
-  *Mitigation*: US-2.12's TASK-2.12.1 measures a real response against the smoke key
-  **before** the shaping code is written, and records the number in the story. The story is
-  re-pointed at that moment if the number contradicts D10, rather than at review.
-  *Owner*: @bluezdot.
-  **Retired 2026-08-11.** Measured: **87,063 bytes ≈ 21,766 tokens** for a 63-day window,
-  extrapolating to ~126,000 over a year — larger than D10's estimate but the same order of
-  magnitude, so the cuts were not re-argued and the 3 points stood. The second half of the
-  risk landed instead: the four cuts left 4,938 tokens against a 5,000 budget, and only
-  because the smoke account trades one symbol. A **fifth** cut — `perSymbol`'s two
-  running-sum row-sets, verified lossless against live data — took it to 3,047
-  ([CONTEXT D25](../CONTEXT.md)). The residue is recorded, not fixed: at ten symbols
-  neither four cuts nor five hold the budget.
-- **The smoke key works, but the account behind it does not cover every branch.** A working
-  `SENTI_SMOKE_KEY` arrived 2026-08-10 and `npm run test:smoke` passes against
-  `be-dev.sentitrade.xyz` — that discharges Phase 1's first followup. Two gaps survive it,
-  both recorded in [EPIC-2](epics/EPIC-2.md) §Live payload findings: the account holds
-  **zero pending orders**, so US-2.9's `priceStopLimit` nullability is still unsettled, and
-  its **terminal is online**, so the `409`/`conflictMeans` branch has still never run
-  against the real service. *Impact*: neither blocks a Phase 3 story — `list_deals` reads
-  closed deals, not resting orders, and the performance endpoints signal an offline terminal
-  with `live: null` rather than a `409`. What is at risk is the *claim* that EPIC-2's read
-  path is live-verified when the epic closes. *Mitigation*: US-2.13's epic-close task states
-  which branches shipped unexercised rather than closing the epic silently; if an account
-  with deal history and a resting order becomes available mid-week, US-2.11's smoke leg
-  picks up both opportunistically. *Owner*: @bluezdot.
-  **Half discharged, 2026-08-11.** The account acquired a resting `ORDER_TYPE_BUY_LIMIT`
-  between 08-10 and 08-11, and it carries `priceStopLimit: 0` — not `null`. So US-2.9's
-  zero case is now live-verified and only its `null` arm is test-only. The terminal is
-  still online, so the `409`/`conflictMeans` branch remains unexercised against the real
-  service; that half stands. **Stated at close, 2026-08-12.** US-2.13's TASK-2.13.4 wrote it
-  into [EPIC-2](epics/EPIC-2.md) §Remaining work as a three-row table of branches that
-  shipped unexercised, so the risk is discharged as *recorded* rather than as *resolved* —
-  the terminal is still online and the `409` branch has still never run.
-- **An account with no deal history makes US-2.11's pagination untestable live.** *Impact*:
-  `nextCursor` only appears when a second page exists; a smoke account with fewer than
-  `limit` deals exercises the empty-cursor path and nothing else. *Mitigation*: the cursor
-  contract is proven by stubbed `fetch` in `deals.test.ts` regardless, and the smoke leg
-  skips cleanly rather than failing — the same posture `smoke.test.ts` already takes when a
-  key owns no accounts. *Owner*: @bluezdot.
-  **Did not materialize, 2026-08-11.** The smoke account holds 500+ deals; at `limit: 2`
-  the live first page returned a real `nextCursor`, and a second call with it returned
-  different tickets. The cursor path is proven against the real service, not only against
-  a stub. The skip-cleanly arm shipped and did not run.
-- **No implementation plan exists for these four stories yet.** Phase 1 ran against
-  [read-tools-w33](../superpowers/plans/2026-08-06-senti-read-tools-w33.md), a task-by-task
-  plan with code, and the retrospective below credits that plan for why six stories read as
-  "transcription with verification". *Impact*: Phase 3 has stories but no equivalent plan.
-  *Mitigation*: write one before US-2.10 starts — Superpowers owns that artifact, this
-  sprint file does not. It is the phase's first action. *Owner*: @bluezdot.
-- **Four days of window remain, and 11 points against them.** *Impact*: a tighter run than
-  a full week gives. *Mitigation*: the four stories are independent releases, not one
-  deliverable — each ships its own minor, so an unfinished Phase 3 leaves shipped tools
-  behind rather than a half-migration. *Owner*: @bluezdot.
+>
+> **The §Retrospective sections below are tranche-scoped and left as written**
+> ([CONTEXT D30](../CONTEXT.md)): US-2.4–US-2.9 → §Retrospective · US-4.1–US-4.5 →
+> §Phase 2 retrospective · US-2.10–US-2.13 → §Phase 3 retrospective · US-5.1–US-5.4 →
+> §Phase 4 retrospective. "Phase" in those headings is the name each tranche carried while
+> it ran.
+>
+> The 08-10 tranche's plan, dependency list and risk register were removed on 2026-08-17
+> ([CONTEXT D31](../CONTEXT.md)): they were [sprint-2026-W34](sprint-2026-W34.md)'s, moved
+> here wholesale when its scope moved, and every finding in them survives in
+> [EPIC-2](epics/EPIC-2.md), in US-2.10–US-2.13, and in [CONTEXT D23–D25](../CONTEXT.md).
 
 ## Sprint goal recap
 
@@ -219,19 +79,19 @@ transcription-with-verification than to open design.
 
 ## Phased plan
 
-1. **Phase 1 — Substrate** (~2.5 days): US-2.4. `core/` + `tools/<tag>/` layout;
+1. **Phase 1 — Substrate** (\~2.5 days): US-2.4. `core/` + `tools/<tag>/` layout;
    `registerReadTool` and `parseOrThrow`; `client.get`'s `query` option, `accountPath`,
    and the dedicated `404`/`409` branches; `list_accounts` migrated onto the helper with
    no behaviour change; table-driven invariant tests; the operation-count correction,
    three new `CONTEXT.md` decisions, and the five-scope documentation update. Ships
    `0.2.0`.
-2. **Phase 2 — First tools on the new substrate** (~1 day): US-2.5 `list_brokers`
+2. **Phase 2 — First tools on the new substrate** (\~1 day): US-2.5 `list_brokers`
    (`0.3.0`), US-2.6 `list_strategies` (`0.4.0`) — neither takes a path parameter, so
    both prove `registerReadTool` before any story has to prove `accountPath` too.
-3. **Phase 3 — First path parameter** (~1 day): US-2.7 `list_account_strategies`
+3. **Phase 3 — First path parameter** (\~1 day): US-2.7 `list_account_strategies`
    (`0.5.0`) — the first tool that routes through `accountPath` and the `404` login/id
    hint.
-4. **Phase 4 — Terminal-backed pair** (~1 day): US-2.8 `list_positions` (`0.6.0`),
+4. **Phase 4 — Terminal-backed pair** (\~1 day): US-2.8 `list_positions` (`0.6.0`),
    US-2.9 `list_pending_orders` (`0.7.0`) — the first tools carrying the `409`
    terminal-offline branch, the "empty is a real zero" distinction, and the 200-row
    truncation cap. US-2.9's close is this sprint's close.
@@ -312,7 +172,7 @@ live key), `npm run typecheck` and `npm run build` clean at close.
   its Zod schema, parser, (where present) cap helper, formatter, and registration
   together, lands at 97–156 lines (`list_brokers` 99, `list_strategies` 113,
   `list_account_strategies` 97, `list_positions` 156, `list_pending_orders` 145) — the
-  ~30-line figure only ever described the registration sliver substrate made cheap, not
+  \~30-line figure only ever described the registration sliver substrate made cheap, not
   the tool as a whole, and EPIC-2.md's Business context paragraph still repeats the
   original number without that qualification.
 - **The Task 19 brief's own smoke-test extension omitted the tool the task exists to
@@ -329,7 +189,7 @@ live key), `npm run typecheck` and `npm run build` clean at close.
 
 ### Followups
 
-- **A working smoke key for W34.** `get_performance_breakdowns`'s ~70,000-token
+- **A working smoke key for W34.** `get_performance_breakdowns`'s \~70,000-token
   `breakdowns` payload (D10) and `get_equity_timeseries`'s downsampling are exactly the
   cases where "what the live payload actually weighs" (this plan's own Post-sprint
   note) cannot be estimated from the schema — W34 needs a key that authenticates before
@@ -444,7 +304,7 @@ smoke walk covers all ten read tools.
   Three sprints of work did not move this, and no story could have — it needs an account,
   not code.
 - **A payload budget is recorded as breached rather than met.** `get_performance_breakdowns`
-  projects to ~8,050 tokens against a 5,000-token budget on a ten-symbol account. It was
+  projects to \~8,050 tokens against a 5,000-token budget on a ten-symbol account. It was
   measured on a one-symbol account, so the cut that would matter is inert on the only data
   available. The number is honest and the budget is still wrong.
 
@@ -503,7 +363,7 @@ to `2.0.0`'s. Suite went 428 passed to **438 passed, 1 skipped (439)**.
   Every `dist/**/*.js` was checksummed under both compilers — 17 files byte-identical — and
   the three `.js.map` files that did differ were traced to the exact three source constructs
   behind them (two parameter defaults and one set of parameter properties) rather than waved
-  past. The argument for moving was then a measured ~3.6× build and ~2.8× typecheck, not
+  past. The argument for moving was then a measured \~3.6× build and \~2.8× typecheck, not
   novelty ([D29](../CONTEXT.md)).
 
 ### What didn't
@@ -572,7 +432,8 @@ open work, and none of them has a story yet.
 - [EPIC-2](epics/EPIC-2.md) · [EPIC-3](epics/EPIC-3.md) · [EPIC-4](epics/EPIC-4.md) — Phase 2's epic · [EPIC-5](epics/EPIC-5.md) — Phase 4's epic
 - [STATUS.md](STATUS.md) — generated kanban
 - [CONTEXT D6](../CONTEXT.md) — the most recent decision as this sprint opens
-- [CONTEXT D21](../CONTEXT.md) · [CONTEXT D22](../CONTEXT.md) — the sprint-scope decisions behind this file's phases
+- [CONTEXT D21](../CONTEXT.md) · [CONTEXT D22](../CONTEXT.md) — the sprint-scope decisions behind this file's four tranches
+- [CONTEXT D30](../CONTEXT.md) — why those four tranches are one scope table rather than four
 - [CONTEXT D15–D20](../CONTEXT.md) — the six decisions Phase 2 implements
 - [CONTEXT D14](../CONTEXT.md) — the `1.1.0` → `1.4.0` renumber Phase 3's versions follow
 - [CONTEXT D10](../CONTEXT.md) — tools bind and shape their own payloads; the policy US-2.12 and US-2.13 implement

@@ -1,8 +1,8 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-17 02:46:18 UTC
-> Total stories: 23
+> Last generated: 2026-08-17 07:39:19 UTC
+> Total stories: 25
 
 ## ⏰ Deadlines (0)
 
@@ -24,7 +24,7 @@ _No stories_
 
 _No stories_
 
-## ✅ Done (23)
+## ✅ Done (25)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
@@ -51,6 +51,8 @@ _No stories_
 | US-5.2 | release:check guards the Node floor across every artifact that states it | EPIC-5 | P2 | 2 | sprint-2026-W33 | bluezdot |
 | US-5.3 | devDependency currency, and the rule that @types/node tracks the floor | EPIC-5 | P3 | 3 | sprint-2026-W33 | bluezdot |
 | US-5.4 | Decide TypeScript 7, and say why either way | EPIC-5 | P3 | 2 | sprint-2026-W33 | bluezdot |
+| US-6.1 | One scope table per sprint file | EPIC-6 | P2 | 2 | sprint-2026-W34 | bluezdot |
+| US-6.2 | Remove W33's relocated plan block | EPIC-6 | P2 | 1 | sprint-2026-W34 | bluezdot |
 
 ## 🚫 Blocked (0)
 
@@ -68,7 +70,7 @@ _No stories_
 - 🟢 **Ready**: 0
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0
-- ✅ **Done**: 23
+- ✅ **Done**: 25
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 
