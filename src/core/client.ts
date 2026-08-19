@@ -44,6 +44,10 @@ export const ACCOUNT_NOT_FOUND =
   'If a `login` (the MT5 account number) was passed where an `accountId` was expected, ' +
   'call list_accounts and use its `id`.';
 
+export const DRAFT_NOT_FOUND =
+  'The draft does not exist or is not owned by this API key. ' +
+  'Call list_drafts and use its `id`.';
+
 export type SentiClient = {
   /** Returns the parsed JSON body. Validation belongs to the domain module. */
   get(path: string, options?: RequestOptions): Promise<unknown>;
@@ -172,20 +176,30 @@ const PATH_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
  * check — it is a legal segment, just the wrong value. What catches that is the
  * 404 message, and only when the caller passed `ACCOUNT_NOT_FOUND`.
  */
-export function accountPath(accountId: string, ...rest: string[]): string {
-  const segments = [accountId, ...rest];
-
+function segmentPath(prefix: string, segments: string[], hint: string): string {
   for (const segment of segments) {
     if (!PATH_SEGMENT.test(segment)) {
       throw new Error(
         `Invalid path segment ${JSON.stringify(segment)}: expected 1-64 characters from ` +
           'A-Z, a-z, 0-9, "_" and "-". Values containing "/", ".", "%" or whitespace are ' +
-          'rejected before they reach a URL. Use the `id` field from list_accounts.',
+          `rejected before they reach a URL. ${hint}`,
       );
     }
   }
 
-  return `/api/v1/accounts/${segments.map(encodeURIComponent).join('/')}`;
+  return `${prefix}${segments.map(encodeURIComponent).join('/')}`;
+}
+
+export function accountPath(accountId: string, ...rest: string[]): string {
+  return segmentPath(
+    '/api/v1/accounts/',
+    [accountId, ...rest],
+    'Use the `id` field from list_accounts.',
+  );
+}
+
+export function draftPath(draftId: string, ...rest: string[]): string {
+  return segmentPath('/api/v1/drafts/', [draftId, ...rest], 'Use the `id` field from list_drafts.');
 }
 
 export function createClient(config: Config, deps: ClientDeps = {}): SentiClient {

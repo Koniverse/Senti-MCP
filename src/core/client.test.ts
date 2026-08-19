@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { ACCOUNT_NOT_FOUND, accountPath, createClient } from './client.js';
+import { ACCOUNT_NOT_FOUND, accountPath, createClient, DRAFT_NOT_FOUND, draftPath } from './client.js';
 import { ApiError } from './errors.js';
 import { loadConfig } from '../config.js';
 
@@ -388,5 +388,43 @@ describe('accountPath', () => {
 
   test('names the id field a caller should have used', () => {
     expect(() => accountPath('../etc')).toThrow(/list_accounts/);
+  });
+});
+
+describe('draftPath', () => {
+  test('builds a draft path', () => {
+    expect(draftPath('c2dfc055-929d-42b8-ab33-a524a4d1e7f8')).toBe(
+      '/api/v1/drafts/c2dfc055-929d-42b8-ab33-a524a4d1e7f8',
+    );
+  });
+
+  test('appends sub-resource segments', () => {
+    expect(draftPath('abc-123', 'attachments')).toBe('/api/v1/drafts/abc-123/attachments');
+  });
+
+  test.each(['../etc', 'a/b', 'a%2Fb', 'has space', '', 'x'.repeat(65)])(
+    'rejects %j',
+    (value) => {
+      expect(() => draftPath(value)).toThrow(/Invalid path segment/);
+    },
+  );
+
+  test('rejects a traversal in a later segment', () => {
+    expect(() => draftPath('abc-123', '../secrets')).toThrow(/Invalid path segment/);
+  });
+
+  test('points a bad draft id at list_drafts, not list_accounts', () => {
+    expect(() => draftPath('../etc')).toThrow(/list_drafts/);
+    expect(() => draftPath('../etc')).not.toThrow(/list_accounts/);
+  });
+});
+
+describe('DRAFT_NOT_FOUND', () => {
+  test('names the tool that produces a valid draft id', () => {
+    expect(DRAFT_NOT_FOUND).toMatch(/list_drafts/);
+  });
+
+  test('does not blame the account, which this path does not take', () => {
+    expect(DRAFT_NOT_FOUND).not.toMatch(/account/i);
   });
 });
