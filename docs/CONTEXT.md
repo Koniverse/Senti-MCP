@@ -1711,3 +1711,120 @@ nothing.
 
 **Date**: 2026-08-17
 **Version**: unreleased (documentation only)
+
+---
+
+### D32. `list_drafts` returns no source, and the cut is not optional
+
+**Context**: The Senti Quant API grew an `Authoring` tag on or before 2026-08-19, taking the
+document from 17 operations to 29. `GET /api/v1/drafts` returns every draft the API key owns
+**with its full MQL5 `sourceCode`**, every attachment's full `sourceCode`, and every draft's
+`lastCompileLog` — the trailing 16 KiB of compiler output. The route accepts no query
+parameters at all: there is no `?include=`, no `?fields=`, no pagination, no filter.
+
+`GET /api/v1/authoring/conventions` publishes the platform's own ceilings, read live on
+2026-08-19: `maxDrafts 20`, `maxAttachmentsPerDraft 5`, `maxAttachmentBytes 65536`,
+`maxSourceBytes 196608`. Those make the worst case arithmetic rather than an estimate:
+
+```
+20 × (192 KiB source + 5 × 64 KiB attachments + 16 KiB log) = 10.3 MiB ≈ 2,700,000 tokens
+```
+
+Measured on the live smoke account the same day: 4 drafts, 19,853 bytes ≈ 4,963 tokens —
+small, because that account holds one substantial draft and zero attachments. **The gap
+between 4,963 and 2,700,000 is entirely a property of how much the user has written**, which
+is not something a tool may assume.
+
+**Decision**: `list_drafts` drops **four** things and notes all four: draft `sourceCode`
+(→ `sourceBytes`), `attachments[].sourceCode` (→ `sourceBytes`), `lastCompileLog`, and
+`lastCompileDiagnostics` (→ `diagnosticsCount`). `logTruncated` goes with the log, because it
+describes a field the reader no longer has. Live reduction: 19,853 B → 1,898 B, **90.4%
+removed**.
+
+**There is no parameter that turns this off.** No `full: true`, no `include=source`. This
+extends [D10](#d10-tools-bind-and-shape-their-own-payloads)'s rule and mirrors the refusal
+[US-2.12](sprints/stories/US-2.12-get-performance-breakdowns-tool.md) already made, with a
+sharper reason: the ceiling here is two orders of magnitude larger than `breakdowns`', and a
+model with an escape hatch will use it. `get_draft` is the escape hatch, and it returns one
+draft rather than twenty.
+
+**Every one of the four cuts loses information**, so every one writes a note — unlike
+`breakdowns`, where three of five cuts were free ([D25](#d25-breakdowns-is-cut-five-ways-not-four-only-a-cut-that-loses-something-writes-a-note)). They are emitted as one
+sentence rather than four: four notes describing one decision would train a reader to skim
+past all of them. `notes` stays empty on an empty collection, so its presence never implies a
+cut occurred.
+
+**Alternatives considered**:
+
+- **Return it unshaped** — rejected on the arithmetic above. A "what am I working on"
+  question must not be able to cost 2.7M tokens.
+- **Keep the first N lines of each source as a preview** — rejected. A truncated MQL5 file
+  reads as a complete one to a model that did not write it, and `sourceBytes` plus `get_draft`
+  answers the same question without the hazard. This is the same rule that makes
+  `list_draft_attachments` return source whole or not at all.
+- **Keep `lastCompileDiagnostics` and drop only the log** — rejected as a half-measure that
+  still carries an untyped, unbounded array 20 times over. The count answers "is this one
+  broken"; `get_draft` answers "why".
+- **Ask the API for a summary mode instead of shaping here** — **done, and not waited on.**
+  Raised as the top item of a contract review sent to the API team on 2026-08-19, alongside
+  the observation that `GET /accounts/{accountId}/deals` already has `limit`, `cursor` and
+  filters, so the idiom exists and drafts simply does not use it. If a summary mode ships,
+  this cut becomes deletable — but the tool cannot wait for it.
+
+**Impact**: Delivered by [US-7.3](sprints/stories/US-7.3-list-drafts-tool.md) in
+[EPIC-7](sprints/epics/EPIC-7.md). Binds [US-7.2](sprints/stories/US-7.2-get-draft-tool.md)
+and [US-7.4](sprints/stories/US-7.4-list-draft-attachments-tool.md), which shape for the same
+reason at smaller ceilings.
+
+**Date**: 2026-08-19
+**Version**: 2.3.0 (planned)
+
+---
+
+### D33. `draftPath` is extracted from `accountPath`, not copied
+
+**Context**: [US-2.4](sprints/stories/US-2.4-tool-substrate-and-layout.md) put one traversal
+guard in `core/client.ts`: a `PATH_SEGMENT` regex, a loop that rejects any segment failing
+it, and `encodeURIComponent` on the way into the URL. Every account-scoped tool builds its
+path through `accountPath`, and none concatenates.
+
+The `Authoring` tag's draft endpoints sit at `/api/v1/drafts/{draftId}`, not under
+`/api/v1/accounts/`. `accountPath` cannot serve them: it hard-codes the accounts prefix, and
+its error message ends *"Use the `id` field from list_accounts"* — advice that sends a reader
+to the wrong tool entirely when the bad value was a `draftId`.
+
+**Decision**: extract the guard into a private `segmentPath(prefix, segments, hint)` that
+owns `PATH_SEGMENT`, the loop and the encoding. `accountPath` and `draftPath` become two
+prefixes over it, each supplying its own closing hint. `accountPath`'s signature and its
+error message are preserved **byte for byte**, which its existing tests assert.
+
+**`PATH_SEGMENT` is not tightened to a UUID pattern**, though every live `draftId` observed
+on 2026-08-19 is a UUID. The OpenAPI document declares `draftId` as a bare `type: string`
+with no `format` and no `pattern` — indeed the document contains **zero `format` keywords
+across all 29 operations** — so hard-coding UUID would take both draft tools down at once the
+day Senti issues an id in another shape. That would be this server's assumption failing,
+reported to the user as though the API had broken. Same reasoning already recorded against
+`accountId`.
+
+**Alternatives considered**:
+
+- **Copy `accountPath` and change the prefix** — rejected, and this is the whole point of the
+  decision. Duplicating a traversal guard is how one copy gets fixed and the other does not.
+  A security check with two implementations has one that is out of date.
+- **A single `apiPath(...segments)` with no prefix concept** — rejected. Callers would then
+  build `apiPath('accounts', id, 'positions')`, which puts the literal `accounts` at the call
+  site and makes a typo there a 404 rather than a compile error. The prefix belongs to the
+  builder.
+- **Tighten `PATH_SEGMENT` to UUID for `draftPath` only** — rejected on the `format` evidence
+  above. It has been raised with the API instead: declaring `format: uuid` and
+  `format: date-time` where the live values already comply would let this guard tighten
+  legitimately.
+
+**Impact**: Delivered by
+[US-7.1](sprints/stories/US-7.1-authoring-substrate-and-conventions-tool.md). Consumed by
+[US-7.2](sprints/stories/US-7.2-get-draft-tool.md) and
+[US-7.4](sprints/stories/US-7.4-list-draft-attachments-tool.md), and handed forward to
+whichever epic opens the eight authoring writes — every one of them takes a `draftId`.
+
+**Date**: 2026-08-19
+**Version**: 2.1.0 (planned)
