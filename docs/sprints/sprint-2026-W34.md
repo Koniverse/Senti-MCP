@@ -12,7 +12,7 @@ goal: 'Give a sprint file one scope table, retrofit the two written before that 
 | US-6.1 | One scope table per sprint file *(added 2026-08-17)*   | EPIC-6 | P2  | 2      | ✅ done | [link](stories/US-6.1-one-scope-table-per-sprint-file.md) |
 | US-6.2 | Remove W33's relocated plan block *(added 2026-08-17)* | EPIC-6 | P2  | 1      | ✅ done | [link](stories/US-6.2-remove-the-relocated-plan-block.md) |
 | US-7.1 | Authoring substrate and `get_authoring_conventions` *(added 2026-08-19)* | EPIC-7 | P1  | 3      | ✅ done | [link](stories/US-7.1-authoring-substrate-and-conventions-tool.md) |
-| US-7.2 | `get_draft` tool *(added 2026-08-19)*                  | EPIC-7 | P1  | 2      | 🟢 ready | [link](stories/US-7.2-get-draft-tool.md) |
+| US-7.2 | `get_draft` tool *(added 2026-08-19)*                  | EPIC-7 | P1  | 2      | ✅ done | [link](stories/US-7.2-get-draft-tool.md) |
 | US-7.3 | `list_drafts` tool *(added 2026-08-19)*                | EPIC-7 | P1  | 3      | 🟢 ready | [link](stories/US-7.3-list-drafts-tool.md) |
 | US-7.4 | `list_draft_attachments` tool *(added 2026-08-19)*     | EPIC-7 | P1  | 2      | 🟢 ready | [link](stories/US-7.4-list-draft-attachments-tool.md) |
 

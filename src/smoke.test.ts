@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { formatAccounts, parseAccounts } from './tools/accounts/list-accounts.js';
 import { formatConventions, parseConventions } from './tools/authoring/conventions.js';
+import { formatDraft, parseDraft, shapeDraft } from './tools/authoring/get-draft.js';
 import { formatBrokers, parseBrokers } from './tools/brokers/list-brokers.js';
 import {
   formatAccountStrategies,
@@ -22,7 +23,7 @@ import {
 import { formatDeals, parseDeals } from './tools/trading/deals.js';
 import { capOrders, formatOrders, parseOrders } from './tools/trading/orders.js';
 import { capPositions, formatPositions, parsePositions } from './tools/trading/positions.js';
-import { accountPath, createClient } from './core/client.js';
+import { accountPath, createClient, draftPath } from './core/client.js';
 import { loadConfig } from './config.js';
 
 /**
@@ -50,6 +51,17 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
     );
     expect(conventions.limits.maxDrafts).toBeGreaterThan(0);
     expect(formatConventions(conventions)).toMatch(/authoring contract/i);
+
+    const drafts = (await client.get('/api/v1/drafts', { scope: 'authoring:read' })) as {
+      id: string;
+    }[];
+
+    if (drafts.length > 0) {
+      const draft = parseDraft(
+        await client.get(draftPath(drafts[0]!.id), { scope: 'authoring:read' }),
+      );
+      expect(formatDraft(shapeDraft(draft))).toContain(draft.id);
+    }
 
     const strategies = parseStrategies(
       await client.get('/api/v1/strategies', { scope: 'strategies:read' }),

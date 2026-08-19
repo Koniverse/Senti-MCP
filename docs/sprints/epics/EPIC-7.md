@@ -137,7 +137,7 @@ one is how they get broken:
 | US | Title | Pri | Points | Status | Ships |
 |---|---|---|---|---|---|
 | [US-7.1](../stories/US-7.1-authoring-substrate-and-conventions-tool.md) | Authoring substrate and `get_authoring_conventions` | P1 | 3 | ✅ done | `2.1.0` |
-| [US-7.2](../stories/US-7.2-get-draft-tool.md) | `get_draft` tool | P1 | 2 | 🟢 ready | `2.2.0` |
+| [US-7.2](../stories/US-7.2-get-draft-tool.md) | `get_draft` tool | P1 | 2 | ✅ done | `2.2.0` |
 | [US-7.3](../stories/US-7.3-list-drafts-tool.md) | `list_drafts` tool | P1 | 3 | 🟢 ready | `2.3.0` |
 | [US-7.4](../stories/US-7.4-list-draft-attachments-tool.md) | `list_draft_attachments` tool | P1 | 2 | 🟢 ready | `2.4.0` |
 

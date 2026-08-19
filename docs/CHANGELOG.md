@@ -15,6 +15,53 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.2.0] — 2026-08-19 — `get_draft`: the twelfth tool, and the schemas the last two `EPIC-7` tools import
+
+`get_draft` reads `GET /api/v1/drafts/{draftId}` under `authoring:read` and returns one MQL5
+draft's full source code, its compiler log, its diagnostics, and whether the last compile still
+matches the current source — the tool that answers "why did this fail to compile" or "show me
+the code". It is the second tool over the `Authoring` tag
+([US-7.2](sprints/stories/US-7.2-get-draft-tool.md)), and the module that owns `DraftSchema` and
+`AttachmentSchema`: `list_drafts` and `list_draft_attachments` import both from here rather than
+redeclaring them, so one shape drifting only breaks in one place.
+
+**One cut.** At the [US-7.1](sprints/stories/US-7.1-authoring-substrate-and-conventions-tool.md)
+ceilings, one draft is worth up to 192 KiB of EA source + 5 × 64 KiB of attachment source + 16
+KiB of compile log — roughly 135,000 tokens, more than most context windows. Attachment
+`sourceCode` is replaced with `sourceBytes`; everything else, including the EA's own source,
+returns whole — this is the tool a caller reaches for *because* they want the source, so
+truncating it here would leave no tool able to return it.
+
+Read live on 2026-08-19 against the account holding drafts: the key set matched the design
+spec's twelve exactly, four drafts existed, none `FAILED` and none carrying an attachment, so
+no real `lastCompileDiagnostics` element was available to check against `DiagnosticSchema` — a
+shape transcribed from `POST /drafts/{draftId}/compile`, which types that field where the two
+`GET` paths do not. The parse stays `z.array(z.unknown())` regardless: `parseOrThrow` is
+all-or-nothing, so transcribing the compile response's shape onto an untyped `GET` field would
+take both draft tools down the day they diverge. See
+[US-7.2 §Implementation notes](sprints/stories/US-7.2-get-draft-tool.md) for the observed key
+set.
+
+### Added
+- **`get_draft` — one MQL5 draft, full fidelity** (`src/tools/authoring/get-draft.ts`).
+  `DraftSchema`, `AttachmentSchema`, `DiagnosticSchema`, `AttachmentSummarySchema`,
+  `DraftOutputSchema`, `byteLength`, `parseDraft`, `shapeDraft`, `formatDraft`. Diagnostics
+  render opportunistically — `DiagnosticSchema.safeParse` per element, a readable
+  `file:line:column` line on a match, the raw element otherwise — so a shape mismatch costs a
+  less readable line, never a failed call. The text also composes the API's documented
+  register-readiness question (`lastCompileStatus === 'SUCCESS' && compiledUpToDate`) as a
+  derived sentence rather than a stored field, since both operands are already in the output.
+  - **Attachment source is cut, not truncated.** `attachments[].sourceCode` never reaches
+    either channel; `sourceBytes` replaces it, and a `notes` entry — repeated in the text —
+    names `list_draft_attachments` and the `draftId` that undoes the cut.
+  - **No parameter reopens the cut, and the EA's own source is never truncated.** Half an
+    MQL5 file reads as a complete one to a model that did not write it.
+
+### Notes
+- **The API's `Authoring` `GET` surface is now two of four tooled.** `list_drafts` and
+  `list_draft_attachments` remain, both importing this release's schemas rather than
+  redeclaring them ([EPIC-7](sprints/epics/EPIC-7.md)).
+
 ## [2.1.0] — 2026-08-19 — `get_authoring_conventions`: the eleventh tool, and a new tag opens
 
 The Senti Quant Public API grew a new `Authoring` tag, and with it from **17 operations to

@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { ConventionsOutputSchema } from './tools/authoring/conventions.js';
+import { DraftOutputSchema } from './tools/authoring/get-draft.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 import { BreakdownsOutputSchema } from './tools/performance/breakdowns.js';
 import { PerformanceOutputSchema } from './tools/performance/summary.js';
@@ -63,6 +64,32 @@ const CONVENTIONS = {
     maxSourceBytes: 196608,
     maxRegisteredEas: 10,
   },
+};
+
+const DRAFT = {
+  id: 'd-1',
+  name: 'RSI Reversal',
+  sourceCode: '// 12 bytes\n',
+  createdAt: '2026-08-14T09:22:41.318Z',
+  updatedAt: '2026-08-18T04:07:55.902Z',
+  lastCompileStatus: 'FAILED',
+  lastCompileLog: 'strategy.mq5(42,7) : error 123: undeclared identifier',
+  logTruncated: false,
+  lastCompileDiagnostics: [
+    {
+      severity: 'error',
+      file: 'strategy.mq5',
+      line: 42,
+      column: 7,
+      code: '123',
+      message: 'undeclared identifier',
+    },
+  ],
+  compiledUpToDate: false,
+  eaDefinitionId: null,
+  attachments: [
+    { id: 'a-1', filename: 'Trend.mq5', sourceCode: 'abcde', createdAt: '2026-08-14T09:30:00.000Z' },
+  ],
 };
 
 const STRATEGY = {
@@ -1553,6 +1580,12 @@ const TOOL_CALLS: {
     outputSchema: ConventionsOutputSchema,
     successBody: CONVENTIONS,
   },
+  {
+    name: 'get_draft',
+    arguments: { draftId: 'abc-123' },
+    outputSchema: DraftOutputSchema,
+    successBody: DRAFT,
+  },
   { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
   { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
   { name: 'list_strategies', outputSchema: StrategiesOutputSchema, successBody: [STRATEGY] },
@@ -1650,13 +1683,18 @@ describe('invariants across every registered tool', () => {
     }
   });
 
-  test('rejects a path-traversal accountId before any HTTP call, for every account-scoped tool', async () => {
-    const accountScoped = TOOL_CALLS.filter(
-      (call): call is typeof call & { arguments: Record<string, unknown> } =>
-        call.arguments !== undefined && 'accountId' in call.arguments,
-    );
+  test('rejects a path-traversal id before any HTTP call, for every account- or draft-scoped tool', async () => {
+    // Both `accountPath` and `draftPath` are built over the same private
+    // `segmentPath` guard (`core/client.ts`), so one hostile-value check
+    // covers every tool keyed on either id.
+    const SEGMENT_KEYS = ['accountId', 'draftId'] as const;
 
-    for (const call of accountScoped) {
+    const scopedCalls = TOOL_CALLS.flatMap((call) => {
+      const key = SEGMENT_KEYS.find((candidate) => call.arguments && candidate in call.arguments);
+      return key ? [{ call, key }] : [];
+    });
+
+    for (const { call, key } of scopedCalls) {
       let called = false;
       const watching = (async () => {
         called = true;
@@ -1666,15 +1704,15 @@ describe('invariants across every registered tool', () => {
 
       const result = (await client.callTool({
         name: call.name,
-        arguments: { ...call.arguments, accountId: '../../admin' },
+        arguments: { ...call.arguments, [key]: '../../admin' },
       })) as ToolResult;
 
       expect(result.isError, call.name).toBe(true);
       expect(textOf(result), call.name).toMatch(/Invalid path segment/);
-      // The load-bearing assertion: `accountPath` throws before `client.get`
-      // is entered, so a hostile value never reaches the network at all —
-      // materially stronger than a value that reaches the network and is
-      // merely rejected server-side.
+      // The load-bearing assertion: the path builder throws before
+      // `client.get` is entered, so a hostile value never reaches the
+      // network at all — materially stronger than a value that reaches the
+      // network and is merely rejected server-side.
       expect(called, call.name).toBe(false);
     }
   });
