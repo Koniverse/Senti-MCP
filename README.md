@@ -31,18 +31,19 @@ the MT5 account number, not a key.
   (Node 20.3.0), on the path of every tool call, and `npm run test:smoke` uses
   `node --env-file` (20.6.0). Raised from the old 20.6.0 floor in v2.0.0 because
   Node 20 reached end of life on 2026-04-30 ([CONTEXT D27](docs/CONTEXT.md))
-- A Senti Quant API key (`sq_live_…`). As of v0.2.0 the tool surface needs five
+- A Senti Quant API key (`sq_live_…`). As of v2.1.0 the tool surface needs six
   read scopes: `accounts:read`, `brokers:read`, `strategies:read`,
-  `performance:read`, `trading:read` — create one with all five at the
-  [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). There is
-  no key-introspection endpoint, so a missing scope isn't caught at startup: it
-  surfaces as a `403` naming the scope the first time the affected tool is
-  called, and every other tool keeps working. As of v1.1.0 all five are
-  exercised by a shipped tool: `accounts:read` (`list_accounts`), `brokers:read`
+  `performance:read`, `trading:read`, `authoring:read` — create one with all
+  six at the [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys).
+  There is no key-introspection endpoint, so a missing scope isn't caught at
+  startup: it surfaces as a `403` naming the scope the first time the affected
+  tool is called, and every other tool keeps working. All six are exercised by
+  a shipped tool: `accounts:read` (`list_accounts`), `brokers:read`
   (`list_brokers`), `strategies:read` (`list_strategies`,
   `list_account_strategies`), `trading:read` (`list_positions`,
-  `list_pending_orders`, `list_deals`) and `performance:read`
-  (`get_account_performance`, `get_performance_breakdowns`, `get_equity_timeseries`).
+  `list_pending_orders`, `list_deals`), `performance:read`
+  (`get_account_performance`, `get_performance_breakdowns`, `get_equity_timeseries`)
+  and `authoring:read` (`get_authoring_conventions`).
 
 ## Configuration
 

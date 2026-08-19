@@ -14,7 +14,7 @@ nothing was ever published.
 | Requirement | Why |
 |---|---|
 | **Node.js ≥ 22.11.0** | The first LTS release of the Node 22 "Jod" line, supported until 2027-04-30. This is a **support-lifetime** floor, not an API one ([CONTEXT D27](CONTEXT.md)): the newest API in use is still `AbortSignal.any()` (20.3.0), on the path of every tool call, and `npm run test:smoke` uses `node --env-file` (20.6.0). So the code runs on 20.6.0–22.10.x and npm only warns `EBADENGINE` there — but that range receives no security patches and CI does not test it. Below 20.3.0 it genuinely breaks: the server starts, `tools/list` succeeds, then every `list_accounts` call fails with `TypeError: AbortSignal.any is not a function`. |
-| **A Senti Quant API key** | `sq_live_…`. As of v0.2.0 the tool surface needs five read scopes — see §3. Created in the [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). |
+| **A Senti Quant API key** | `sq_live_…`. As of v2.1.0 the tool surface needs six read scopes — see §3. Created in the [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). |
 
 ```bash
 node --version    # must be >= 22.11.0
@@ -42,9 +42,10 @@ cp .env.example .env.local
 ```bash
 # Senti Quant API key (added in v0.1.0) — REQUIRED.
 # The first-party key is itself the bearer token; the server exits at startup
-# without it. As of v0.2.0 the tool surface needs five read scopes:
-# accounts:read, brokers:read, strategies:read, performance:read, trading:read.
-# Create one with all five at https://stage.sentitrade.xyz/account/api-keys
+# without it. As of v2.1.0 the tool surface needs six read scopes:
+# accounts:read, brokers:read, strategies:read, performance:read, trading:read,
+# authoring:read. Create one with all six at
+# https://stage.sentitrade.xyz/account/api-keys
 SENTI_API_KEY=sq_live_…
 
 # Senti API root (added in v0.1.0) — optional.
@@ -64,12 +65,12 @@ SENTI_SMOKE_KEY=sq_live_…
 | `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | API root. Set to `https://be-dev.sentitrade.xyz` for development. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only, read from `.env.local` by `npm run test:smoke`. |
 
-> ### Five scopes, not one
+> ### Six scopes, not one
 >
-> As of v0.2.0 the tool surface needs `accounts:read`, `brokers:read`,
-> `strategies:read`, `performance:read`, and `trading:read`. Create the key with all
-> five at once — scopes are fixed at creation, so a key created with fewer means going
-> back to the dashboard later.
+> As of v2.1.0 the tool surface needs `accounts:read`, `brokers:read`,
+> `strategies:read`, `performance:read`, `trading:read`, and `authoring:read`.
+> Create the key with all six at once — scopes are fixed at creation, so a key
+> created with fewer means going back to the dashboard later.
 >
 > **There is no key-introspection endpoint**, so a missing scope cannot be detected at
 > startup. It surfaces as a `403` naming the missing scope the first time a tool that
@@ -79,8 +80,10 @@ SENTI_SMOKE_KEY=sq_live_…
 > `strategies:read` (`list_strategies`, `list_account_strategies`) and `trading:read`
 > (`list_positions`, `list_pending_orders`) are exercised by a shipped tool.
 > `performance:read` is not yet — it arrives with the remaining read operations, which
-> are [sprint-2026-W33](sprints/sprint-2026-W33.md)'s Phase 3. Creating the key with all
-> five now still saves a trip back to the dashboard once those land.
+> are [sprint-2026-W33](sprints/sprint-2026-W33.md)'s Phase 3. `authoring:read`
+> (`get_authoring_conventions`) is exercised as of v2.1.0 — see
+> [EPIC-7](sprints/epics/EPIC-7.md). Creating the key with all six now still saves a
+> trip back to the dashboard once further authoring tools land.
 
 > ### The key and the base URL must match environments
 >
@@ -163,7 +166,7 @@ Restart the client; `list_accounts` should appear in its tool list.
 |---|---|
 | `SENTI_API_KEY is required…`, exit 1 | No key in the environment. The MCP client's `env` block is separate from your shell. |
 | `Senti API rejected the credentials (401)` | Key does not match the environment `SENTI_API_BASE_URL` targets (see §3), or it was revoked. |
-| `Senti API returned 403 … missing the \`<scope>\` scope` | The key is valid but lacks that scope — `accounts:read`, `brokers:read`, `strategies:read`, `performance:read`, or `trading:read`, depending on which tool was called. There is no key-introspection endpoint, so this is caught only when the tool runs, not at startup. Create a new key with all five scopes; scopes are fixed at creation. |
+| `Senti API returned 403 … missing the \`<scope>\` scope` | The key is valid but lacks that scope — `accounts:read`, `brokers:read`, `strategies:read`, `performance:read`, `trading:read`, or `authoring:read`, depending on which tool was called. There is no key-introspection endpoint, so this is caught only when the tool runs, not at startup. Create a new key with all six scopes; scopes are fixed at creation. |
 | `TypeError: AbortSignal.any is not a function` | Node older than 20.3.0 — well below the ≥ 22.11.0 floor. See §1. |
 | Client shows no tools / fails to connect | Something wrote to stdout and corrupted the JSON-RPC stream. Diagnostics must go to stderr only. |
 | `SENTI_API_BASE_URL must not carry a query string or fragment` | Exactly that — a query or fragment cannot survive being joined to an endpoint path. |
