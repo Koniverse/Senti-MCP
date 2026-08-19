@@ -12,18 +12,20 @@ interact with **[Senti Quant](https://github.com/Koniverse/Senti-Quant)** throug
 Public API.
 
 The API — `https://api.sentitrade.xyz`, OpenAPI 3.1 at `/api/v1/openapi.json` — exposes
-17 operations across 15 paths, tagged Accounts, Brokers, Strategies, Performance, and
-Trading. An MCP host cannot call it directly: something has to own the API key, present
-typed tools whose descriptions let a model choose correctly, and turn API errors into
-text a model can act on. This server is that something.
+29 operations across 22 paths, tagged Accounts, Brokers, Strategies, Performance,
+Trading, and Authoring. An MCP host cannot call it directly: something has to own the
+API key, present typed tools whose descriptions let a model choose correctly, and turn
+API errors into text a model can act on. This server is that something.
 
-**Current state: `2.0.1`.** `1.0.0` is the stable-surface cut and is tagged git-only;
+**Current state: `2.1.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
 `1.0.1` is the version that carried it to the registry
-([CONTEXT D11, D12](docs/CONTEXT.md)). **Ten** tools are registered in `src/server.ts`:
-`list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
-`list_positions`, `list_pending_orders`, `list_deals`, `get_account_performance`,
-`get_performance_breakdowns`, `get_equity_timeseries` — **the API's 10 `GET`
-operations, complete**. `list_accounts` shipped first, in v0.1.0, tracked as
+([CONTEXT D11, D12](docs/CONTEXT.md)). **Eleven** tools are registered in `src/server.ts`:
+`get_authoring_conventions`, `list_accounts`, `list_brokers`, `list_strategies`,
+`list_account_strategies`, `list_positions`, `list_pending_orders`, `list_deals`,
+`get_account_performance`, `get_performance_breakdowns`, `get_equity_timeseries` —
+**ten of the API's 14 `GET` operations**; the remaining three sit behind the new
+`Authoring` tag's `get_draft`, `list_drafts` and `list_draft_attachments`, tracked in
+[EPIC-7](docs/sprints/epics/EPIC-7.md). `list_accounts` shipped first, in v0.1.0, tracked as
 [US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md) and proven against the
 live API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md); the
 next five closed out [sprint-2026-W33](docs/sprints/sprint-2026-W33.md)'s Phase 1,
@@ -42,7 +44,16 @@ only for the two that lose something: [CONTEXT D25](docs/CONTEXT.md)), and
 ([US-2.13](docs/sprints/stories/US-2.13-get-equity-timeseries-tool.md), whose
 downsample pins the first point, the last point and the deepest drawdown, ranked by
 magnitude because the API never declares the sign: [CONTEXT D26](docs/CONTEXT.md)).
-**EPIC-2 closed `done` on 2026-08-12** with the read path complete.
+**EPIC-2 closed `done` on 2026-08-12** with the read path complete — complete against the
+API as it stood that day. The API has since grown a new `Authoring` tag, which is what
+[EPIC-7](docs/sprints/epics/EPIC-7.md) exists to catch up to:
+`get_authoring_conventions` shipped in `2.1.0`
+([US-7.1](docs/sprints/stories/US-7.1-authoring-substrate-and-conventions-tool.md)), the
+first of that tag's four `GET` operations. It reads the platform's own MQL5 authoring
+contract — hard-safety constraints, trading-safety requirements, the static analyzer's
+forbidden-construct list, and the `limits` block an agent must read before generating
+source, since those five ceilings are also what size the cuts the remaining three
+`EPIC-7` tools make.
 
 **Neither `2.0.0` nor `2.0.1` ships a tool.** `2.0.0` is a **support-policy** release: the
 Node floor moved from `>=20.6.0` to `>=22.11.0` because Node 20 reached end of life on
@@ -60,10 +71,14 @@ before touching anything under `src/`.
 ### The read/write split
 
 This is the project's load-bearing architectural boundary. **Only read operations are
-exposed.** Seven of the 17 operations are `POST`, two of them `positions/close-all` and
-`orders/cancel-all`. A tool an LLM can call that closes every open position is not a
-bigger version of a tool that lists accounts — it needs an opt-in switch, an
-`Idempotency-Key`, and user confirmation before execution. It gets its own epic
+exposed.** 15 of the 29 operations are writes — two of them `positions/close-all` and
+`orders/cancel-all`, eight more added by the `Authoring` tag's `POST /drafts`, its
+`PUT`/`DELETE`, its three attachment writes, and its `compile` and `register` actions.
+`register` puts an EA into a real trading account and `compile` consumes a globally
+serial slot, so a retry policy that is harmless on a read is a denial-of-service on
+either. A tool an LLM can call that closes every open position is not a bigger version
+of a tool that lists accounts — it needs an opt-in switch, an `Idempotency-Key`, and
+user confirmation before execution. It gets its own epic
 ([EPIC-3](docs/sprints/epics/EPIC-3.md)) and its own design spec. Do not register a
 write tool, and do not add one "ready to enable".
 
@@ -84,7 +99,8 @@ src/
   core/                 ← infrastructure; imports nothing from tools/
     client.ts           ← createClient(config, deps).get(); owns the Authorization
                           header, the 15s timeout, status→message mapping, query
-                          parameters, accountPath path builder, and 404/409 branches
+                          parameters, the accountPath/draftPath path builders over a
+                          shared private segmentPath guard, and 404/409 branches
     client.test.ts
     errors.ts           ← ApiError (status + envelope code); describeError flattens
                           the cause chain, which is what makes fetch failures readable
@@ -97,6 +113,9 @@ src/
     parse.test.ts
 
   tools/                ← one folder per API tag, one file per endpoint
+    authoring/          ← conventions.ts (v2.1.0) — the first tool over the new
+                          `Authoring` tag; publishes the `limits` the rest of
+                          EPIC-7's tools size their cuts against. No cuts of its own
     accounts/           ← list-accounts.ts — AccountSchema (16 fields), parseAccounts,
                           formatAccounts. Imports no MCP SDK, so it is tested by direct
                           calls. Shipped in v0.1.0, relocated here in v0.2.0
@@ -284,6 +303,12 @@ that shows it, since the path is gitignored. `vitest.config.ts` scopes collectio
 are environment-bound and the default base URL is production, so a key issued
 elsewhere returns 401 however valid it is. That is the first thing to check on a 401,
 ahead of regenerating the key.
+
+`SENTI_API_KEY` needs six read scopes for the full tool surface: `accounts:read`,
+`brokers:read`, `strategies:read`, `performance:read`, `trading:read`, and — as of
+`2.1.0` — `authoring:read` (`get_authoring_conventions`). There is no
+key-introspection endpoint, so a missing scope is not caught at startup; it surfaces
+as a `403` naming the scope the first time the affected tool is called.
 
 Neither key is ever printed, logged, or committed. When adding a variable, RULE-11
 requires [docs/SETUP.md](docs/SETUP.md) and `.env.example` updated in the same commit.

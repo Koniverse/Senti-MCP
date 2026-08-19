@@ -2,6 +2,7 @@ import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 import { describe, expect, test } from 'vitest';
 import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
+import { ConventionsOutputSchema } from './tools/authoring/conventions.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 import { BreakdownsOutputSchema } from './tools/performance/breakdowns.js';
 import { PerformanceOutputSchema } from './tools/performance/summary.js';
@@ -49,6 +50,19 @@ const BROKER = {
   name: 'Exness',
   servers: ['Exness-MT5Trial6'],
   accountTypes: [{ id: 'at1', name: 'Standard', defaultSymbol: 'EURUSD' }],
+};
+
+const CONVENTIONS = {
+  hardSafetyConstraints: ['NEVER use #import of a DLL.'],
+  tradingSafetyRequirements: ['Every order must carry a stop loss.'],
+  forbiddenConstructs: [{ id: 'NO_DLL_IMPORT', pattern: '#import\\b', reason: 'No DLLs.' }],
+  limits: {
+    maxDrafts: 20,
+    maxAttachmentsPerDraft: 5,
+    maxAttachmentBytes: 65536,
+    maxSourceBytes: 196608,
+    maxRegisteredEas: 10,
+  },
 };
 
 const STRATEGY = {
@@ -1534,6 +1548,11 @@ const TOOL_CALLS: {
   outputSchema: z.ZodType;
   successBody: unknown;
 }[] = [
+  {
+    name: 'get_authoring_conventions',
+    outputSchema: ConventionsOutputSchema,
+    successBody: CONVENTIONS,
+  },
   { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
   { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },
   { name: 'list_strategies', outputSchema: StrategiesOutputSchema, successBody: [STRATEGY] },

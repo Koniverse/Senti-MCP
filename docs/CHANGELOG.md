@@ -15,6 +15,58 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.1.0] — 2026-08-19 — `get_authoring_conventions`: the eleventh tool, and a new tag opens
+
+The Senti Quant Public API grew a new `Authoring` tag, and with it from **17 operations to
+29** — 14 of them now `GET`, not 10. `get_authoring_conventions` is the first tool over that
+tag: it reads `GET /api/v1/authoring/conventions` under a new `authoring:read` scope and
+publishes the platform's own MQL5 authoring contract — the hard-safety constraints, the
+trading-safety requirements, the static analyzer's forbidden-construct list, and the five
+`limits` ceilings the API enforces on drafts, attachments and registered EAs. Read live on
+2026-08-19: `maxDrafts` 20, `maxAttachmentsPerDraft` 5, `maxAttachmentBytes` 65536 (64 KiB),
+`maxSourceBytes` 196608 (192 KiB), `maxRegisteredEas` 10. Those numbers matter beyond this
+release — they are what size the cuts [EPIC-7](sprints/epics/EPIC-7.md)'s remaining three
+tools make against a payload the API can otherwise grow past a context window
+([US-7.1](sprints/stories/US-7.1-authoring-substrate-and-conventions-tool.md)).
+
+This release also lands the substrate the rest of `EPIC-7` stands on:
+`draftPath`/`DRAFT_NOT_FOUND` in `src/core/client.ts`, extracted from `accountPath` over a
+shared private `segmentPath` guard rather than copied
+([CONTEXT D33](CONTEXT.md)) — no path-traversal guard now has a second copy to drift out of
+sync with the first.
+
+### Added
+- **`get_authoring_conventions` — the platform's MQL5 authoring contract, as data**
+  (`src/tools/authoring/conventions.ts`). `ConventionsOutputSchema`, `parseConventions`,
+  `formatConventions`. No path parameter, no `409` — `client.get` is called with a `scope`
+  only, no `notFoundMeans` or `conflictMeans`. The tool description tells the model to call
+  this **before generating any MQL5 source**: code that violates these rules is rejected by
+  a static scan before it reaches the compiler, and compile slots are globally serial, so
+  discovering a rule by failing a compile is expensive and still fails.
+  - **Every rule is rendered whole, never summarized.** These are instructions a model must
+    follow, not records it might skim — `formatConventions` numbers every constraint and
+    requirement and reproduces every `forbiddenConstructs[].pattern` verbatim, escapes
+    intact.
+  - **The patterns are reported, not evaluated.** `pattern` values are regular expressions
+    the API's own static analyzer applies; this tool does not compile or run them, and says
+    so — the document types them as bare strings and never names the regex dialect, so
+    building a `RegExp` from an undeclared dialect would be a crash or a silent mismatch.
+  - **No cuts and no `notes` field.** The whole response is roughly 2 KB and static per
+    deploy, so unlike `get_performance_breakdowns` and `get_equity_timeseries` there is
+    nothing here to shape.
+- **`draftPath` and `DRAFT_NOT_FOUND`** in `src/core/client.ts` — the substrate the other
+  three `EPIC-7` tools build their paths on. A private `segmentPath(prefix, segments, hint)`
+  now owns `PATH_SEGMENT`, `encodeURIComponent` and the traversal-rejection loop;
+  `accountPath` is re-expressed over it with its signature and error message unchanged, and
+  `draftPath` is a second prefix over the same guard rather than a second copy of it
+  ([CONTEXT D33](CONTEXT.md)).
+
+### Notes
+- **The API's operation count is now 29, not 17** — a new `Authoring` tag adds 12 operations,
+  four of them `GET`. `get_authoring_conventions` is the first of those four;
+  [EPIC-7](sprints/epics/EPIC-7.md) tracks the remaining three (`get_draft`, `list_drafts`,
+  `list_draft_attachments`).
+
 ## [2.0.1] — 2026-08-14 — the floor gets a gate, and the toolchain catches up
 
 **Nothing that runs has changed.** All **17 `dist/**/*.js` files are byte-identical** to

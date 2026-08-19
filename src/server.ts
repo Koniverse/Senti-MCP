@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/server';
 import { createClient } from './core/client.js';
 import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
 import { registerListAccounts } from './tools/accounts/list-accounts.js';
+import { registerGetAuthoringConventions } from './tools/authoring/conventions.js';
 import { registerListBrokers } from './tools/brokers/list-brokers.js';
 import { registerGetPerformanceBreakdowns } from './tools/performance/breakdowns.js';
 import { registerGetAccountPerformance } from './tools/performance/summary.js';
@@ -34,6 +35,7 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
 
   const client = createClient(config, { fetch: deps.fetch });
 
+  registerGetAuthoringConventions(server, client);
   registerListAccounts(server, client);
   registerListBrokers(server, client);
   registerListStrategies(server, client);

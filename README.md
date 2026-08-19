@@ -19,6 +19,7 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | `get_performance_breakdowns` | `accountId`, plus the same optional `from`, `to` and `reporting` as `get_account_performance` | Breaks one MT5 account down three ways over a date window: a day-by-day P&L, volume and notional series; a per-symbol P&L and deal-count series; and P&L by hour of the day. Answers "which symbol is losing me money" and "what hour do I trade worst". **This response is shaped.** The endpoint is the largest the API serves — 87 KB for a 63-day window on a single-symbol account — so per-account rows and running totals are dropped, at most **10 symbols** are kept (those with the largest absolute net P&L), and the hourly grid is totalled across the window. Whatever that costs is listed in `notes` and repeated in the text; `notes` is empty when nothing was cut. For a single whole-account figure use `get_account_performance` — it is smaller and it is the default for a performance question. |
 
 | `get_equity_timeseries` | `accountId`, plus the same optional `from`, `to` and `reporting` as `get_account_performance` | Returns the reconstructed equity curve and floating drawdown for one MT5 account over a date window, as a series of points — answers "how has my equity moved" and "what was my worst drawdown". **This response is shaped.** A wide window returns a point per interval and grows without bound, so the series is downsampled to at most **200 points** — but the **first point, the last point and the point of deepest drawdown are always retained**, so the start, the end and the worst of the curve are exact rather than sampled near. Measured live on 2026-08-12: 499 points over 63 days → 200. Every downsample is recorded in `notes`, which is empty when the series was short enough to return whole; narrow `from`/`to` for finer resolution. `caveats` and `portfolioCaveats` — the API's own statements about figures it could not fully reconstruct — are always returned in full, never shortened. |
+| `get_authoring_conventions` | none | Reads the Senti Quant MQL5 authoring contract as data: hard-safety constraints, trading-safety requirements, the static analyzer's forbidden-construct list, and the platform limits on draft count and source size. Call this before generating any MQL5 source — code that breaks these rules is rejected by a static scan before it reaches the compiler, and compile slots are globally serial, so discovering a rule by failing a compile is expensive and still fails. The response is small (~2 KB) and static per deploy; `forbiddenConstructs[].pattern` values are regular expressions reported verbatim, never evaluated. |
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
 
@@ -84,14 +85,17 @@ No install step — `npx` fetches the published package on first run:
 }
 ```
 
-Restart the client; all ten tools should appear — every `GET` operation the
-Senti Quant Public API exposes now has one. `npx -y senti-mcp-server` resolves to
-whatever npm's `latest` tag points at — `2.0.1` as of this release, which carries
-the same ten tools as `1.4.0` and differs from it only in requiring Node ≥ 22.11.0.
-`2.0.0` is identical to `2.0.1` in everything that runs; the patch carries only
+Restart the client; all eleven tools should appear — every `GET` operation the
+Senti Quant Public API exposed as of `1.4.0` has one, plus `get_authoring_conventions`
+over the `Authoring` tag the API grew afterward; the API's newest three `Authoring` `GET`
+operations have no tool yet. `npx -y senti-mcp-server` resolves to whatever npm's `latest`
+tag points at — `2.1.0` as of this release.
+It carries the ten tools of `1.4.0` plus `get_authoring_conventions`.
+`2.0.1` and `2.0.0` carry the same ten tools as `1.4.0` and differ from it only in
+requiring Node ≥ 22.11.0; the `2.0.1` patch on top of `2.0.0` carries only
 build-toolchain and documentation changes.
 `1.4.0` is the last version declaring the old 20.6.0 floor and is the one to
-pin if you are stuck on Node 20; it carries all ten tools. `1.3.0` carries nine,
+pin if you are stuck on Node 20; it carries ten tools. `1.3.0` carries nine,
 without `get_equity_timeseries`; `1.2.0` carries eight, without
 `get_performance_breakdowns` as well; `1.1.0` carries seven, without `list_deals`
 on top of that; `1.0.1` carries six, without `get_account_performance` too;
@@ -100,7 +104,7 @@ others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
 expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@2.0.1"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@2.1.0"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server

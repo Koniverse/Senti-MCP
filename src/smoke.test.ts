@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { formatAccounts, parseAccounts } from './tools/accounts/list-accounts.js';
+import { formatConventions, parseConventions } from './tools/authoring/conventions.js';
 import { formatBrokers, parseBrokers } from './tools/brokers/list-brokers.js';
 import {
   formatAccountStrategies,
@@ -43,6 +44,12 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
 
     const brokers = parseBrokers(await client.get('/api/v1/brokers', { scope: 'brokers:read' }));
     expect(formatBrokers(brokers).length).toBeGreaterThan(0);
+
+    const conventions = parseConventions(
+      await client.get('/api/v1/authoring/conventions', { scope: 'authoring:read' }),
+    );
+    expect(conventions.limits.maxDrafts).toBeGreaterThan(0);
+    expect(formatConventions(conventions)).toMatch(/authoring contract/i);
 
     const strategies = parseStrategies(
       await client.get('/api/v1/strategies', { scope: 'strategies:read' }),
