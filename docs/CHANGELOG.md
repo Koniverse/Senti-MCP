@@ -15,6 +15,52 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.3.0] — 2026-08-20 — `list_drafts`: the thirteenth tool, and the largest payload in the API cut four ways
+
+`list_drafts` reads `GET /api/v1/drafts` under `authoring:read` and lists every MQL5 draft
+the API key owns, most recently updated first, with each draft's compile status, size,
+attachment count and registered-EA id — the tool that answers "what am I working on" or
+"which of my drafts are broken". It is the third tool over the `Authoring` tag
+([US-7.3](sprints/stories/US-7.3-list-drafts-tool.md)), and its `DraftSummarySchema` is
+derived from `2.2.0`'s `DraftSchema` by `.omit()` and `.extend()` rather than hand-written,
+so a field the API adds upstream cannot silently bypass the cut.
+
+**The largest payload the API can produce.** The route takes no query parameters at all —
+no `?include=`, no `?fields=`, no pagination, no filter — and returns every draft's full
+`sourceCode`, every attachment's full `sourceCode`, and every draft's `lastCompileLog`
+whole. At the [US-7.1](sprints/stories/US-7.1-authoring-substrate-and-conventions-tool.md)
+ceilings that arithmetic is `20 × (192 KiB source + 5 × 64 KiB attachments + 16 KiB log) =
+10.3 MiB ≈ 2.7 million tokens`. Measured live on 2026-08-20 against an account holding 4
+drafts and 0 attachments: **19,853 B → 1,898 B, 90.4% removed** — matching the design
+spec's 2026-08-19 measurement exactly. See [CONTEXT D32](CONTEXT.md).
+
+**Four cuts, one note.** `sourceCode` (→ `sourceBytes`), `attachments[].sourceCode` (→
+`sourceBytes`), `lastCompileLog` (and `logTruncated`, which describes a field that is no
+longer there), and `lastCompileDiagnostics` (→ `diagnosticsCount`). All four lose
+information, so all four are reported — but as one sentence naming the draft and attachment
+counts, the KiB removed, and both `get_draft` and `list_draft_attachments` as the way to
+read what was cut, rather than four notes a reader would learn to skim past. `notes` stays
+empty on an empty collection, so its presence never implies a cut occurred.
+
+**No parameter turns the cut off.** The ceiling is two orders of magnitude past
+`get_performance_breakdowns`', the API's next-largest payload, so an opt-out here would be a
+footgun with a documented safety catch rather than a real escape hatch — `get_draft` already
+is one, and it returns one draft rather than twenty.
+
+### Added
+- **`list_drafts` — every draft, shaped** (`src/tools/authoring/list-drafts.ts`).
+  `DraftSummarySchema`, `DraftsOutputSchema`, `parseDrafts`, `shapeDrafts`, `formatDrafts`.
+  Registered between `get_authoring_conventions` and `get_draft` in `src/server.ts`, so the
+  file reads conventions → list → read. Text output marks a draft `SUCCESS`-and-up-to-date as
+  "ready to register" and renders a `null` `lastCompileStatus` as "never compiled" rather
+  than printing `null`.
+
+### Notes
+- **The API's `Authoring` `GET` surface is now three of four tooled.**
+  `list_draft_attachments` remains, tracked in [EPIC-7](sprints/epics/EPIC-7.md).
+- `src/smoke.test.ts` now parses `GET /api/v1/drafts` through `parseDrafts` rather than
+  casting it, so the live smoke path exercises the schema instead of bypassing it.
+
 ## [2.2.0] — 2026-08-19 — `get_draft`: the twelfth tool, and the schemas the last two `EPIC-7` tools import
 
 `get_draft` reads `GET /api/v1/drafts/{draftId}` under `authoring:read` and returns one MQL5

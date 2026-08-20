@@ -4,6 +4,7 @@ import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
 import { registerListAccounts } from './tools/accounts/list-accounts.js';
 import { registerGetAuthoringConventions } from './tools/authoring/conventions.js';
 import { registerGetDraft } from './tools/authoring/get-draft.js';
+import { registerListDrafts } from './tools/authoring/list-drafts.js';
 import { registerListBrokers } from './tools/brokers/list-brokers.js';
 import { registerGetPerformanceBreakdowns } from './tools/performance/breakdowns.js';
 import { registerGetAccountPerformance } from './tools/performance/summary.js';
@@ -37,6 +38,7 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
   const client = createClient(config, { fetch: deps.fetch });
 
   registerGetAuthoringConventions(server, client);
+  registerListDrafts(server, client);
   registerGetDraft(server, client);
   registerListAccounts(server, client);
   registerListBrokers(server, client);

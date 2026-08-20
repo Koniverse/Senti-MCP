@@ -4,6 +4,7 @@ import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { ConventionsOutputSchema } from './tools/authoring/conventions.js';
 import { DraftOutputSchema } from './tools/authoring/get-draft.js';
+import { DraftsOutputSchema } from './tools/authoring/list-drafts.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 import { BreakdownsOutputSchema } from './tools/performance/breakdowns.js';
 import { PerformanceOutputSchema } from './tools/performance/summary.js';
@@ -1580,6 +1581,7 @@ const TOOL_CALLS: {
     outputSchema: ConventionsOutputSchema,
     successBody: CONVENTIONS,
   },
+  { name: 'list_drafts', outputSchema: DraftsOutputSchema, successBody: [DRAFT] },
   {
     name: 'get_draft',
     arguments: { draftId: 'abc-123' },

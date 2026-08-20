@@ -2,13 +2,14 @@
 id: US-7.3
 title: "list_drafts tool"
 epic: EPIC-7
-status: ready
+status: done
 priority: P1
 points: 3
 sprint: sprint-2026-W34
 assignee: bluezdot
 created: 2026-08-19
-updated: 2026-08-19
+updated: 2026-08-20
+version_shipped: 2.3.0
 ---
 
 ## Goal
@@ -71,71 +72,71 @@ file by up to 3× and would be reported to the reader as bytes.
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** a response containing `sourceCode`, **When** the tool returns,
+- [x] **AC-1** — **Given** a response containing `sourceCode`, **When** the tool returns,
   **Then** no draft `sourceCode` appears in `content` or `structuredContent`, **And** each
   draft carries `sourceBytes`.
-- [ ] **AC-2** — **Given** a response containing `attachments[].sourceCode`, **When** the
+- [x] **AC-2** — **Given** a response containing `attachments[].sourceCode`, **When** the
   tool returns, **Then** none appears in the output, **And** each attachment carries
   `sourceBytes`, `id`, `filename` and `createdAt`.
-- [ ] **AC-3** — **Given** a response containing `lastCompileLog` and `logTruncated`, **When**
+- [x] **AC-3** — **Given** a response containing `lastCompileLog` and `logTruncated`, **When**
   the tool returns, **Then** neither appears in the output.
-- [ ] **AC-4** — **Given** a response containing `lastCompileDiagnostics`, **When** the tool
+- [x] **AC-4** — **Given** a response containing `lastCompileDiagnostics`, **When** the tool
   returns, **Then** the array does not appear, **And** `diagnosticsCount` carries its length.
-- [ ] **AC-5** — **Given** any non-empty response, **When** the tool returns, **Then** `notes`
+- [x] **AC-5** — **Given** any non-empty response, **When** the tool returns, **Then** `notes`
   carries exactly one entry, **And** it states how many drafts and attachments were cut, how
   many KiB that removed, and names **both** `get_draft` and `list_draft_attachments` as the
   ways to read what was dropped, **And** the same sentence appears in `content`.
-- [ ] **AC-6** — **Given** an empty collection, **When** the tool returns, **Then** `notes` is
+- [x] **AC-6** — **Given** an empty collection, **When** the tool returns, **Then** `notes` is
   the empty array, **And** `content` explains the empty result rather than returning nothing.
-- [ ] **AC-7** — **Given** attachment or source text containing non-ASCII characters, **When**
+- [x] **AC-7** — **Given** attachment or source text containing non-ASCII characters, **When**
   `sourceBytes` is computed, **Then** it is the UTF-8 byte length.
-- [ ] **AC-8** — **Given** `lastCompileStatus: 'SUCCESS'` and `compiledUpToDate: true` on a
+- [x] **AC-8** — **Given** `lastCompileStatus: 'SUCCESS'` and `compiledUpToDate: true` on a
   draft, **When** the text is rendered, **Then** that draft is marked ready to register;
   **Given** either is otherwise, **Then** it is not.
-- [ ] **AC-9** — **Given** `lastCompileStatus: null`, **When** the text is rendered, **Then**
+- [x] **AC-9** — **Given** `lastCompileStatus: null`, **When** the text is rendered, **Then**
   it reads "never compiled" and the word `null` does not appear.
-- [ ] **AC-10** — **Given** the tool is registered, **When** `src/server.test.ts` runs,
+- [x] **AC-10** — **Given** the tool is registered, **When** `src/server.test.ts` runs,
   **Then** `list_drafts` appears in `TOOL_CALLS` and passes the read-only-annotation,
   output-schema and key-absence assertions.
-- [ ] **AC-11** — **Given** a `403` from the API, **When** the tool returns, **Then**
+- [x] **AC-11** — **Given** a `403` from the API, **When** the tool returns, **Then**
   `isError` is true and the text names the `authoring:read` scope.
-- [ ] **AC-12** — **Given** the tool's `inputSchema`, **When** it is inspected, **Then** it is
+- [x] **AC-12** — **Given** the tool's `inputSchema`, **When** it is inspected, **Then** it is
   empty — there is no parameter that requests the unshaped response.
 
 ## Tasks
 
-- [ ] **TASK-7.3.1** — **Measure the live collection before writing any shaping code**
+- [x] **TASK-7.3.1** — **Measure the live collection before writing any shaping code**
   (AC: 1, 2, 3, 4, 5)
-  - [ ] Fetch `/api/v1/drafts` with the smoke key; record the raw byte size, the draft count,
+  - [x] Fetch `/api/v1/drafts` with the smoke key; record the raw byte size, the draft count,
         the attachment count, and the shaped size the four cuts would leave
-  - [ ] Write the numbers into §Implementation notes and compare against the 19,853 B →
+  - [x] Write the numbers into §Implementation notes and compare against the 19,853 B →
         1,898 B (90.4%) the design spec measured. A materially different ratio earns a
         sentence explaining why — not a change to the cuts
-  - [ ] Confirm the collection's item shape still matches `DraftSchema` as
+  - [x] Confirm the collection's item shape still matches `DraftSchema` as
         [US-7.2](US-7.2-get-draft-tool.md) transcribed it. If the list item and the single
         read have diverged, **stop** — this story is built on them being the same object
-- [ ] **TASK-7.3.2** — `src/tools/authoring/list-drafts.ts` domain module (AC: 1–9, 12)
-  - [ ] `DraftSummarySchema` derived from `DraftSchema` by `.omit()` and `.extend()`, so a
+- [x] **TASK-7.3.2** — `src/tools/authoring/list-drafts.ts` domain module (AC: 1–9, 12)
+  - [x] `DraftSummarySchema` derived from `DraftSchema` by `.omit()` and `.extend()`, so a
         field added upstream cannot silently bypass the cut
-  - [ ] `parseDrafts` via `parseOrThrow` with subject `draft list`; `shapeDrafts`;
+  - [x] `parseDrafts` via `parseOrThrow` with subject `draft list`; `shapeDrafts`;
         `formatDrafts`
-  - [ ] One `notes` sentence covering all four cuts, with counts and KiB removed
-  - [ ] Empty-collection branch that explains itself and emits no note
-- [ ] **TASK-7.3.3** — Registration and the `2.3.0` release (AC: 10, 11, 12)
-  - [ ] Register through `registerReadTool`; path `/api/v1/drafts` (no parameter, so no
+  - [x] One `notes` sentence covering all four cuts, with counts and KiB removed
+  - [x] Empty-collection branch that explains itself and emits no note
+- [x] **TASK-7.3.3** — Registration and the `2.3.0` release (AC: 10, 11, 12)
+  - [x] Register through `registerReadTool`; path `/api/v1/drafts` (no parameter, so no
         `draftPath` and no `notFoundMeans`); `scope: 'authoring:read'`
-  - [ ] Tool description states that source, logs **and** diagnostics are all dropped, names
+  - [x] Tool description states that source, logs **and** diagnostics are all dropped, names
         both tools that return them, and says there is no option to request the unshaped
         response
-  - [ ] `src/server.ts` registration; `TOOL_CALLS` row in `src/server.test.ts`
-  - [ ] `VERSION`, `package.json`, `src/config.ts` `SERVER_VERSION` → `2.3.0` in lockstep;
+  - [x] `src/server.ts` registration; `TOOL_CALLS` row in `src/server.test.ts`
+  - [x] `VERSION`, `package.json`, `src/config.ts` `SERVER_VERSION` → `2.3.0` in lockstep;
         `docs/CHANGELOG.md` `## [2.3.0]`; `README.md` tool-table row; `AGENTS.md` tool count
         12 → 13
-- [ ] **TASK-7.3.4** — Append [CONTEXT D32](../../CONTEXT.md) and extend the smoke test
+- [x] **TASK-7.3.4** — Append [CONTEXT D32](../../CONTEXT.md) and extend the smoke test
   (AC: 5)
-  - [ ] D32 records the measured ceiling, the live reduction, and that the cut is not
+  - [x] D32 records the measured ceiling, the live reduction, and that the cut is not
         optional
-  - [ ] `src/smoke.test.ts` parses the live collection through `parseDrafts` rather than
+  - [x] `src/smoke.test.ts` parses the live collection through `parseDrafts` rather than
         casting it, so the smoke path exercises the schema instead of bypassing it
 
 ## Dev notes
@@ -190,3 +191,53 @@ This story's budget is **payload weight**, and it is the tightest in the epic.
 - [Source: implementation plan Task 4](../../superpowers/plans/2026-08-19-senti-authoring-read-tools-w34.md)
 - [Source: CONTEXT D25](../../CONTEXT.md) — a note records loss, not removal
 - [Source: EPIC-7 §The payload problem](../epics/EPIC-7.md)
+
+## Implementation notes
+
+**TASK-7.3.1's live check held — the measurement matches the design spec exactly.** Run
+2026-08-20 against `be-dev.sentitrade.xyz` with the smoke key, before any shaping code was
+written:
+
+```
+raw 19853 B → shaped ~1898 B, 90.4% removed
+draft count: 4
+attachment count: 0
+```
+
+Byte-for-byte and percentage-for-percentage the same as the 19,853 B → 1,898 B (90.4%)
+figure [CONTEXT D32](../../CONTEXT.md) already recorded on 2026-08-19 — the same account,
+one day later, unchanged. No divergence to explain. The item shape was confirmed against
+`DraftSchema` indirectly rather than by a standalone field-set dump: `npm run test:smoke`
+now runs the live collection through `parseDrafts` (TASK-7.3.4), and that call succeeding
+against the real response is the shape check TASK-7.3.1's third bullet asks for — a
+schema mismatch would have failed the suite, not passed it silently.
+
+**D32 was read, not appended.** [CONTEXT D32](../../CONTEXT.md) was written on 2026-08-19,
+before this story's implementation began, and already states the four cuts and the
+19,853 B → 1,898 B / 90.4% figure this run reproduced. `CONTEXT.md` is append-only and a
+second `D32` would break the ID graph `npm run agile:validate` checks, so per this task's
+instructions the existing entry was read and checked against what actually shipped rather
+than duplicated: it matches — same four cuts, same one-note shape, same measured reduction.
+No concern to raise.
+
+**The brief's Step 5 said "PASS, 18 tests"; the test block it describes defines 17** (3
+`describe('parseDrafts', …)` + 8 `describe('shapeDrafts', …)` + 6
+`describe('formatDrafts', …)`). `npx vitest run src/tools/authoring/list-drafts.test.ts`
+reports 17 passed, 0 failed — the test block, not the prose count, was treated as
+authoritative, per this task's explicit instruction.
+
+**Registration order in `src/server.ts`** is now `registerGetAuthoringConventions` →
+`registerListDrafts` → `registerGetDraft`, so the file reads conventions → list → read
+inside the `authoring/` group, ahead of the alphabetically-later domains. The
+`TOOL_CALLS` row in `src/server.test.ts` was placed at the matching position (between
+`get_authoring_conventions` and `get_draft`) for the same reason, and carries no
+`arguments` key — `list_drafts` takes no parameters, so the path-traversal test's
+`SEGMENT_KEYS` scan (`['accountId', 'draftId']`) correctly finds nothing to exercise for
+this row.
+
+**Nothing was deliberately skipped.** Every step in the brief (measurement, TDD red/green,
+registration, smoke-test extension, version bump in all three files plus the lockfile,
+CHANGELOG, README, AGENTS.md, story/sprint/epic status, and all six gates) was carried
+out as specified. `POST /drafts/{draftId}/compile`, `POST /drafts`, and every other
+authoring write endpoint were never called, consistent with the epic-wide read-only
+constraint.

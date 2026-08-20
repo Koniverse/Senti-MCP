@@ -21,6 +21,7 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | `get_equity_timeseries` | `accountId`, plus the same optional `from`, `to` and `reporting` as `get_account_performance` | Returns the reconstructed equity curve and floating drawdown for one MT5 account over a date window, as a series of points — answers "how has my equity moved" and "what was my worst drawdown". **This response is shaped.** A wide window returns a point per interval and grows without bound, so the series is downsampled to at most **200 points** — but the **first point, the last point and the point of deepest drawdown are always retained**, so the start, the end and the worst of the curve are exact rather than sampled near. Measured live on 2026-08-12: 499 points over 63 days → 200. Every downsample is recorded in `notes`, which is empty when the series was short enough to return whole; narrow `from`/`to` for finer resolution. `caveats` and `portfolioCaveats` — the API's own statements about figures it could not fully reconstruct — are always returned in full, never shortened. |
 | `get_authoring_conventions` | none | Reads the Senti Quant MQL5 authoring contract as data: hard-safety constraints, trading-safety requirements, the static analyzer's forbidden-construct list, and the platform limits on draft count and source size. Call this before generating any MQL5 source — code that breaks these rules is rejected by a static scan before it reaches the compiler, and compile slots are globally serial, so discovering a rule by failing a compile is expensive and still fails. The response is small (~2 KB) and static per deploy; `forbiddenConstructs[].pattern` values are regular expressions reported verbatim, never evaluated. |
 | `get_draft` | `draftId` (the `id` field from `list_drafts`) | Reads one MQL5 draft the API key owns: its full source code, its compiler log, its diagnostics, and whether the last compile still matches the current source. Answers "why did this fail to compile" or "show me the code". **The response can be large** — a draft may hold up to 192 KiB of source, roughly 48,000 tokens. Attachment source is NOT included; attachments are listed with their size, and `list_draft_attachments` returns their code. |
+| `list_drafts` | none | Lists the MQL5 drafts this API key owns, most recently updated first, with each draft's compile status, size, attachment count and registered-EA id. Use it to find a `draftId`, or to answer "what am I working on" and "which of my drafts are broken". **This response is shaped.** `GET /api/v1/drafts` is the largest payload the API can produce — up to 10.3 MiB across 20 drafts — so source code, compiler logs and diagnostics are ALL dropped; what was cut is listed in `notes`. Measured live on 2026-08-20: 19,853 B → 1,898 B, 90.4% removed. Call `get_draft` for one draft's source and compiler output, or `list_draft_attachments` for its indicator sources. There is no option to request the unshaped response. |
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
 
@@ -44,7 +45,7 @@ the MT5 account number, not a key.
   `list_account_strategies`), `trading:read` (`list_positions`,
   `list_pending_orders`, `list_deals`), `performance:read`
   (`get_account_performance`, `get_performance_breakdowns`, `get_equity_timeseries`)
-  and `authoring:read` (`get_authoring_conventions`, `get_draft`).
+  and `authoring:read` (`get_authoring_conventions`, `get_draft`, `list_drafts`).
 
 ## Configuration
 
@@ -87,15 +88,17 @@ No install step — `npx` fetches the published package on first run:
 }
 ```
 
-Restart the client; all twelve tools should appear — every `GET` operation the
-Senti Quant Public API exposed as of `1.4.0` has one, plus `get_authoring_conventions`
-and `get_draft` over the `Authoring` tag the API grew afterward; the API's newest two
-`Authoring` `GET` operations (`list_drafts`, `list_draft_attachments`) have no tool yet.
-`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.2.0` as
+Restart the client; all thirteen tools should appear — every `GET` operation the
+Senti Quant Public API exposed as of `1.4.0` has one, plus `get_authoring_conventions`,
+`get_draft` and `list_drafts` over the `Authoring` tag the API grew afterward; the API's
+newest `Authoring` `GET` operation (`list_draft_attachments`) has no tool yet.
+`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.3.0` as
 of this release.
-It carries the ten tools of `1.4.0` plus `get_authoring_conventions` and `get_draft`.
-`2.1.0` carries those same ten tools plus `get_authoring_conventions` only, eleven in
-total. `2.0.1` and `2.0.0` carry the same ten tools as `1.4.0` and differ from it only in
+It carries the ten tools of `1.4.0` plus `get_authoring_conventions`, `get_draft` and
+`list_drafts`, thirteen in total. `2.2.0` carries those same ten tools plus
+`get_authoring_conventions` and `get_draft`, twelve in total. `2.1.0` carries those same
+ten tools plus `get_authoring_conventions` only, eleven in total. `2.0.1` and `2.0.0`
+carry the same ten tools as `1.4.0` and differ from it only in
 requiring Node ≥ 22.11.0; the `2.0.1` patch on top of `2.0.0` carries only
 build-toolchain and documentation changes.
 `1.4.0` is the last version declaring the old 20.6.0 floor and is the one to
@@ -108,7 +111,7 @@ others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
 expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@2.2.0"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@2.3.0"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server

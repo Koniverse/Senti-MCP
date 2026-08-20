@@ -17,14 +17,15 @@ Trading, and Authoring. An MCP host cannot call it directly: something has to ow
 API key, present typed tools whose descriptions let a model choose correctly, and turn
 API errors into text a model can act on. This server is that something.
 
-**Current state: `2.2.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
+**Current state: `2.3.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
 `1.0.1` is the version that carried it to the registry
-([CONTEXT D11, D12](docs/CONTEXT.md)). **Twelve** tools are registered in `src/server.ts`:
-`get_authoring_conventions`, `get_draft`, `list_accounts`, `list_brokers`, `list_strategies`,
-`list_account_strategies`, `list_positions`, `list_pending_orders`, `list_deals`,
-`get_account_performance`, `get_performance_breakdowns`, `get_equity_timeseries` —
-**eleven of the API's 14 `GET` operations**; the remaining two sit behind the new
-`Authoring` tag's `list_drafts` and `list_draft_attachments`, tracked in
+([CONTEXT D11, D12](docs/CONTEXT.md)). **Thirteen** tools are registered in `src/server.ts`:
+`get_authoring_conventions`, `list_drafts`, `get_draft`, `list_accounts`, `list_brokers`,
+`list_strategies`, `list_account_strategies`, `list_positions`, `list_pending_orders`,
+`list_deals`, `get_account_performance`, `get_performance_breakdowns`,
+`get_equity_timeseries` —
+**twelve of the API's 14 `GET` operations**; the remaining one sits behind the new
+`Authoring` tag's `list_draft_attachments`, tracked in
 [EPIC-7](docs/sprints/epics/EPIC-7.md). `list_accounts` shipped first, in v0.1.0, tracked as
 [US-2.2](docs/sprints/stories/US-2.2-list-accounts-tool.md) and proven against the
 live API by [US-2.3](docs/sprints/stories/US-2.3-live-smoke-test-and-readme.md); the
@@ -59,7 +60,12 @@ source, since those five ceilings are also what size the cuts the remaining tool
 one way — attachment source is replaced with a byte count, undone by
 `list_draft_attachments` — and it is the module that owns `DraftSchema` and
 `AttachmentSchema`, which `list_drafts` and `list_draft_attachments` import rather than
-redeclare. Two `EPIC-7` tools remain.
+redeclare. `list_drafts` shipped in `2.3.0`
+([US-7.3](docs/sprints/stories/US-7.3-list-drafts-tool.md)), the third of that tag's four
+`GET` operations and the largest payload the API can produce — up to 10.3 MiB across 20
+drafts. It cuts four things (source, attachment source, compile log, diagnostics) and
+notes all four in one sentence; measured live on 2026-08-20, 19,853 B → 1,898 B, 90.4%
+removed ([CONTEXT D32](docs/CONTEXT.md)). One `EPIC-7` tool remains.
 
 **Neither `2.0.0` nor `2.0.1` ships a tool.** `2.0.0` is a **support-policy** release: the
 Node floor moved from `>=20.6.0` to `>=22.11.0` because Node 20 reached end of life on
@@ -124,6 +130,8 @@ src/
                           EPIC-7's tools size their cuts against. No cuts of its own.
                           get-draft.ts (v2.2.0) — owns DraftSchema/AttachmentSchema,
                           imported by list-drafts.ts and list-draft-attachments.ts
+                          list-drafts.ts (v2.3.0) — the largest payload the API can
+                          produce; four cuts, one note (CONTEXT D32)
     accounts/           ← list-accounts.ts — AccountSchema (16 fields), parseAccounts,
                           formatAccounts. Imports no MCP SDK, so it is tested by direct
                           calls. Shipped in v0.1.0, relocated here in v0.2.0
@@ -314,7 +322,8 @@ ahead of regenerating the key.
 
 `SENTI_API_KEY` needs six read scopes for the full tool surface: `accounts:read`,
 `brokers:read`, `strategies:read`, `performance:read`, `trading:read`, and — as of
-`2.1.0` — `authoring:read` (`get_authoring_conventions`, `get_draft` in `2.2.0`). There is no
+`2.1.0` — `authoring:read` (`get_authoring_conventions`, `get_draft` in `2.2.0`,
+`list_drafts` in `2.3.0`). There is no
 key-introspection endpoint, so a missing scope is not caught at startup; it surfaces
 as a `403` naming the scope the first time the affected tool is called.
 

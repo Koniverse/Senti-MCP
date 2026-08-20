@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { formatAccounts, parseAccounts } from './tools/accounts/list-accounts.js';
 import { formatConventions, parseConventions } from './tools/authoring/conventions.js';
 import { formatDraft, parseDraft, shapeDraft } from './tools/authoring/get-draft.js';
+import { formatDrafts, parseDrafts, shapeDrafts } from './tools/authoring/list-drafts.js';
 import { formatBrokers, parseBrokers } from './tools/brokers/list-brokers.js';
 import {
   formatAccountStrategies,
@@ -52,9 +53,8 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
     expect(conventions.limits.maxDrafts).toBeGreaterThan(0);
     expect(formatConventions(conventions)).toMatch(/authoring contract/i);
 
-    const drafts = (await client.get('/api/v1/drafts', { scope: 'authoring:read' })) as {
-      id: string;
-    }[];
+    const drafts = parseDrafts(await client.get('/api/v1/drafts', { scope: 'authoring:read' }));
+    expect(formatDrafts(shapeDrafts(drafts)).length).toBeGreaterThan(0);
 
     if (drafts.length > 0) {
       const draft = parseDraft(
