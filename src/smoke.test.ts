@@ -2,6 +2,11 @@ import { describe, expect, test } from 'vitest';
 import { formatAccounts, parseAccounts } from './tools/accounts/list-accounts.js';
 import { formatConventions, parseConventions } from './tools/authoring/conventions.js';
 import { formatDraft, parseDraft, shapeDraft } from './tools/authoring/get-draft.js';
+import {
+  formatAttachments,
+  parseAttachments,
+  shapeAttachments,
+} from './tools/authoring/list-draft-attachments.js';
 import { formatDrafts, parseDrafts, shapeDrafts } from './tools/authoring/list-drafts.js';
 import { formatBrokers, parseBrokers } from './tools/brokers/list-brokers.js';
 import {
@@ -61,6 +66,11 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
         await client.get(draftPath(drafts[0]!.id), { scope: 'authoring:read' }),
       );
       expect(formatDraft(shapeDraft(draft))).toContain(draft.id);
+
+      const attachments = parseAttachments(
+        await client.get(draftPath(drafts[0]!.id, 'attachments'), { scope: 'authoring:read' }),
+      );
+      expect(formatAttachments(shapeAttachments(attachments)).length).toBeGreaterThan(0);
     }
 
     const strategies = parseStrategies(

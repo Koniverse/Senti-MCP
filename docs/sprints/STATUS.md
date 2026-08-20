@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-20 02:45:59 UTC
+> Last generated: 2026-08-20 03:05:22 UTC
 > Total stories: 29
 
 ## ⏰ Deadlines (0)
@@ -12,11 +12,9 @@ _No stories carry an explicit deadline._
 
 _No stories_
 
-## 🟢 Ready (1)
+## 🟢 Ready (0)
 
-| ID | Title | Epic | Pri | Points | Sprint | Assignee |
-|---|---|---|---|---|---|---|
-| US-7.4 | list_draft_attachments tool, and EPIC-7's close | EPIC-7 | P1 | 2 | sprint-2026-W34 | bluezdot |
+_No stories_
 
 ## 🟡 In Progress (0)
 
@@ -26,7 +24,7 @@ _No stories_
 
 _No stories_
 
-## ✅ Done (28)
+## ✅ Done (29)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
@@ -58,6 +56,7 @@ _No stories_
 | US-7.1 | Authoring substrate and get_authoring_conventions tool | EPIC-7 | P1 | 3 | sprint-2026-W34 | bluezdot |
 | US-7.2 | get_draft tool | EPIC-7 | P1 | 2 | sprint-2026-W34 | bluezdot |
 | US-7.3 | list_drafts tool | EPIC-7 | P1 | 3 | sprint-2026-W34 | bluezdot |
+| US-7.4 | list_draft_attachments tool, and EPIC-7's close | EPIC-7 | P1 | 2 | sprint-2026-W34 | bluezdot |
 
 ## 🚫 Blocked (0)
 
@@ -72,10 +71,10 @@ _No stories_
 ## Summary
 
 - 📋 **Backlog**: 0
-- 🟢 **Ready**: 1
+- 🟢 **Ready**: 0
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0
-- ✅ **Done**: 28
+- ✅ **Done**: 29
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 

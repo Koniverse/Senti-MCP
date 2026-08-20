@@ -4,6 +4,7 @@ import type * as z from 'zod/v4';
 import { AccountsOutputSchema } from './tools/accounts/list-accounts.js';
 import { ConventionsOutputSchema } from './tools/authoring/conventions.js';
 import { DraftOutputSchema } from './tools/authoring/get-draft.js';
+import { AttachmentsOutputSchema } from './tools/authoring/list-draft-attachments.js';
 import { DraftsOutputSchema } from './tools/authoring/list-drafts.js';
 import { BrokersOutputSchema } from './tools/brokers/list-brokers.js';
 import { BreakdownsOutputSchema } from './tools/performance/breakdowns.js';
@@ -91,6 +92,13 @@ const DRAFT = {
   attachments: [
     { id: 'a-1', filename: 'Trend.mq5', sourceCode: 'abcde', createdAt: '2026-08-14T09:30:00.000Z' },
   ],
+};
+
+const ATTACHMENT = {
+  id: 'a-1',
+  filename: 'Trend.mq5',
+  sourceCode: 'abcde',
+  createdAt: '2026-08-14T09:30:00.000Z',
 };
 
 const STRATEGY = {
@@ -1587,6 +1595,12 @@ const TOOL_CALLS: {
     arguments: { draftId: 'abc-123' },
     outputSchema: DraftOutputSchema,
     successBody: DRAFT,
+  },
+  {
+    name: 'list_draft_attachments',
+    arguments: { draftId: 'abc-123' },
+    outputSchema: AttachmentsOutputSchema,
+    successBody: [ATTACHMENT],
   },
   { name: 'list_accounts', outputSchema: AccountsOutputSchema, successBody: [ACCOUNT] },
   { name: 'list_brokers', outputSchema: BrokersOutputSchema, successBody: [BROKER] },

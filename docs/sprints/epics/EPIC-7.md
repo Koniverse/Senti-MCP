@@ -1,9 +1,9 @@
 ---
 id: EPIC-7
 title: "Authoring read path over MCP"
-status: in-progress
+status: done
 created: 2026-08-19
-updated: 2026-08-19
+updated: 2026-08-20
 ---
 
 ## Goal
@@ -139,7 +139,7 @@ one is how they get broken:
 | [US-7.1](../stories/US-7.1-authoring-substrate-and-conventions-tool.md) | Authoring substrate and `get_authoring_conventions` | P1 | 3 | ✅ done | `2.1.0` |
 | [US-7.2](../stories/US-7.2-get-draft-tool.md) | `get_draft` tool | P1 | 2 | ✅ done | `2.2.0` |
 | [US-7.3](../stories/US-7.3-list-drafts-tool.md) | `list_drafts` tool | P1 | 3 | ✅ done | `2.3.0` |
-| [US-7.4](../stories/US-7.4-list-draft-attachments-tool.md) | `list_draft_attachments` tool | P1 | 2 | 🟢 ready | `2.4.0` |
+| [US-7.4](../stories/US-7.4-list-draft-attachments-tool.md) | `list_draft_attachments` tool | P1 | 2 | ✅ done | `2.4.0` |
 
 **Total: 10 points**, all in [sprint-2026-W34](../sprint-2026-W34.md).
 
@@ -148,20 +148,33 @@ The order is not arbitrary. **US-7.1 ships first because it publishes the limits
 US-7.4's byte budget is literally `maxAttachmentBytes`. US-7.2 precedes US-7.3 because
 nothing can be shaped before the unshaped shape exists.
 
-## What this epic will not claim when it closes
+## What this close does not claim
 
-Written before the work starts, so closing it is a matter of moving rows out rather than
-remembering to add them. Each is a branch that the live smoke key cannot currently exercise:
+**This epic closed `done` on 2026-08-20: all 14 of the API's `GET` operations have a
+tool**, shipped `2.4.0` by
+[US-7.4](../stories/US-7.4-list-draft-attachments-tool.md). `status: done` means every
+read operation over the `Authoring` tag has a tool that parses, shapes and renders the
+real service's response. It does **not** mean every branch of those tools has run
+against the real service. This section was written before the work started, precisely so
+that closing the epic would be a matter of moving rows out rather than remembering to add
+them — and none moved. Every row below is still true as of the close, checked again
+against the live smoke account during US-7.4's implementation:
 
-| Branch | Why it cannot run today | What would discharge it |
+| Branch | Why it never ran | What would discharge it |
 |---|---|---|
-| Every attachment code path, in all three draft tools | The smoke key holds 4 drafts and `attachments` is `[]` in 4/4 | One attachment created in the web Studio |
-| `list_draft_attachments`' byte budget and `filename` filter | The same condition — a budget cannot bind on an empty set | As above |
-| The diagnostic render path in `get_draft` | `lastCompileDiagnostics` is `[]` in 4/4 drafts, including the one that compiled `SUCCESS` | One draft left in `FAILED` state |
-| `DRAFT_NOT_FOUND`'s 404 | Never provoked live | A `GET` for a draft id the key does not own |
+| Every attachment code path in all three draft tools | The smoke key holds 4 drafts and `attachments` was `[]` in 4/4 — reconfirmed live on 2026-08-20, unchanged since `2.2.0` | One attachment created in the web Studio |
+| `list_draft_attachments`'s byte budget and its `filename` filter | The same condition — the budget cannot bind on an empty set | As above |
+| The `DiagnosticSchema` render path in `get_draft` | `lastCompileDiagnostics` was `[]` in 4/4 drafts, including the one that compiled `SUCCESS` — same account, same 2026-08-20 check | One draft left in `FAILED` state |
+| `DRAFT_NOT_FOUND`'s 404 | Never provoked live; covered by test only | A `GET` for a draft id the key does not own |
 
 **Both of the first two are cheap to discharge** — they need a UI action, not the offline MT5
 terminal that EPIC-2's equivalent gaps have been waiting on since 2026-08-10.
+
+**The open question below on `lastCompileDiagnostics` is still open.** Nothing in US-7.1
+through US-7.4 settled it: every live draft's `lastCompileDiagnostics` was empty, so the
+loose-parse/tight-render pair `get_draft` ships (§Open question below) has never been
+checked against a real diagnostic element. Closing this epic is not a claim that the
+question closed with it.
 
 ## Open question this epic carries
 

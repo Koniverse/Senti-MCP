@@ -15,6 +15,57 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.4.0] — 2026-08-20 — `list_draft_attachments`: the fourteenth tool, and EPIC-7's close
+
+`list_draft_attachments` reads `GET /api/v1/drafts/{draftId}/attachments` under
+`authoring:read` and returns the indicator source files a draft's EA embeds via
+`#resource` — the source [US-7.2](sprints/stories/US-7.2-get-draft-tool.md) deliberately
+leaves out of `get_draft`. It is the fourth and last tool over the `Authoring` tag
+([US-7.4](sprints/stories/US-7.4-list-draft-attachments-tool.md)), and this release closes
+[EPIC-7](sprints/epics/EPIC-7.md): **all 14 of the Senti Quant Public API's `GET`
+operations now have a tool.**
+
+**A budget, not a truncation.** At `maxAttachmentsPerDraft: 5` × `maxAttachmentBytes:
+65536` the endpoint's ceiling is 320 KiB ≈ 82,000 tokens. With `filename` supplied, the
+tool returns exactly that attachment whole, whatever its size, and cuts nothing else.
+With `filename` omitted, attachments are returned whole, in the API's own order, while
+the running total *including* the one just added stays within 65,536 bytes — the first
+attachment is always returned whole regardless of its own size, and once one attachment
+is cut, every attachment after it is cut too. Checking the total after inclusion rather
+than before is what caps the response at 64 KiB instead of admitting 127 KiB. A cut
+attachment keeps its metadata and reports `sourceCode: null`; source is never partial —
+an empty file is `''` with `sourceBytes: 0`, and the two are never confused. A `filename`
+that matches nothing returns an empty result and names, in the text, every filename that
+does exist, which is also how to discover what a cut left out.
+
+**The API has no way to request one attachment by id.** `GET
+/drafts/{draftId}/attachments/{attachmentId}` does not exist, though `PUT` and `DELETE`
+on that exact path do — raised with the API as an asymmetry. The `filename` filter is a
+client-side workaround: the set is always fetched whole, so it bounds the model's
+context, not the wire.
+
+**Untested live.** The smoke account holds 4 drafts and 0 attachments in all 4 — measured
+again this release, unchanged since `2.2.0` and `2.3.0` — so the budget, the cut rule and
+the `filename` filter are proven only against synthetic sizes in
+`list-draft-attachments.test.ts`. EPIC-7's close states this rather than letting a green
+suite imply otherwise; see
+[EPIC-7 §What this close does not claim](sprints/epics/EPIC-7.md).
+
+### Added
+- **`list_draft_attachments` — a byte-budgeted attachment read**
+  (`src/tools/authoring/list-draft-attachments.ts`). `ATTACHMENT_BUDGET_BYTES`,
+  `AttachmentsOutputSchema`, `parseAttachments`, `shapeAttachments`, `formatAttachments`.
+  Registered after `get_draft` in `src/server.ts`, so the `authoring/` group reads
+  conventions → list → read → attachments.
+
+### Notes
+- **EPIC-7 closes `done`.** All 14 of the API's `GET` operations have a tool. Its close
+  names four branches that never ran against the live service — every attachment code
+  path across all three draft tools, this tool's budget and `filename` filter, `get_draft`'s
+  `DiagnosticSchema` render path, and `DRAFT_NOT_FOUND`'s 404 — and what would discharge
+  each. The open question on whether a `GET`'s `lastCompileDiagnostics` element really
+  matches the compile response's diagnostic shape is still open.
+
 ## [2.3.0] — 2026-08-20 — `list_drafts`: the thirteenth tool, and the largest payload in the API cut four ways
 
 `list_drafts` reads `GET /api/v1/drafts` under `authoring:read` and lists every MQL5 draft
