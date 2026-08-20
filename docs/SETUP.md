@@ -76,14 +76,15 @@ SENTI_SMOKE_KEY=sq_live_…
 > startup. It surfaces as a `403` naming the missing scope the first time a tool that
 > needs it is called; every other tool keeps working normally.
 >
-> As of v1.0.0, `accounts:read` (`list_accounts`), `brokers:read` (`list_brokers`),
-> `strategies:read` (`list_strategies`, `list_account_strategies`) and `trading:read`
-> (`list_positions`, `list_pending_orders`) are exercised by a shipped tool.
-> `performance:read` is not yet — it arrives with the remaining read operations, which
-> are [sprint-2026-W33](sprints/sprint-2026-W33.md)'s Phase 3. `authoring:read`
-> (`get_authoring_conventions`) is exercised as of v2.1.0 — see
-> [EPIC-7](sprints/epics/EPIC-7.md). Creating the key with all six now still saves a
-> trip back to the dashboard once further authoring tools land.
+> All six are exercised by a shipped tool: `accounts:read` (`list_accounts`),
+> `brokers:read` (`list_brokers`), `strategies:read` (`list_strategies`,
+> `list_account_strategies`), `trading:read` (`list_positions`, `list_pending_orders`,
+> `list_deals`), `performance:read` (`get_account_performance`,
+> `get_performance_breakdowns`, `get_equity_timeseries`), and `authoring:read`
+> (`get_authoring_conventions`, `get_draft`, `list_drafts`, `list_draft_attachments`) —
+> see [EPIC-7](sprints/epics/EPIC-7.md), which closed `done` in v2.4.0. Creating the key
+> with all six at once still saves a trip back to the dashboard the day a write tool
+> needs a scope this server does not use yet.
 
 > ### The key and the base URL must match environments
 >

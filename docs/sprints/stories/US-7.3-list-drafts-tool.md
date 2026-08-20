@@ -156,7 +156,10 @@ file by up to 3× and would be reported to the reader as bytes.
 This story's budget is **payload weight**, and it is the tightest in the epic.
 
 - Shaped response must stay comfortably inside a normal host context window — working target
-  **≤ 2,000 tokens** at `maxDrafts`, against an unshaped ceiling of ~2,700,000.
+  **~5,000–7,000 tokens** at `maxDrafts` with 5 attachments each, against an unshaped
+  ceiling of ~2,700,000. The revised figure counts both `content` and `structuredContent` —
+  MCP returns a tool's result on both, and both reach the model — where the original
+  ≤ 2,000-token target counted only one ([CONTEXT D34](../../CONTEXT.md)).
 - The bound is structural rather than statistical: after the cuts, a draft's contribution is
   a fixed set of short scalars plus one short row per attachment. 20 drafts × 5 attachments
   cannot exceed a few thousand tokens however large the sources were.

@@ -83,8 +83,6 @@ export function shapeDraft(draft: Draft): ShapedDraft {
   return { ...draft, attachments, notes };
 }
 
-const NO_VALUE = '—';
-
 function diagnosticLine(entry: unknown): string {
   const parsed = DiagnosticSchema.safeParse(entry);
 
@@ -95,15 +93,6 @@ function diagnosticLine(entry: unknown): string {
 }
 
 function compileBlock(draft: ShapedDraft): string {
-  const status = draft.lastCompileStatus ?? 'never compiled';
-  const ready =
-    draft.lastCompileStatus === 'SUCCESS' && draft.compiledUpToDate
-      ? ' → ready to register without recompiling'
-      : '';
-  const head = `Compile: ${status} · source unchanged since that compile: ${
-    draft.compiledUpToDate ? 'yes' : 'no'
-  }${ready}`;
-
   const diagnostics =
     draft.lastCompileDiagnostics.length === 0
       ? ''
@@ -116,6 +105,20 @@ function compileBlock(draft: ShapedDraft): string {
         draft.lastCompileLog
       }`
     : '';
+
+  // A null status means no compile ever ran, so nothing is said about whether the
+  // source has changed "since" one — there is no "since" to measure from.
+  if (draft.lastCompileStatus === null) {
+    return `Compile: never compiled${diagnostics}${log}`;
+  }
+
+  const ready =
+    draft.lastCompileStatus === 'SUCCESS' && draft.compiledUpToDate
+      ? ' → ready to register without recompiling'
+      : '';
+  const head = `Compile: ${draft.lastCompileStatus} · source unchanged since that compile: ${
+    draft.compiledUpToDate ? 'yes' : 'no'
+  }${ready}`;
 
   return `${head}${diagnostics}${log}`;
 }
@@ -131,9 +134,11 @@ function attachmentBlock(draft: ShapedDraft): string {
 }
 
 export function formatDraft(draft: ShapedDraft): string {
+  const registered = draft.eaDefinitionId ? `registered as ${draft.eaDefinitionId}` : 'not registered';
+
   const sections = [
     `Draft "${draft.name}" (draftId ${draft.id}) · ${byteLength(draft.sourceCode)} bytes of ` +
-      `MQL5 · updated ${draft.updatedAt} · registered EA ${draft.eaDefinitionId ?? NO_VALUE}`,
+      `MQL5 · updated ${draft.updatedAt} · ${registered}`,
     compileBlock(draft),
     attachmentBlock(draft),
     `Source:\n${draft.sourceCode}`,
@@ -157,9 +162,11 @@ export function registerGetDraft(server: McpServer, client: SentiClient): void {
       'diagnostics, and whether the last compile still matches the current source. Use it ' +
       'to answer "why did this fail to compile" or "show me the code". `draftId` is the ' +
       '`id` field from list_drafts. THE RESPONSE CAN BE LARGE — a draft may hold up to ' +
-      '192 KiB of source, roughly 48,000 tokens. Attachment source is NOT included; the ' +
-      'attachments are listed with their size, and list_draft_attachments returns their ' +
-      'code. For a cheap overview of every draft, call list_drafts instead.',
+      '192 KiB of source plus 16 KiB of compiler log, and this server returns that ' +
+      'content twice (once as text, once as structured data) — roughly 105,000 tokens ' +
+      'worst case. Attachment source is NOT included; the attachments are listed with ' +
+      'their size, and list_draft_attachments returns their code. For a cheap overview ' +
+      'of every draft, call list_drafts instead.',
     inputSchema: z.object({ draftId: z.string() }),
     outputSchema: DraftOutputSchema,
     run: async (args, signal) => {

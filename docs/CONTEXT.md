@@ -1828,3 +1828,65 @@ whichever epic opens the eight authoring writes — every one of them takes a `d
 
 **Date**: 2026-08-19
 **Version**: 2.1.0 (planned)
+
+---
+
+## Phase 13 — Authoring read-path fix wave (2026-08-20)
+
+### D34. A tool's payload cost is what both `content` and `structuredContent` carry, not either alone
+
+**Context**: a whole-branch review of [EPIC-7](sprints/epics/EPIC-7.md), run after all four
+authoring tools had shipped, found that every published token ceiling for the three shaping
+tools understated cost by roughly half. `core/tool.ts`'s `registerReadTool` returns
+`{ content: [{ type: 'text', text }], structuredContent: structured }` on every successful
+call — the same payload twice, once as freeform text and once as JSON-escaped structured
+data — and both reach the model. [D10](#d10-tools-bind-and-shape-their-own-payloads) already
+named this fact directly: *"both `content` and `structuredContent` enter the model's
+context."* But every worst-case figure computed for this epic — in `get-draft.ts`'s and
+`list-draft-attachments.ts`'s tool descriptions, `README.md`, the
+[design spec](superpowers/specs/2026-08-19-senti-authoring-read-tools-design.md), and
+stories [US-7.2](sprints/stories/US-7.2-get-draft-tool.md) through
+[US-7.4](sprints/stories/US-7.4-list-draft-attachments-tool.md) — measured one channel
+(the rendered text) and published that as if it were the whole cost. `get_draft`'s own
+`formatDraft` puts the full `sourceCode` and the full `lastCompileLog` into `text`, and
+`shapeDraft`'s `structured` carries the same two fields again; the published "~48,000
+tokens" counted only the first copy.
+
+**Decision**: recompute and republish every affected ceiling counting both channels.
+`get_draft`'s worst case moves **~48,000 → ~105,000 tokens** (192 KiB source + 16 KiB log,
+doubled). `list_draft_attachments`' moves **~16,000 → ~33,000 tokens** (the 64 KiB budget,
+doubled). `list_drafts`' working target moves **~2,000 → ~5,000–7,000 tokens** at
+`maxDrafts` with 5 attachments each. **Source stays in `text`.** Removing it was
+considered and rejected: `get_draft`'s entire purpose is returning source a model can read,
+and `src/tools/performance/breakdowns.ts` — the file this epic's invariants are inherited
+from — records that many MCP hosts surface `content` alone and never look at
+`structuredContent`. Silently halving the published number by dropping text would blind
+every one of those hosts to the tool's actual output; a correct, larger number lets a model
+decide whether to call the tool, which a quietly wrong smaller one does not.
+
+**Alternatives considered**:
+- **Drop `text` and return source only in `structuredContent`** — rejected above. It also
+  contradicts the design spec's own reasoning for `get_draft`: "truncating it here would
+  leave no tool in the server that can return an EA's code" applies just as much to a host
+  that cannot read `structuredContent`.
+- **Move `sourceCode` out of `structuredContent` and keep it only in `text`** — rejected as
+  a payload-shape change, which this fix wave's own brief ruled out: "Do NOT change how
+  `content` and `structuredContent` are emitted." That is a design question for a future
+  story, not a number correction.
+- **Leave the old figures standing and note elsewhere that they undercount** — rejected. The
+  published ceiling is the number a model reads to decide whether calling the tool is safe;
+  a known-wrong number left in the tool description a model actually sees is worse than a
+  corrected one, however the correction is recorded.
+
+**Impact**: `src/tools/authoring/get-draft.ts` and `list-draft-attachments.ts` restate the
+corrected ceilings in their tool descriptions — the text a model actually reads before
+deciding to call either tool. `README.md`'s tool table, the design spec, `US-7.2`, `US-7.3`,
+`US-7.4`, and `docs/CHANGELOG.md`'s `## [2.4.0]` section are corrected to match. No version
+moves: this is a fix wave on work not yet published to npm, and `2.4.0` stands.
+[D32](#d32-list_drafts-returns-no-source-and-the-cut-is-not-optional) and
+[D25](#d25-breakdowns-is-cut-five-ways-not-four-only-a-cut-that-loses-something-writes-a-note)
+are unchanged (RULE-7) — this entry is the correction a future reader reconciles their
+numbers against.
+
+**Date**: 2026-08-20
+**Version**: 2.4.0 (unreleased)

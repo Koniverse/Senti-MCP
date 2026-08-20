@@ -332,9 +332,11 @@ that can return an EA's code.
 The note is emitted only when the draft has at least one attachment — a draft with none
 loses nothing, and `notes` stays empty.
 
-Worst case after the cut: 192 KiB source + 16 KiB log ≈ 208 KiB ≈ **52,000 tokens**. That
-is large and it is stated in the tool description, so a model can decide whether it wants
-the whole file before asking for it.
+Worst case after the cut: 192 KiB source + 16 KiB log ≈ 208 KiB. MCP returns a tool's
+result on both `content` and `structuredContent`, and both reach the model, so the token
+ceiling is **~105,000**, not the ~52,000 a single-channel count would suggest
+([CONTEXT D34](../../CONTEXT.md)). That is large and it is stated in the tool description,
+so a model can decide whether it wants the whole file before asking for it.
 
 ### `list_draft_attachments` — a budget, not a truncation
 
@@ -353,7 +355,9 @@ The budget is `maxAttachmentBytes` — one attachment's worth. Checking the tota
 inclusion rather than before is what makes the ceiling exact: the response can carry at
 most 64 KiB, or one oversized first attachment, and never the 127 KiB that a
 check-before-adding rule would admit. The common case (one indicator) never triggers a
-cut, and the tool is capped at ~16,000 tokens against the endpoint's ~82,000 ceiling.
+cut. Counting both `content` and `structuredContent` — both reach the model — the tool is
+capped at ~33,000 tokens against the endpoint's ~82,000 ceiling
+([CONTEXT D34](../../CONTEXT.md)).
 
 A partially-returned attachment is never emitted. Source is returned whole or not at all:
 half an MQL5 file reads as a complete one to a model that did not write it, and there is

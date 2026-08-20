@@ -31,6 +31,21 @@ const BARE: Draft = {
   attachments: [],
 };
 
+/** Nothing here has any bytes to lose — the shape of a brand-new, untouched draft. */
+const EMPTY: Draft = {
+  ...BARE,
+  id: 'd-3',
+  name: 'Fresh',
+  sourceCode: '',
+};
+
+const SOURCE_ONLY: Draft = {
+  ...EMPTY,
+  id: 'd-4',
+  name: 'Just started',
+  sourceCode: '// đặt lệnh mua khi giá vượt đỉnh',
+};
+
 describe('parseDrafts', () => {
   test('accepts a well-formed collection', () => {
     expect(parseDrafts([DRAFT, BARE])).toEqual([DRAFT, BARE]);
@@ -102,6 +117,36 @@ describe('shapeDrafts', () => {
   test('writes no note for an empty collection', () => {
     expect(shapeDrafts([]).notes).toEqual([]);
   });
+
+  test('writes no note when nothing was actually cut', () => {
+    expect(shapeDrafts([EMPTY]).notes).toEqual([]);
+  });
+
+  test('notes only source when only source was actually cut', () => {
+    const [note] = shapeDrafts([SOURCE_ONLY]).notes;
+
+    // The trailer sentence always names get_draft's "source, log and diagnostics" as the
+    // way to read what was cut, regardless of which categories were cut — so the absence
+    // check is against the cut-description clause, not that word in isolation.
+    expect(note).toMatch(/had source dropped/i);
+    expect(note).not.toMatch(/compile log\(s\) dropped/i);
+    expect(note).not.toMatch(/diagnostics dropped/i);
+  });
+
+  test('counts source bytes in UTF-8, not UTF-16 code units', () => {
+    const [draft] = shapeDrafts([SOURCE_ONLY]).drafts;
+
+    expect(draft?.sourceBytes).toBe(Buffer.byteLength(SOURCE_ONLY.sourceCode, 'utf8'));
+    expect(draft?.sourceBytes).not.toBe(SOURCE_ONLY.sourceCode.length);
+  });
+
+  test('renders a sub-KiB cut without claiming 0 KiB', () => {
+    const tiny: Draft = { ...SOURCE_ONLY, sourceCode: 'x'.repeat(10) };
+    const [note] = shapeDrafts([tiny]).notes;
+
+    expect(note).toContain('10 B');
+    expect(note).not.toMatch(/0 KiB/);
+  });
 });
 
 describe('formatDrafts', () => {
@@ -135,5 +180,11 @@ describe('formatDrafts', () => {
 
   test('repeats the note in the text', () => {
     expect(formatDrafts(shapeDrafts([DRAFT]))).toMatch(/get_draft/);
+  });
+
+  test('renders no empty Notes section when nothing was actually cut', () => {
+    const rendered = formatDrafts(shapeDrafts([EMPTY]));
+
+    expect(rendered).not.toMatch(/notes:/i);
   });
 });

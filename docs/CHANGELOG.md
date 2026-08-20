@@ -26,8 +26,13 @@ leaves out of `get_draft`. It is the fourth and last tool over the `Authoring` t
 operations now have a tool.**
 
 **A budget, not a truncation.** At `maxAttachmentsPerDraft: 5` × `maxAttachmentBytes:
-65536` the endpoint's ceiling is 320 KiB ≈ 82,000 tokens. With `filename` supplied, the
-tool returns exactly that attachment whole, whatever its size, and cuts nothing else.
+65536` the endpoint's ceiling is 320 KiB ≈ 82,000 tokens; counting both `content` and
+`structuredContent`, which both reach the model, the tool's own worst case is ≈ 33,000
+tokens ([CONTEXT D34](CONTEXT.md)). With `filename` supplied, the tool returns at most one
+attachment whole, whatever its size, and cuts nothing else — filenames are not guaranteed
+unique within a draft, so if more than one attachment shares the requested name, only the
+first is returned and `notes` says how many were skipped, rather than returning every
+match and bypassing the budget entirely.
 With `filename` omitted, attachments are returned whole, in the API's own order, while
 the running total *including* the one just added stays within 65,536 bytes — the first
 attachment is always returned whole regardless of its own size, and once one attachment

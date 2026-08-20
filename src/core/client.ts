@@ -159,22 +159,26 @@ function failureOf(
 
 /**
  * What a path segment may contain. Deliberately not a UUID pattern: the
- * OpenAPI document declares `accountId` as a bare `type: string` with no
- * `format` and no `pattern`, so hard-coding UUID would take every
- * account-scoped tool down at once the day Senti issues an id in another
- * shape — this server's assumption failing, not the API's contract. What this
- * does reject is everything that makes concatenation dangerous.
+ * OpenAPI document declares both `accountId` and `draftId` as a bare
+ * `type: string` with no `format` and no `pattern`, so hard-coding UUID would
+ * take every tool keyed on either one down at once the day Senti issues an id
+ * in another shape — this server's assumption failing, not the API's
+ * contract. What this does reject is everything that makes concatenation
+ * dangerous.
  */
 const PATH_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
 
 /**
  * The only function permitted to build a path containing a parameter. No tool
- * concatenates: `accountId` originates from the model, and a value such as
- * `..%2F..%2Fadmin` escapes `/api/v1/accounts/` under naive concatenation.
+ * concatenates: an id such as `accountId` or `draftId` originates from the
+ * model, and a value such as `..%2F..%2Fadmin` escapes a prefix such as
+ * `/api/v1/accounts/` or `/api/v1/drafts/` under naive concatenation.
  *
- * Note that a `login` (the MT5 account number, e.g. `413878201`) passes this
- * check — it is a legal segment, just the wrong value. What catches that is the
- * 404 message, and only when the caller passed `ACCOUNT_NOT_FOUND`.
+ * Note that a wrong-but-legal value (e.g. a `login`, the MT5 account number,
+ * passed where an `accountId` was expected) passes this check — it is a legal
+ * segment, just the wrong value. What catches that is the 404 message, built
+ * from whichever `hint` the caller supplied (`ACCOUNT_NOT_FOUND` or
+ * `DRAFT_NOT_FOUND`).
  */
 function segmentPath(prefix: string, segments: string[], hint: string): string {
   for (const segment of segments) {

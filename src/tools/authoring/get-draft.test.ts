@@ -130,6 +130,32 @@ describe('formatDraft', () => {
     expect(formatDraft(truncated)).toMatch(/truncated/i);
   });
 
+  test('says never compiled rather than printing null, and asserts nothing about a compile that never ran', () => {
+    const fresh = shapeDraft({
+      ...NO_ATTACHMENTS,
+      lastCompileStatus: null,
+      lastCompileLog: null,
+    });
+    const rendered = formatDraft(fresh);
+
+    expect(rendered).toMatch(/never compiled/i);
+    expect(rendered).not.toContain('null');
+    expect(rendered).not.toMatch(/unchanged since/i);
+  });
+
+  test('says not registered rather than a placeholder that reads as a value', () => {
+    const unregistered = shapeDraft({ ...NO_ATTACHMENTS, eaDefinitionId: null });
+
+    expect(formatDraft(unregistered)).toMatch(/not registered/i);
+    expect(formatDraft(unregistered)).not.toMatch(/registered EA/i);
+  });
+
+  test('names the registered EA when there is one', () => {
+    const registered = shapeDraft({ ...NO_ATTACHMENTS, eaDefinitionId: 'ea-42' });
+
+    expect(formatDraft(registered)).toMatch(/registered as ea-42/i);
+  });
+
   test('repeats the note in the text, not only in structured content', () => {
     expect(formatDraft(shapeDraft(DRAFT))).toMatch(/list_draft_attachments/);
   });

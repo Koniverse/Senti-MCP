@@ -49,27 +49,47 @@ function summarise(draft: Draft): ShapedDrafts['drafts'][number] {
   };
 }
 
+/**
+ * A note reports what was actually lost, not what the shaping code merely touched — a
+ * draft with empty source and no log is not a cut just because the fields exist in the
+ * schema (CONTEXT D25).
+ */
 export function shapeDrafts(drafts: Draft[]): ShapedDrafts {
   const summaries = drafts.map(summarise);
 
-  if (summaries.length === 0) return { drafts: summaries, notes: [] };
-
-  const attachmentCount = summaries.reduce((sum, draft) => sum + draft.attachments.length, 0);
-  const cutBytes = drafts.reduce(
-    (sum, draft) =>
-      sum +
-      byteLength(draft.sourceCode) +
-      byteLength(draft.lastCompileLog ?? '') +
-      draft.attachments.reduce((inner, a) => inner + byteLength(a.sourceCode), 0),
-    0,
+  const draftsWithSource = drafts.filter((draft) => byteLength(draft.sourceCode) > 0);
+  const cutAttachments = drafts.flatMap((draft) =>
+    draft.attachments.filter((a) => byteLength(a.sourceCode) > 0),
   );
+  const draftsWithLog = drafts.filter((draft) => byteLength(draft.lastCompileLog ?? '') > 0);
+  const draftsWithDiagnostics = drafts.filter((draft) => draft.lastCompileDiagnostics.length > 0);
+
+  const clauses: string[] = [];
+  if (draftsWithSource.length > 0 || cutAttachments.length > 0) {
+    const parts = [
+      draftsWithSource.length > 0 ? `${draftsWithSource.length} draft(s)` : undefined,
+      cutAttachments.length > 0 ? `${cutAttachments.length} attachment(s)` : undefined,
+    ].filter((part): part is string => part !== undefined);
+
+    clauses.push(`${parts.join(' and ')} had source dropped`);
+  }
+  if (draftsWithLog.length > 0) clauses.push(`${draftsWithLog.length} compile log(s) dropped`);
+  if (draftsWithDiagnostics.length > 0) {
+    clauses.push(`${draftsWithDiagnostics.length} draft(s)' diagnostics dropped`);
+  }
+
+  if (clauses.length === 0) return { drafts: summaries, notes: [] };
+
+  const cutBytes =
+    draftsWithSource.reduce((sum, draft) => sum + byteLength(draft.sourceCode), 0) +
+    cutAttachments.reduce((sum, a) => sum + byteLength(a.sourceCode), 0) +
+    draftsWithLog.reduce((sum, draft) => sum + byteLength(draft.lastCompileLog ?? ''), 0);
+  const size = cutBytes >= 1024 ? `${Math.round(cutBytes / 1024)} KiB` : `${cutBytes} B`;
 
   return {
     drafts: summaries,
     notes: [
-      `Source and compiler output were cut: ${summaries.length} draft(s) and ` +
-        `${attachmentCount} attachment(s) had their source dropped, along with every ` +
-        `compile log and every diagnostic — ${Math.round(cutBytes / 1024)} KiB in total. ` +
+      `Source and compiler output were cut: ${clauses.join('; ')} — ${size} in total. ` +
         'Call get_draft for one draft\'s source, log and diagnostics, or ' +
         'list_draft_attachments for its indicator sources.',
     ],
@@ -82,7 +102,7 @@ function readiness(draft: ShapedDrafts['drafts'][number]): string {
   const upToDate = draft.compiledUpToDate ? 'source unchanged since' : 'source changed since';
   const ready =
     draft.lastCompileStatus === 'SUCCESS' && draft.compiledUpToDate
-      ? ' → ready to register'
+      ? ' → ready to register without recompiling'
       : '';
 
   return `${draft.lastCompileStatus}, ${upToDate}${ready}`;
@@ -110,11 +130,14 @@ export function formatDrafts(shaped: ShapedDrafts): string {
 
   const noun = shaped.drafts.length === 1 ? 'draft' : 'drafts';
   const blocks = shaped.drafts.map(block).join('\n\n');
-  const notes = `Notes:\n${shaped.notes.map((note) => `- ${note}`).join('\n')}`;
+  const notes =
+    shaped.notes.length === 0
+      ? ''
+      : `\n\nNotes:\n${shaped.notes.map((note) => `- ${note}`).join('\n')}`;
 
   return (
     `${shaped.drafts.length} ${noun}, most recently updated first. Source code is not ` +
-    `included — call get_draft with a draftId to read one.\n\n${blocks}\n\n${notes}`
+    `included — call get_draft with a draftId to read one.\n\n${blocks}${notes}`
   );
 }
 

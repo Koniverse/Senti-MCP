@@ -984,7 +984,9 @@ export function registerGetDraft(server: McpServer, client: SentiClient): void {
       'diagnostics, and whether the last compile still matches the current source. Use it ' +
       'to answer "why did this fail to compile" or "show me the code". `draftId` is the ' +
       '`id` field from list_drafts. THE RESPONSE CAN BE LARGE — a draft may hold up to ' +
-      '192 KiB of source, roughly 48,000 tokens. Attachment source is NOT included; the ' +
+      '192 KiB of source plus 16 KiB of compiler log, and this server returns that ' +
+      'content twice (once as text, once as structured data) — roughly 105,000 tokens ' +
+      'worst case. Attachment source is NOT included; the ' +
       'attachments are listed with their size, and list_draft_attachments returns their ' +
       'code. For a cheap overview of every draft, call list_drafts instead.',
     inputSchema: z.object({ draftId: z.string() }),

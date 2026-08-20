@@ -65,8 +65,26 @@ describe('shapeAttachments', () => {
     const second = small('a-2', 'Second.mq5', 100);
 
     for (const entry of shapeAttachments([first, second]).attachments) {
-      expect(entry.sourceCode === null || entry.sourceCode.length === entry.sourceBytes).toBe(true);
+      expect(
+        entry.sourceCode === null ||
+          Buffer.byteLength(entry.sourceCode, 'utf8') === entry.sourceBytes,
+      ).toBe(true);
     }
+  });
+
+  test('never returns a partial source, checked in UTF-8 bytes rather than UTF-16 code units', () => {
+    const accented: Attachment = {
+      id: 'a-3',
+      filename: 'Nhan.mq5',
+      sourceCode: '// đặt lệnh mua khi giá vượt đỉnh',
+      createdAt: '2026-08-14T09:30:00.000Z',
+    };
+
+    const [entry] = shapeAttachments([accented]).attachments;
+
+    expect(entry?.sourceCode).toBe(accented.sourceCode);
+    expect(entry?.sourceBytes).toBe(Buffer.byteLength(accented.sourceCode, 'utf8'));
+    expect(entry?.sourceBytes).not.toBe(accented.sourceCode.length);
   });
 
   test('cuts everything after the first breach, even something that would fit', () => {
@@ -98,6 +116,20 @@ describe('shapeAttachments', () => {
 
   test('returns nothing when the named filename does not exist', () => {
     expect(shapeAttachments([A, B], 'Missing.mq5').attachments).toEqual([]);
+  });
+
+  test('returns only the first match when the filename is shared, and notes how many', () => {
+    const first = small('a-1', 'Indicator.mq5', 100);
+    const second = { ...small('a-2', 'Indicator.mq5', 200), sourceCode: 'y'.repeat(200) };
+    const third = { ...small('a-3', 'Indicator.mq5', 300), sourceCode: 'z'.repeat(300) };
+    const shaped = shapeAttachments([first, second, third], 'Indicator.mq5');
+
+    expect(shaped.attachments).toHaveLength(1);
+    expect(shaped.attachments[0]?.id).toBe('a-1');
+    expect(shaped.attachments[0]?.sourceCode).toBe(first.sourceCode);
+    expect(shaped.notes).toHaveLength(1);
+    expect(shaped.notes[0]).toContain('3');
+    expect(shaped.notes[0]).toMatch(/Indicator\.mq5/);
   });
 });
 

@@ -166,6 +166,7 @@ against the live smoke account during US-7.4's implementation:
 | `list_draft_attachments`'s byte budget and its `filename` filter | The same condition — the budget cannot bind on an empty set | As above |
 | The `DiagnosticSchema` render path in `get_draft` | `lastCompileDiagnostics` was `[]` in 4/4 drafts, including the one that compiled `SUCCESS` — same account, same 2026-08-20 check | One draft left in `FAILED` state |
 | `DRAFT_NOT_FOUND`'s 404 | Never provoked live; covered by test only | A `GET` for a draft id the key does not own |
+| `lastCompileDiagnostics`'s size, in both directions | `get_draft` places no cap on the array — a draft that failed with thousands of diagnostics would render all of them in `text`. Deliberately not bounded: no other tool in this epic bounds a field that has never been observed non-empty, and doing so here would be speculative. Unobserved either way — no live draft has ever carried a non-empty array, so neither a typical count nor a worst-case one has been measured | A `FAILED` draft with many diagnostics, observed live |
 
 **Both of the first two are cheap to discharge** — they need a UI action, not the offline MT5
 terminal that EPIC-2's equivalent gaps have been waiting on since 2026-08-10.

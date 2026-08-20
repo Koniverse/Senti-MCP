@@ -3,13 +3,17 @@ import * as z from 'zod/v4';
 import { DRAFT_NOT_FOUND, draftPath, type SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
 import { registerReadTool } from '../../core/tool.js';
-import { type Attachment, AttachmentSchema, byteLength } from './get-draft.js';
+import {
+  type Attachment,
+  AttachmentSchema,
+  AttachmentSummarySchema,
+  byteLength,
+} from './get-draft.js';
 
 /** `maxAttachmentBytes` from GET /api/v1/authoring/conventions, measured 2026-08-19. */
 export const ATTACHMENT_BUDGET_BYTES = 65_536;
 
-const AttachmentEntrySchema = AttachmentSchema.omit({ sourceCode: true }).extend({
-  sourceBytes: z.number(),
+const AttachmentEntrySchema = AttachmentSummarySchema.extend({
   sourceCode: z.string().nullable(),
 });
 
@@ -37,11 +41,18 @@ export function shapeAttachments(
   filename?: string,
 ): ShapedAttachments {
   if (filename !== undefined) {
-    const matched = attachments.filter((attachment) => attachment.filename === filename);
+    const matchCount = attachments.filter((a) => a.filename === filename).length;
+    const match = attachments.find((a) => a.filename === filename);
 
     return {
-      attachments: matched.map((a) => entry(a, byteLength(a.sourceCode), true)),
-      notes: [],
+      attachments: match ? [entry(match, byteLength(match.sourceCode), true)] : [],
+      notes:
+        matchCount > 1
+          ? [
+              `${matchCount} attachments share the filename "${filename}"; only the first ` +
+                'is returned.',
+            ]
+          : [],
     };
   }
 
@@ -120,11 +131,15 @@ export function registerListDraftAttachments(server: McpServer, client: SentiCli
     title: "Read a draft's indicator sources",
     description:
       'Read the indicator source files a draft\'s EA embeds via `#resource`. `draftId` is ' +
-      'the `id` field from list_drafts. Pass `filename` to read exactly one attachment ' +
-      'whole — that is also how to read one the default call had to leave out. With ' +
-      '`filename` omitted this returns every attachment\'s source up to a 64 KiB budget ' +
-      'and lists the rest by name and size only; `notes` says whether that happened. Use ' +
-      'get_draft for the EA\'s own source, which this tool never returns.',
+      'the `id` field from list_drafts. Pass `filename` to read at most one attachment ' +
+      'whole, by exact name — that is also how to read one the default call had to leave ' +
+      'out. Filenames are not guaranteed unique within a draft: if more than one ' +
+      'attachment shares the requested name, only the first is returned and `notes` says ' +
+      'how many were skipped. With `filename` omitted this returns every attachment\'s ' +
+      'source up to a 64 KiB budget and lists the rest by name and size only; `notes` ' +
+      'says whether that happened. THE RESPONSE CAN BE LARGE — up to 64 KiB of source, ' +
+      'returned in both `content` and `structuredContent` — roughly 33,000 tokens worst ' +
+      'case. Use get_draft for the EA\'s own source, which this tool never returns.',
     inputSchema: z.object({ draftId: z.string(), filename: z.string().optional() }),
     outputSchema: AttachmentsOutputSchema,
     run: async (args, signal) => {

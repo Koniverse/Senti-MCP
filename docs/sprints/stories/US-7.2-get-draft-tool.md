@@ -33,7 +33,7 @@ roughly 135,000 tokens** — more than most context windows. One cut fixes it:
 
 | Cut | What goes | Replaced by | Worst case after |
 |---|---|---|---|
-| 1 | `attachments[].sourceCode` | `attachments[].sourceBytes` | 208 KiB ≈ 52,000 tokens |
+| 1 | `attachments[].sourceCode` | `attachments[].sourceBytes` | 208 KiB, ~105,000 tokens counting both `content` and `structuredContent` ([CONTEXT D34](../../CONTEXT.md)) |
 
 **That cut also draws the tool boundary where a reader would want it.** `get_draft` answers
 "what does this EA say"; `list_draft_attachments` answers "what do its indicators say". The
@@ -138,8 +138,9 @@ could compose it wrong.
 - [x] **TASK-7.2.3** — Registration and the `2.2.0` release (AC: 1, 12)
   - [x] Register through `registerReadTool`; path via `draftPath(args.draftId)`;
         `scope: 'authoring:read'`; `notFoundMeans: DRAFT_NOT_FOUND`; no `conflictMeans`
-  - [x] Tool description states the response can reach ~48,000 tokens of source, that
-        attachment source is **not** included, and that `list_drafts` is the cheap overview
+  - [x] Tool description states the response can reach ~105,000 tokens of source and log,
+        counting both `content` and `structuredContent`, that attachment source is **not**
+        included, and that `list_drafts` is the cheap overview
   - [x] `src/server.ts` registration; `TOOL_CALLS` row **with `arguments`** in
         `src/server.test.ts`
   - [x] `VERSION`, `package.json`, `src/config.ts` `SERVER_VERSION` → `2.2.0` in lockstep;

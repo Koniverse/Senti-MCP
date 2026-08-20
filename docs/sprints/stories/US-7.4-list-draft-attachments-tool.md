@@ -46,7 +46,9 @@ file, i.e. 127 KiB. This rule caps the response at 64 KiB, or one oversized firs
 
 The budget is `maxAttachmentBytes` — one attachment's worth — chosen so that a single
 attachment always fits whole, which makes the common case (one indicator) never trigger a
-cut. It caps the tool at ~16,000 tokens against the endpoint's ~82,000 ceiling.
+cut. Counting both `content` and `structuredContent` — MCP returns a tool's result on both,
+and both reach the model — it caps the tool at ~33,000 tokens against the endpoint's
+~82,000 ceiling ([CONTEXT D34](../../CONTEXT.md)).
 
 **A partially-returned attachment is never emitted.** Source is returned whole or not at all:
 half an MQL5 file reads as a complete one to a model that did not write it, and there is no
@@ -140,8 +142,10 @@ next reader may be adding one that does.
 
 ### Performance budget
 
-- Response capped at **65,536 bytes of source ≈ 16,000 tokens**, or one oversized first
-  attachment, against an endpoint ceiling of 320 KiB ≈ 82,000 tokens.
+- Response capped at **65,536 bytes of source**, or one oversized first attachment —
+  **≈ 33,000 tokens** counting both `content` and `structuredContent`
+  ([CONTEXT D34](../../CONTEXT.md)) — against an endpoint ceiling of 320 KiB ≈ 82,000
+  tokens.
 - The cap is structural, not statistical — see §Background on why the check runs after
   inclusion.
 - **Untestable live on the current key**, which holds zero attachments. Covered by unit test
