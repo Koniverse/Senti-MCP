@@ -90,11 +90,15 @@ could compose it wrong.
 - [x] **AC-4** — **Given** attachment source containing non-ASCII characters, **When**
   `sourceBytes` is computed, **Then** it is the UTF-8 byte length, not the UTF-16 code-unit
   count.
-- [x] **AC-5** — **Given** a draft with at least one attachment, **When** the tool returns,
-  **Then** `notes` carries one entry naming `list_draft_attachments` and the `draftId`,
-  **And** the same sentence appears in `content`.
-- [x] **AC-6** — **Given** a draft with no attachments, **When** the tool returns, **Then**
-  `notes` is the empty array. A note is never emitted for a cut that did not happen.
+- [x] **AC-5** — **Given** a draft with at least one attachment that carries source,
+  **When** the tool returns, **Then** `notes` carries one entry naming
+  `list_draft_attachments` and the `draftId`, **And** the same sentence appears in
+  `content`, **And** the count it states is the number of attachments that carried source,
+  not the number of attachments.
+- [x] **AC-6** — **Given** a draft whose attachments all carry empty source, or no
+  attachments at all, **When** the tool returns, **Then** `notes` is the empty array, **And**
+  `list_drafts` reaches the same verdict on the same draft. A note is never emitted for a cut
+  that did not happen ([CONTEXT D25](../../CONTEXT.md), [D35](../../CONTEXT.md)).
 - [x] **AC-7** — **Given** a `lastCompileDiagnostics` element matching the compile response's
   shape, **When** the text is rendered, **Then** it appears as a readable
   `file:line:column` location with its severity, code and message.

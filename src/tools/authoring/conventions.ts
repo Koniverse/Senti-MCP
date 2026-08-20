@@ -31,12 +31,27 @@ export function parseConventions(payload: unknown): Conventions {
   return parseOrThrow(ConventionsOutputSchema, payload, 'authoring conventions');
 }
 
+/**
+ * A limit is a hard cap the model must generate under, not a size to skim. Rounding one
+ * publishes a ceiling the API does not honour in either direction: `Math.round` turns a
+ * 900-byte cap into "1 KiB", which an obedient model then overshoots, and a 500-byte cap
+ * into "0 KiB". Only an exact multiple is rendered in KiB; anything else stays in bytes.
+ */
 function kib(bytes: number): string {
-  return `${Math.round(bytes / 1024)} KiB`;
+  return bytes >= 1024 && bytes % 1024 === 0 ? `${bytes / 1024} KiB` : `${bytes} bytes`;
 }
 
 function numbered(items: string[]): string {
   return items.map((item, index) => `${index + 1}. ${item}`).join('\n');
+}
+
+/**
+ * An empty category is stated, never left as a bare header: a model reading the contract
+ * cannot otherwise tell "the platform declares no rule here" from "this tool failed to
+ * render the rules", and it is told to obey this document before generating any source.
+ */
+function section(title: string, body: string, empty: string): string {
+  return body.length === 0 ? `${title}: ${empty}` : `${title}:\n${body}`;
 }
 
 export function formatConventions(conventions: Conventions): string {
@@ -50,12 +65,26 @@ export function formatConventions(conventions: Conventions): string {
     'Senti Quant MQL5 authoring contract. Read this before generating source: code that ' +
       'violates these rules is rejected by the L1 static scan before it reaches the ' +
       'compiler, and a compile slot is globally serial.',
-    `Hard safety constraints:\n${numbered(conventions.hardSafetyConstraints)}`,
-    `Trading safety requirements:\n${numbered(conventions.tradingSafetyRequirements)}`,
-    'Forbidden constructs. Each `pattern` is a regular expression the static analyzer ' +
-      'applies to your source. They have not been run against anything here — this tool ' +
-      'reports the contract, it does not evaluate it, and the API does not document which ' +
-      `regex dialect the analyzer uses.\n${forbidden}`,
+    section(
+      'Hard safety constraints',
+      numbered(conventions.hardSafetyConstraints),
+      'the API declares none.',
+    ),
+    section(
+      'Trading safety requirements',
+      numbered(conventions.tradingSafetyRequirements),
+      'the API declares none.',
+    ),
+    section(
+      'Forbidden constructs',
+      forbidden.length === 0
+        ? ''
+        : 'Each `pattern` is a regular expression the static analyzer applies to your ' +
+          'source. They have not been run against anything here — this tool reports the ' +
+          'contract, it does not evaluate it, and the API does not document which regex ' +
+          `dialect the analyzer uses.\n${forbidden}`,
+      'the API declares none. The static analyzer still runs.',
+    ),
     'Platform limits:\n' +
       `- at most ${limits.maxDrafts} drafts\n` +
       `- at most ${limits.maxAttachmentsPerDraft} attachments per draft\n` +

@@ -96,6 +96,13 @@ next reader may be adding one that does.
 - [x] **AC-12** — **Given** `EPIC-7.md` at close, **When** it is read, **Then** it carries a
   §What this close does not claim listing every branch that never ran against the real
   service, with what would discharge each.
+- [x] **AC-13** — **Given** `filename` naming an existing attachment on a draft that holds
+  others, **When** the text is rendered, **Then** it names the filter and the draft's real
+  attachment count, so `content` alone cannot be read as the draft's whole set
+  ([CONTEXT D35](../../CONTEXT.md)).
+- [x] **AC-14** — **Given** a cut, **When** the note is rendered, **Then** it describes the
+  cut rule rather than attributing a breach to each cut file — an attachment after the
+  first breach is cut regardless of its own size ([CONTEXT D35](../../CONTEXT.md)).
 
 ## Tasks
 

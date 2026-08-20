@@ -69,4 +69,32 @@ describe('formatConventions', () => {
     expect(rendered).toContain('192 KiB');
     expect(rendered).toContain('64 KiB');
   });
+
+  test('never rounds a limit, because a limit is a hard cap rather than a size', () => {
+    const odd = formatConventions({
+      ...CONVENTIONS,
+      limits: { ...CONVENTIONS.limits, maxAttachmentBytes: 500, maxSourceBytes: 900 },
+    });
+
+    // 500 must not render as "0 KiB", and 900 must not round *up* to "1 KiB" — a model
+    // that obeys a rounded-up cap generates source the API then rejects.
+    expect(odd).toContain('500 bytes');
+    expect(odd).toContain('900 bytes');
+    expect(odd).not.toMatch(/0 KiB/);
+    expect(odd).not.toMatch(/1 KiB/);
+  });
+
+  test('states an empty category rather than leaving a header with nothing under it', () => {
+    const bare = formatConventions({
+      ...CONVENTIONS,
+      hardSafetyConstraints: [],
+      forbiddenConstructs: [],
+    });
+
+    // A model cannot otherwise tell "the platform declares no rule here" from "this tool
+    // failed to render them", on the document it is told to obey before generating source.
+    expect(bare).toMatch(/Hard safety constraints: the API declares none\./);
+    expect(bare).toMatch(/Forbidden constructs: the API declares none\./);
+    expect(bare).not.toMatch(/Hard safety constraints:\n\n/);
+  });
 });

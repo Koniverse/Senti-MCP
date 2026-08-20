@@ -329,8 +329,10 @@ Everything else is returned whole: the EA's `sourceCode`, `lastCompileLog`,
 *because* they want the source, and truncating it here would leave no tool in the server
 that can return an EA's code.
 
-The note is emitted only when the draft has at least one attachment — a draft with none
-loses nothing, and `notes` stays empty.
+The note is emitted only when at least one attachment actually carried source — a draft
+with no attachments, and a draft whose attachments are all empty, both lose nothing, and
+`notes` stays empty. The count in the note is the number that lost source, not the number
+of attachments ([CONTEXT D35](../../CONTEXT.md)).
 
 Worst case after the cut: 192 KiB source + 16 KiB log ≈ 208 KiB. MCP returns a tool's
 result on both `content` and `structuredContent`, and both reach the model, so the token
@@ -340,7 +342,10 @@ so a model can decide whether it wants the whole file before asking for it.
 
 ### `list_draft_attachments` — a budget, not a truncation
 
-With `filename` supplied, the tool returns that one attachment whole and cuts nothing.
+With `filename` supplied, the tool returns that one attachment whole and cuts nothing. The
+rendered text names the filter and the draft's real attachment count —
+`Filtered by filename "X" — 1 of N attachment(s) on this draft` — so a host that surfaces
+`content` alone cannot read the filtered count as the whole set.
 
 With `filename` omitted, attachments are returned whole in the API's filename order while
 the running total **including that attachment** stays within **65,536 bytes**. The first
@@ -348,8 +353,15 @@ attachment is always returned whole whatever its size; every later one that woul
 the budget, and every one after it, degrades to metadata (`id`, `filename`, `createdAt`,
 `sourceBytes`) and the tool writes one note:
 
-> Attachment source was cut: K of N attachment(s) exceeded this tool's 64 KiB budget and
-> are listed without their source. Pass `filename` to read one of them whole.
+> Attachment source was cut: K of N attachment(s) are listed without their source. This
+> tool returns source while the running total stays within 64 KiB, then cuts every
+> attachment after the first one that does not fit — including small ones. Pass `filename`
+> to read any of them whole.
+
+The note describes the *rule*, not a property of each cut file: everything after the first
+breach is cut regardless of its own size, so K can include a 1-byte attachment that
+exceeded nothing. Saying otherwise tells the model not to bother re-reading it
+([CONTEXT D35](../../CONTEXT.md)).
 
 The budget is `maxAttachmentBytes` — one attachment's worth. Checking the total *after*
 inclusion rather than before is what makes the ceiling exact: the response can carry at

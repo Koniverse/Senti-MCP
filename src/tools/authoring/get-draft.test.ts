@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { type Draft, formatDraft, parseDraft, shapeDraft } from './get-draft.js';
+import { shapeDrafts } from './list-drafts.js';
 
 const DRAFT: Draft = {
   id: 'd-1',
@@ -100,6 +101,46 @@ describe('shapeDraft', () => {
   test('writes no note when the draft has no attachments', () => {
     expect(shapeDraft(NO_ATTACHMENTS).notes).toEqual([]);
   });
+
+  test('writes no note when the attachments had no source to lose', () => {
+    const empty = {
+      ...DRAFT,
+      attachments: [{ ...DRAFT.attachments[0]!, sourceCode: '' }],
+    };
+
+    // A note reports information loss, not removal (CONTEXT D25) — and this note sends
+    // the model to list_draft_attachments, which would return nothing for this draft.
+    expect(shapeDraft(empty).notes).toEqual([]);
+  });
+
+  test('counts only the attachments that actually lost source', () => {
+    const mixed = {
+      ...DRAFT,
+      attachments: [
+        DRAFT.attachments[0]!,
+        { ...DRAFT.attachments[0]!, id: 'a-2', filename: 'Empty.mq5', sourceCode: '' },
+      ],
+    };
+    const [note] = shapeDraft(mixed).notes;
+
+    expect(note).toContain('1 indicator file(s)');
+  });
+
+  test('agrees with list_drafts that an empty attachment lost nothing', () => {
+    const empty: Draft = {
+      ...NO_ATTACHMENTS,
+      sourceCode: '',
+      lastCompileStatus: null,
+      lastCompileLog: null,
+      lastCompileDiagnostics: [],
+      attachments: [{ ...DRAFT.attachments[0]!, sourceCode: '' }],
+    };
+
+    // The two tools shape the same attachments and must not disagree about whether
+    // reading them again would return anything.
+    expect(shapeDraft(empty).notes).toEqual([]);
+    expect(shapeDrafts([empty]).notes).toEqual([]);
+  });
 });
 
 describe('formatDraft', () => {
@@ -111,6 +152,16 @@ describe('formatDraft', () => {
     const odd = shapeDraft({ ...DRAFT, lastCompileDiagnostics: [{ unexpected: true }] });
 
     expect(formatDraft(odd)).toContain('unexpected');
+  });
+
+  test('does not render an empty diagnostic entry as the literal word null', () => {
+    // `lastCompileDiagnostics` is `z.array(z.unknown())`, so null parses fine, and
+    // `JSON.stringify(null)` is the string "null" — which reads as a real diagnostic.
+    const rendered = formatDraft(shapeDraft({ ...DRAFT, lastCompileDiagnostics: [null] }));
+
+    expect(rendered).toContain('Diagnostics (1)');
+    expect(rendered).not.toMatch(/^- null$/m);
+    expect(rendered).not.toMatch(/^- undefined$/m);
   });
 
   test('composes the register-readiness question the API documents', () => {

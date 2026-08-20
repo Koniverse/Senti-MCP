@@ -41,16 +41,20 @@ export function shapeAttachments(
   filename?: string,
 ): ShapedAttachments {
   if (filename !== undefined) {
-    const matchCount = attachments.filter((a) => a.filename === filename).length;
-    const match = attachments.find((a) => a.filename === filename);
+    // One pass, so the count in the note and the entry that is returned cannot describe
+    // different sets. The note states what was *skipped*, which is what the tool
+    // description and the README promise it states — one fewer than the number that match.
+    const matches = attachments.filter((a) => a.filename === filename);
+    const [match] = matches;
+    const skipped = matches.length - 1;
 
     return {
       attachments: match ? [entry(match, byteLength(match.sourceCode), true)] : [],
       notes:
-        matchCount > 1
+        skipped > 0
           ? [
-              `${matchCount} attachments share the filename "${filename}"; only the first ` +
-                'is returned.',
+              `${matches.length} attachments on this draft share the filename ` +
+                `"${filename}"; only the first is returned — ${skipped} skipped.`,
             ]
           : [],
     };
@@ -81,9 +85,14 @@ export function shapeAttachments(
       cut === 0
         ? []
         : [
-            `Attachment source was cut: ${cut} of ${entries.length} attachment(s) exceeded ` +
-              `this tool's ${Math.round(ATTACHMENT_BUDGET_BYTES / 1024)} KiB budget and are ` +
-              'listed without their source. Pass `filename` to read one of them whole.',
+            // Not "these exceeded the budget": everything after the first attachment that
+            // does not fit is cut regardless of its own size, so a 1-byte file can appear
+            // in this count. Saying otherwise tells the model not to bother re-reading it.
+            `Attachment source was cut: ${cut} of ${entries.length} attachment(s) are ` +
+              'listed without their source. This tool returns source while the running ' +
+              `total stays within ${Math.round(ATTACHMENT_BUDGET_BYTES / 1024)} KiB, then ` +
+              'cuts every attachment after the first one that does not fit — including ' +
+              'small ones. Pass `filename` to read any of them whole.',
           ],
   };
 }
@@ -96,10 +105,16 @@ function attachmentBlock(item: Entry): string {
   return `- ${item.filename} (${item.sourceBytes} bytes)\n${item.sourceCode}`;
 }
 
+/**
+ * `available` is every filename on the draft, and it is required rather than defaulted:
+ * with `filename` supplied this renders a filtered view, and a header that reports the
+ * filtered count alone reads as the draft's whole attachment set to a host that surfaces
+ * `content` only (CONTEXT D34).
+ */
 export function formatAttachments(
   shaped: ShapedAttachments,
-  filename?: string,
-  available: string[] = [],
+  filename: string | undefined,
+  available: string[],
 ): string {
   if (shaped.attachments.length === 0) {
     if (filename !== undefined) {
@@ -120,7 +135,13 @@ export function formatAttachments(
       ? ''
       : `\n\nNotes:\n${shaped.notes.map((note) => `- ${note}`).join('\n')}`;
 
-  return `${shaped.attachments.length} ${noun}:\n\n${blocks}${notes}`;
+  const head =
+    filename === undefined
+      ? `${shaped.attachments.length} ${noun}:`
+      : `Filtered by filename "${filename}" — ${shaped.attachments.length} of ` +
+        `${available.length} attachment(s) on this draft:`;
+
+  return `${head}\n\n${blocks}${notes}`;
 }
 
 const AUTHORING_READ = 'authoring:read';

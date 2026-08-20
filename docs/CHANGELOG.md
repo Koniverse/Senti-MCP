@@ -32,12 +32,18 @@ tokens ([CONTEXT D34](CONTEXT.md)). With `filename` supplied, the tool returns a
 attachment whole, whatever its size, and cuts nothing else — filenames are not guaranteed
 unique within a draft, so if more than one attachment shares the requested name, only the
 first is returned and `notes` says how many were skipped, rather than returning every
-match and bypassing the budget entirely.
+match and bypassing the budget entirely. The note states how many were *skipped*, one
+fewer than the number that share the name. A filtered read also says it is filtered —
+`Filtered by filename "X" — 1 of N attachment(s) on this draft` — so a host that surfaces
+`content` alone cannot read the filtered count as the draft's whole attachment set.
 With `filename` omitted, attachments are returned whole, in the API's own order, while
 the running total *including* the one just added stays within 65,536 bytes — the first
 attachment is always returned whole regardless of its own size, and once one attachment
-is cut, every attachment after it is cut too. Checking the total after inclusion rather
-than before is what caps the response at 64 KiB instead of admitting 127 KiB. A cut
+is cut, every attachment after it is cut too — and the note says exactly that, rather
+than claiming each cut file exceeded the budget: a 1-byte attachment that follows a breach
+is cut without exceeding anything, and a model told otherwise will not re-read it.
+Checking the total after inclusion rather than before is what caps the response at 64 KiB
+instead of admitting 127 KiB. A cut
 attachment keeps its metadata and reports `sourceCode: null`; source is never partial —
 an empty file is `''` with `sourceBytes: 0`, and the two are never confused. A `filename`
 that matches nothing returns an empty result and names, in the text, every filename that
@@ -70,6 +76,10 @@ suite imply otherwise; see
   `DiagnosticSchema` render path, and `DRAFT_NOT_FOUND`'s 404 — and what would discharge
   each. The open question on whether a `GET`'s `lastCompileDiagnostics` element really
   matches the compile response's diagnostic shape is still open.
+- **A second fix wave, C1-C9, corrected what the four authoring tools *say* about their own
+  payloads** — seven sentences that were not true of the payload in hand, and the missing
+  per-tool coverage in `src/server.test.ts` that let them through. See
+  [CONTEXT D35](CONTEXT.md). No version moves: none of `2.1.0`-`2.4.0` has been published.
 
 ## [2.3.0] — 2026-08-20 — `list_drafts`: the thirteenth tool, and the largest payload in the API cut four ways
 
@@ -94,9 +104,12 @@ spec's 2026-08-19 measurement exactly. See [CONTEXT D32](CONTEXT.md).
 `sourceBytes`), `lastCompileLog` (and `logTruncated`, which describes a field that is no
 longer there), and `lastCompileDiagnostics` (→ `diagnosticsCount`). All four lose
 information, so all four are reported — but as one sentence naming the draft and attachment
-counts, the KiB removed, and both `get_draft` and `list_draft_attachments` as the way to
+counts, the bytes removed, and both `get_draft` and `list_draft_attachments` as the way to
 read what was cut, rather than four notes a reader would learn to skim past. `notes` stays
-empty on an empty collection, so its presence never implies a cut occurred.
+empty on an empty collection, so its presence never implies a cut occurred. The byte figure
+covers source and log only — diagnostics are reduced to a count, never measured — so it is
+stated as "of source and log in total", and a cut that dropped only diagnostics carries no
+byte figure at all rather than claiming "0 B".
 
 **No parameter turns the cut off.** The ceiling is two orders of magnitude past
 `get_performance_breakdowns`', the API's next-largest payload, so an opt-out here would be a
@@ -150,12 +163,18 @@ set.
   `DraftOutputSchema`, `byteLength`, `parseDraft`, `shapeDraft`, `formatDraft`. Diagnostics
   render opportunistically — `DiagnosticSchema.safeParse` per element, a readable
   `file:line:column` line on a match, the raw element otherwise — so a shape mismatch costs a
-  less readable line, never a failed call. The text also composes the API's documented
+  less readable line, never a failed call. An element that carries nothing at all is stated
+  as such: the field parses as `z.array(z.unknown())`, so a `null` element is legal, and
+  `JSON.stringify` would otherwise print it as a line reading `- null` that a model takes
+  for a diagnostic. The text also composes the API's documented
   register-readiness question (`lastCompileStatus === 'SUCCESS' && compiledUpToDate`) as a
   derived sentence rather than a stored field, since both operands are already in the output.
   - **Attachment source is cut, not truncated.** `attachments[].sourceCode` never reaches
     either channel; `sourceBytes` replaces it, and a `notes` entry — repeated in the text —
-    names `list_draft_attachments` and the `draftId` that undoes the cut.
+    names `list_draft_attachments` and the `draftId` that undoes the cut. The note counts
+    only attachments that actually carried source: an empty attachment lost nothing, and a
+    note about it would send the model to a second tool that returns nothing
+    ([CONTEXT D25](CONTEXT.md)). `list_drafts` reaches the same verdict on the same draft.
   - **No parameter reopens the cut, and the EA's own source is never truncated.** Half an
     MQL5 file reads as a complete one to a model that did not write it.
 
@@ -173,8 +192,12 @@ publishes the platform's own MQL5 authoring contract — the hard-safety constra
 trading-safety requirements, the static analyzer's forbidden-construct list, and the five
 `limits` ceilings the API enforces on drafts, attachments and registered EAs. Read live on
 2026-08-19: `maxDrafts` 20, `maxAttachmentsPerDraft` 5, `maxAttachmentBytes` 65536 (64 KiB),
-`maxSourceBytes` 196608 (192 KiB), `maxRegisteredEas` 10. Those numbers matter beyond this
-release — they are what size the cuts [EPIC-7](sprints/epics/EPIC-7.md)'s remaining three
+`maxSourceBytes` 196608 (192 KiB), `maxRegisteredEas` 10. A limit is rendered exactly or
+not in KiB at all — a hard cap that is not a whole multiple of 1024 stays in bytes, because
+rounding one *up* publishes a ceiling the API then rejects and rounding a sub-KiB one down
+publishes "0 KiB". An empty rule category is stated rather than left as a bare header, so a
+model cannot mistake "the platform declares none" for "this tool failed to render them".
+Those numbers matter beyond this release — they are what size the cuts [EPIC-7](sprints/epics/EPIC-7.md)'s remaining three
 tools make against a payload the API can otherwise grow past a context window
 ([US-7.1](sprints/stories/US-7.1-authoring-substrate-and-conventions-tool.md)).
 

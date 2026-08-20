@@ -80,16 +80,20 @@ export function shapeDrafts(drafts: Draft[]): ShapedDrafts {
 
   if (clauses.length === 0) return { drafts: summaries, notes: [] };
 
+  // Diagnostics are objects, not text, and are reduced to a count rather than measured —
+  // so the byte figure covers source and log only, and is stated as such. A cut that is
+  // diagnostics-only has no byte figure at all, rather than claiming "0 B in total".
   const cutBytes =
     draftsWithSource.reduce((sum, draft) => sum + byteLength(draft.sourceCode), 0) +
     cutAttachments.reduce((sum, a) => sum + byteLength(a.sourceCode), 0) +
     draftsWithLog.reduce((sum, draft) => sum + byteLength(draft.lastCompileLog ?? ''), 0);
   const size = cutBytes >= 1024 ? `${Math.round(cutBytes / 1024)} KiB` : `${cutBytes} B`;
+  const total = cutBytes > 0 ? ` — ${size} of source and log in total` : '';
 
   return {
     drafts: summaries,
     notes: [
-      `Source and compiler output were cut: ${clauses.join('; ')} — ${size} in total. ` +
+      `Source and compiler output were cut: ${clauses.join('; ')}${total}. ` +
         'Call get_draft for one draft\'s source, log and diagnostics, or ' +
         'list_draft_attachments for its indicator sources.',
     ],

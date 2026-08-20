@@ -82,10 +82,13 @@ file by up to 3× and would be reported to the reader as bytes.
   the tool returns, **Then** neither appears in the output.
 - [x] **AC-4** — **Given** a response containing `lastCompileDiagnostics`, **When** the tool
   returns, **Then** the array does not appear, **And** `diagnosticsCount` carries its length.
-- [x] **AC-5** — **Given** any non-empty response, **When** the tool returns, **Then** `notes`
-  carries exactly one entry, **And** it states how many drafts and attachments were cut, how
-  many KiB that removed, and names **both** `get_draft` and `list_draft_attachments` as the
-  ways to read what was dropped, **And** the same sentence appears in `content`.
+- [x] **AC-5** — **Given** a response in which at least one category actually lost
+  something, **When** the tool returns, **Then** `notes` carries exactly one entry, **And**
+  it names only the categories that lost something, **And** it names **both** `get_draft`
+  and `list_draft_attachments` as the ways to read what was dropped, **And** the same
+  sentence appears in `content`. A byte figure is stated only when bytes were measured —
+  it covers source and log, and a cut that dropped only diagnostics carries none rather
+  than reporting "0 B" ([CONTEXT D35](../../CONTEXT.md)).
 - [x] **AC-6** — **Given** an empty collection, **When** the tool returns, **Then** `notes` is
   the empty array, **And** `content` explains the empty result rather than returning nothing.
 - [x] **AC-7** — **Given** attachment or source text containing non-ASCII characters, **When**

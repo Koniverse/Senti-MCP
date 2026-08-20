@@ -1890,3 +1890,90 @@ numbers against.
 
 **Date**: 2026-08-20
 **Version**: 2.4.0 (unreleased)
+
+---
+
+### D35. A shaping tool's prose is a claim about the payload in hand, not about the code path that ran
+
+**Context**: a second whole-branch review of [EPIC-7](sprints/epics/EPIC-7.md), run after
+[D34](#d34-a-tools-payload-cost-is-what-both-content-and-structuredcontent-carry-not-either-alone)'s
+fix wave, found seven sentences across the four authoring tools that were false of the
+specific payload being returned. Each was true of the *shape* of the code — a branch had
+run, a field existed, a cut had been considered — and none was true of the bytes the model
+received:
+
+| # | Tool | The sentence | Why it was false |
+|---|---|---|---|
+| C1 | `get_draft` | "Attachment source was cut: N indicator file(s) …" | Written whenever `attachments.length > 0`. An attachment with `sourceCode: ''` lost nothing, and the note sent the model to `list_draft_attachments` for a file that returns nothing. `list_drafts` reached the opposite verdict on the same draft. |
+| C2 | `get_draft` | `- null` | `lastCompileDiagnostics` is `z.array(z.unknown())`, so a `null` element is legal; `JSON.stringify(null)` is the string `"null"`, rendered as a line the model reads as a diagnostic. |
+| C3 | `list_draft_attachments` | "1 attachment:" under a `filename` filter | The filtered count rendered as the draft's whole attachment set. `breakdowns.ts` already records that many hosts surface `content` alone ([D34](#d34-a-tools-payload-cost-is-what-both-content-and-structuredcontent-carry-not-either-alone)), and those hosts had no other signal. |
+| C4 | `list_draft_attachments` | "K of N attachment(s) exceeded this tool's 64 KiB budget" | Everything after the first breach is cut regardless of its own size, so a 1-byte file appeared in K having exceeded nothing. |
+| C5 | `list_draft_attachments` | "3 attachments share the filename …" | The tool description and `README.md` both promise `notes` says how many were *skipped*. Three share the name; two were skipped. |
+| C6 | `get_authoring_conventions` | "at most 0 KiB per attachment" | `Math.round` on a hard cap. A 500-byte cap rendered as "0 KiB"; a 900-byte cap rounded *up* to "1 KiB", so a model obeying the published ceiling generates source the API rejects. |
+| C7 | `get_authoring_conventions` | "Hard safety constraints:" followed by nothing | An empty rule array left a bare header, indistinguishable from a render failure on the one document a model is told to obey before generating source. |
+| C8 | `list_drafts` | "… — 0 B in total" | Diagnostics are reduced to a count and never measured, so a diagnostics-only cut totalled zero bytes and said so. |
+
+**Decision**: extend
+[D25](#d25-breakdowns-is-cut-five-ways-not-four-only-a-cut-that-loses-something-writes-a-note)
+from *whether* a note is written to *what every rendered sentence asserts*. A note, a
+header, a count and a limit are all claims the model acts on, and each must be checkable
+against the payload being returned:
+
+- **A count counts what was lost, not what was touched** (C1, C4, C5, C8). `shapeDraft`
+  now counts attachments with `sourceBytes > 0`; `list_draft_attachments`' note describes
+  the cut rule ("cuts every attachment after the first one that does not fit — including
+  small ones") instead of attributing a breach to each file; the duplicate-filename note
+  reports `matches.length - 1`; `list_drafts` omits the byte figure entirely when nothing
+  measurable was cut and labels it "of source and log in total" when there is one.
+- **A rendered view states its own scope** (C3, C7). A filtered read renders
+  `Filtered by filename "X" — 1 of N attachment(s) on this draft`; an empty rule category
+  renders "the API declares none."
+- **A limit is rendered exactly or not in that unit at all** (C6). `kib()` converts only
+  whole multiples of 1024 and leaves everything else in bytes.
+- **A value that cannot be rendered says so** (C2). An unreadable diagnostic element
+  renders as a stated placeholder, never as the literal text `null` or `undefined`.
+
+**C9 — why they survived.** `src/server.test.ts` had no `describe` block for any of the
+four authoring tools, only their four rows in `TOOL_CALLS`. That table proves registration
+and `outputSchema` round-tripping; it cannot see the scope string, the URL `draftPath`
+builds, the 404 hint, or whether `filename` reaches `run` at all. Four `describe` blocks
+now cover those. Their scope assertions use `toMatch(/\bauthoring:read\b/)` rather than
+`toContain('authoring:read')`: `'authoring:reads'` contains `'authoring:read'`, so the
+substring form passes for a typo'd scope constant — verified by injecting exactly that
+mutation, which the boundary form catches and the substring form did not. The
+pre-existing per-tool blocks for the ten non-authoring tools still use `toContain` and
+carry the same latent gap; tightening them is not this wave's scope.
+
+**Alternatives considered**:
+- **Count diagnostics in `list_drafts`' byte figure instead of omitting it** — rejected.
+  The figure would be the JSON serialisation of objects the tool never serialises, which
+  is a number no reader can reconcile against anything. A cut with no measurable size is
+  better reported without one.
+- **Render every limit in KiB and floor rather than round** (C6) — rejected. Flooring is
+  safe for the model but still publishes a number that is not the API's cap, and the
+  reader cannot tell an exact 64 KiB from a floored 64.9. Bytes are exact and the unit is
+  only lost where it was never accurate.
+- **Drop `get_draft`'s attachment note entirely and let `attachments[].sourceBytes` speak**
+  — rejected. The note is the only place the *undoing* tool is named, which is what
+  [US-7.2](sprints/stories/US-7.2-get-draft-tool.md) AC-5 exists for; the fix is its
+  trigger condition, not its existence.
+- **Leave `ATTACHMENT_BUDGET_BYTES` reading `limits.maxAttachmentBytes` live** — deferred,
+  not rejected. `list_draft_attachments` transcribes a constant that
+  `get_authoring_conventions` fetches, and the two will disagree the day Senti raises the
+  limit. Reading it live means a second request inside one tool call, which is a design
+  question for a story rather than a correction.
+
+**Impact**: `src/tools/authoring/` — all four modules and all four test files —
+`src/server.test.ts`, and `src/smoke.test.ts` (`formatAttachments` now takes `available`
+as a required argument, so a filtered render cannot silently report "of 0"). Docs:
+`docs/CHANGELOG.md`'s `## [2.1.0]` through `## [2.4.0]` sections, the
+[design spec](superpowers/specs/2026-08-19-senti-authoring-read-tools-design.md), and
+[US-7.2](sprints/stories/US-7.2-get-draft-tool.md) AC-5, whose "Given a draft with at
+least one attachment" wording encoded C1 as the requirement. No version moves: this is a
+second fix wave on work not yet published to npm, and `2.4.0` stands.
+[D25](#d25-breakdowns-is-cut-five-ways-not-four-only-a-cut-that-loses-something-writes-a-note)
+and [D34](#d34-a-tools-payload-cost-is-what-both-content-and-structuredcontent-carry-not-either-alone)
+are unchanged (RULE-7); this entry extends the first and follows the second.
+
+**Date**: 2026-08-20
+**Version**: 2.4.0 (unreleased)

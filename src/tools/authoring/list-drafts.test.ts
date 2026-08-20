@@ -147,6 +147,23 @@ describe('shapeDrafts', () => {
     expect(note).toContain('10 B');
     expect(note).not.toMatch(/0 KiB/);
   });
+
+  test('claims no byte total for a cut that only dropped diagnostics', () => {
+    // Diagnostics are reduced to a count, never measured in bytes, so a diagnostics-only
+    // cut has nothing to total — and must not report one, least of all "0 B".
+    const diagnosticsOnly: Draft = { ...EMPTY, lastCompileDiagnostics: [{ severity: 'warning' }] };
+    const [note] = shapeDrafts([diagnosticsOnly]).notes;
+
+    expect(note).toMatch(/diagnostics dropped/i);
+    expect(note).not.toMatch(/0 B/);
+    expect(note).not.toMatch(/in total/);
+  });
+
+  test('says the byte total covers source and log, which is all it measured', () => {
+    const [note] = shapeDrafts([DRAFT]).notes;
+
+    expect(note).toMatch(/of source and log in total/);
+  });
 });
 
 describe('formatDrafts', () => {

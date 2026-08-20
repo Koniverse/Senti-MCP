@@ -65,17 +65,25 @@ export function parseDraft(payload: unknown): Draft {
   return parseOrThrow(DraftSchema, payload, 'draft');
 }
 
+/**
+ * A note reports what was actually lost, not what the shaping code merely touched — an
+ * attachment whose source is empty had nothing to cut, and a note about it would send the
+ * model to `list_draft_attachments` for a file that returns nothing (CONTEXT D25).
+ * `shapeDrafts` in `list-drafts.ts` applies the same rule to the same attachments.
+ */
 export function shapeDraft(draft: Draft): ShapedDraft {
   const attachments = draft.attachments.map(({ sourceCode, ...kept }) => ({
     ...kept,
     sourceBytes: byteLength(sourceCode),
   }));
 
+  const cut = attachments.filter((attachment) => attachment.sourceBytes > 0).length;
+
   const notes =
-    attachments.length === 0
+    cut === 0
       ? []
       : [
-          `Attachment source was cut: ${attachments.length} indicator file(s) are listed ` +
+          `Attachment source was cut: ${cut} indicator file(s) are listed ` +
             'with their size but without their code. Call list_draft_attachments with ' +
             `draftId "${draft.id}" to read them.`,
         ];
@@ -86,10 +94,21 @@ export function shapeDraft(draft: Draft): ShapedDraft {
 function diagnosticLine(entry: unknown): string {
   const parsed = DiagnosticSchema.safeParse(entry);
 
-  if (!parsed.success) return `- ${JSON.stringify(entry)}`;
+  if (parsed.success) {
+    const { severity, code, file, line, column, message } = parsed.data;
+    return `- ${severity} ${code} at ${file}:${line}:${column} — ${message}`;
+  }
 
-  const { severity, code, file, line, column, message } = parsed.data;
-  return `- ${severity} ${code} at ${file}:${line}:${column} — ${message}`;
+  // `lastCompileDiagnostics` is `z.array(z.unknown())`, so a null element parses fine.
+  // `JSON.stringify(null)` is the string "null" and `JSON.stringify(undefined)` is
+  // `undefined`, which a template literal renders as "undefined" — either would print a
+  // line the model reads as a diagnostic that says something.
+  const raw = JSON.stringify(entry);
+  if (raw === undefined || raw === 'null') {
+    return '- (the API returned an empty diagnostic entry — no detail to report)';
+  }
+
+  return `- ${raw}`;
 }
 
 function compileBlock(draft: ShapedDraft): string {

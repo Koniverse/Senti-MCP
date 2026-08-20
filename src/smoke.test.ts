@@ -70,7 +70,13 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
       const attachments = parseAttachments(
         await client.get(draftPath(drafts[0]!.id, 'attachments'), { scope: 'authoring:read' }),
       );
-      expect(formatAttachments(shapeAttachments(attachments)).length).toBeGreaterThan(0);
+      expect(
+        formatAttachments(
+          shapeAttachments(attachments),
+          undefined,
+          attachments.map((attachment) => attachment.filename),
+        ).length,
+      ).toBeGreaterThan(0);
     }
 
     const strategies = parseStrategies(

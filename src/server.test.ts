@@ -249,6 +249,235 @@ describe('MCP server', () => {
   });
 });
 
+/**
+ * One describe per authoring tool. The table at the bottom of this file proves every tool
+ * registers and round-trips its own `outputSchema`; it cannot prove the things only this
+ * layer decides — the scope string sent to `core/client.ts`, the URL `draftPath` builds,
+ * the 404 hint each tool attaches, and whether an optional argument reaches `run`.
+ */
+const authoringFetch = (body: unknown, calls: string[] = []) =>
+  (async (url: string | URL) => {
+    calls.push(String(url));
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }) as unknown as typeof fetch;
+
+const failingFetch = (status: number, code: string) =>
+  (async () =>
+    new Response(JSON.stringify({ error: { code, message: 'Nope.' } }), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    })) as unknown as typeof fetch;
+
+describe('get_authoring_conventions', () => {
+  test('calls the conventions path and returns both channels', async () => {
+    const calls: string[] = [];
+    const client = await connect(authoringFetch(CONVENTIONS, calls));
+
+    const result = (await client.callTool({ name: 'get_authoring_conventions' })) as ToolResult;
+
+    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/authoring/conventions');
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('NO_DLL_IMPORT');
+    expect(ConventionsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('takes no arguments', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'get_authoring_conventions');
+
+    expect(tool?.inputSchema.properties).toEqual({});
+  });
+
+  test('names the authoring:read scope on 403', async () => {
+    const client = await connect(failingFetch(403, 'FORBIDDEN'));
+
+    const result = (await client.callTool({ name: 'get_authoring_conventions' })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    // A word boundary, not `toContain`: 'authoring:reads' contains 'authoring:read',
+    // so a typo in the scope constant would pass a substring check.
+    expect(textOf(result)).toMatch(/\bauthoring:read\b/);
+  });
+});
+
+describe('list_drafts', () => {
+  test('calls the collection path and returns both channels', async () => {
+    const calls: string[] = [];
+    const client = await connect(authoringFetch([DRAFT], calls));
+
+    const result = (await client.callTool({ name: 'list_drafts' })) as ToolResult;
+
+    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/drafts');
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('RSI Reversal');
+    expect(DraftsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('takes no arguments', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'list_drafts');
+
+    expect(tool?.inputSchema.properties).toEqual({});
+  });
+
+  test('names the authoring:read scope on 403', async () => {
+    const client = await connect(failingFetch(403, 'FORBIDDEN'));
+
+    const result = (await client.callTool({ name: 'list_drafts' })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    // A word boundary, not `toContain`: 'authoring:reads' contains 'authoring:read',
+    // so a typo in the scope constant would pass a substring check.
+    expect(textOf(result)).toMatch(/\bauthoring:read\b/);
+  });
+});
+
+describe('get_draft', () => {
+  test('calls the draft-scoped path and returns both channels', async () => {
+    const calls: string[] = [];
+    const client = await connect(authoringFetch(DRAFT, calls));
+
+    const result = (await client.callTool({
+      name: 'get_draft',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/drafts/d-1');
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('RSI Reversal');
+    expect(DraftOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('declares draftId as a required argument', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'get_draft');
+
+    expect(tool?.inputSchema.properties).toHaveProperty('draftId');
+    expect(tool?.inputSchema.required).toContain('draftId');
+  });
+
+  test('turns a 404 into the hint that names list_drafts', async () => {
+    const client = await connect(failingFetch(404, 'NOT_FOUND'));
+
+    const result = (await client.callTool({
+      name: 'get_draft',
+      arguments: { draftId: 'gone' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/list_drafts/);
+  });
+
+  test('names the authoring:read scope on 403', async () => {
+    const client = await connect(failingFetch(403, 'FORBIDDEN'));
+
+    const result = (await client.callTool({
+      name: 'get_draft',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    // A word boundary, not `toContain`: 'authoring:reads' contains 'authoring:read',
+    // so a typo in the scope constant would pass a substring check.
+    expect(textOf(result)).toMatch(/\bauthoring:read\b/);
+  });
+});
+
+describe('list_draft_attachments', () => {
+  test('calls the attachments sub-path and returns both channels', async () => {
+    const calls: string[] = [];
+    const client = await connect(authoringFetch([ATTACHMENT], calls));
+
+    const result = (await client.callTool({
+      name: 'list_draft_attachments',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/drafts/d-1/attachments');
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('Trend.mq5');
+    expect(AttachmentsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test('declares draftId required and filename optional', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === 'list_draft_attachments');
+
+    expect(Object.keys(tool?.inputSchema.properties ?? {}).sort()).toEqual([
+      'draftId',
+      'filename',
+    ]);
+    expect(tool?.inputSchema.required).toEqual(['draftId']);
+  });
+
+  test('passes filename through to the filter rather than dropping it', async () => {
+    const client = await connect(
+      authoringFetch([ATTACHMENT, { ...ATTACHMENT, id: 'a-2', filename: 'Other.mq5' }]),
+    );
+
+    const result = (await client.callTool({
+      name: 'list_draft_attachments',
+      arguments: { draftId: 'd-1', filename: 'Other.mq5' },
+    })) as ToolResult;
+
+    const structured = result.structuredContent as z.infer<typeof AttachmentsOutputSchema>;
+
+    expect(structured.attachments.map((item) => item.filename)).toEqual(['Other.mq5']);
+    // The filter is client-side, so the text must say this is a filtered view of a
+    // two-attachment draft rather than reading as the draft's whole set.
+    expect(textOf(result)).toMatch(/1 of 2 attachment/);
+  });
+
+  test('names every filename that does exist when the requested one does not', async () => {
+    const client = await connect(authoringFetch([ATTACHMENT]));
+
+    const result = (await client.callTool({
+      name: 'list_draft_attachments',
+      arguments: { draftId: 'd-1', filename: 'Missing.mq5' },
+    })) as ToolResult;
+
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain('Trend.mq5');
+  });
+
+  test('turns a 404 into the hint that names list_drafts', async () => {
+    const client = await connect(failingFetch(404, 'NOT_FOUND'));
+
+    const result = (await client.callTool({
+      name: 'list_draft_attachments',
+      arguments: { draftId: 'gone' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/list_drafts/);
+  });
+
+  test('names the authoring:read scope on 403', async () => {
+    const client = await connect(failingFetch(403, 'FORBIDDEN'));
+
+    const result = (await client.callTool({
+      name: 'list_draft_attachments',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    // A word boundary, not `toContain`: 'authoring:reads' contains 'authoring:read',
+    // so a typo in the scope constant would pass a substring check.
+    expect(textOf(result)).toMatch(/\bauthoring:read\b/);
+  });
+});
+
 describe('list_brokers', () => {
   test('returns a readable summary and matching structured content', async () => {
     const brokersFetch = (async () =>

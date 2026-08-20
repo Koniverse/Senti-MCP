@@ -91,6 +91,14 @@ not 17**, and **14 of them are `GET`, not 10**.
   **Then** it passes — which requires `VERSION`, `package.json` `version` and
   `src/config.ts` `SERVER_VERSION` to agree on `2.1.0` and `docs/CHANGELOG.md` to carry a
   `## [2.1.0]` heading.
+- [x] **AC-11** — **Given** a `limits` ceiling that is not a whole multiple of 1024, **When**
+  it is rendered, **Then** it appears in bytes rather than a rounded KiB figure — a hard cap
+  rounded up publishes a ceiling the API rejects, and a sub-KiB one rounded down publishes
+  "0 KiB" ([CONTEXT D35](../../CONTEXT.md)).
+- [x] **AC-12** — **Given** an empty `hardSafetyConstraints`, `tradingSafetyRequirements` or
+  `forbiddenConstructs`, **When** the text is rendered, **Then** the category states that the
+  API declares none, rather than leaving a header with nothing under it
+  ([CONTEXT D35](../../CONTEXT.md)).
 
 ## Tasks
 
