@@ -3,7 +3,7 @@ id: EPIC-7
 title: "Authoring read path over MCP"
 status: done
 created: 2026-08-19
-updated: 2026-08-20
+updated: 2026-08-21
 ---
 
 ## Goal
@@ -85,9 +85,18 @@ response and only `get_authoring_conventions` does not.
 - **All eight authoring write operations** — `POST /drafts`, `PUT` and `DELETE` on a draft,
   the three attachment writes, `POST …/compile` and `POST …/register`. Not registered, and
   not written "ready to enable", under the standing rule in [AGENTS.md](../../../AGENTS.md)
-  §The read/write split. Two of them deserve naming now because they are not ordinary writes:
-  **`register` puts an EA into a real trading account**, and **`compile` consumes a globally
-  serial slot**, so a retry policy that is harmless on a read is a denial-of-service on it.
+  §The read/write split. One of them deserves naming now because it is not an ordinary write:
+  **`compile` consumes a globally serial slot**, so a retry policy that is harmless on a read
+  is a denial-of-service on it.
+
+  **Correction, 2026-08-21.** This bullet previously also read *"`register` puts an EA into a
+  real trading account"*. It does not: `register` creates a permanently private
+  `EaDefinition`, and a key scoped `authoring:write` cannot reach a trading account at all.
+  Deploying is `POST /api/v1/accounts/{accountId}/strategies` under the separate
+  `strategies:write` scope, which is [EPIC-3](EPIC-3.md)'s
+  ([CONTEXT D36](../../CONTEXT.md)). Seven of these eight are now
+  [EPIC-8](EPIC-8.md)'s scope; `register` is still out, for a different reason recorded
+  there.
 - **Response caching, including for `conventions`.** It is the one endpoint whose
   `Cache-Control: public, max-age=3600` invites it, and it already serves a weak `ETag` —
   but caching is still a mechanism this server does not have, and adding one for a single
@@ -99,10 +108,11 @@ response and only `get_authoring_conventions` does not.
 
 ### A note for whoever opens the write path
 
-**[EPIC-3](EPIC-3.md)'s operation table is stale.** It lists 7 write operations; the API now
-has 15. This epic does not edit it — EPIC-3 is `backlog` and its own design spec will re-read
-the document anyway — but the staleness is recorded here so it is found rather than
-discovered.
+**[EPIC-3](EPIC-3.md)'s operation table was stale.** It listed 7 write operations against the
+API's 15. This epic recorded the staleness rather than editing it;
+[EPIC-8](EPIC-8.md) opened on 2026-08-21 and
+[US-8.1](../stories/US-8.1-write-substrate-and-create-draft.md) corrected it, splitting the
+15 into EPIC-3's 7 trading writes and EPIC-8's 8 authoring ones.
 
 What this epic hands forward: `draftPath`, `DRAFT_NOT_FOUND`, and the full-fidelity
 `DraftSchema` and `AttachmentSchema`. Every authoring write reads back a draft, and none of
@@ -198,6 +208,9 @@ This has been raised with the API as a contract defect. If it is fixed by a shar
 
 - [Authoring read-tool design spec](../../superpowers/specs/2026-08-19-senti-authoring-read-tools-design.md) — the approved design
 - [Implementation plan](../../superpowers/plans/2026-08-19-senti-authoring-read-tools-w34.md) — task-by-task, with code
+- [EPIC-8](EPIC-8.md) — the authoring write path, which consumes `draftPath`, `DRAFT_NOT_FOUND`,
+  `DraftSchema`, `AttachmentSchema` and `DiagnosticSchema` from this epic, and whose write smoke
+  test discharges the first two rows of §What this close does not claim
 - [EPIC-2](EPIC-2.md) — the read path this extends, and the source of every invariant above
 - [EPIC-3](EPIC-3.md) — the write path; its operation table is stale at 7, and the real figure is 15
 - [sprint-2026-W34](../sprint-2026-W34.md) — the window all four stories live in

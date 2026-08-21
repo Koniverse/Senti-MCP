@@ -1977,3 +1977,303 @@ are unchanged (RULE-7); this entry extends the first and follows the second.
 
 **Date**: 2026-08-20
 **Version**: 2.4.0 (unreleased)
+
+---
+
+## Phase 14 — The authoring write path (2026-08-21)
+
+### D36. `register` does not deploy to a trading account; three files said it did
+
+**Context**: [EPIC-7](sprints/epics/EPIC-7.md) §Out of scope, EPIC-7 §A note for whoever opens
+the write path, and the
+[authoring read spec](superpowers/specs/2026-08-19-senti-authoring-read-tools-design.md)
+§Authoring write path all state that **`register` puts an EA into a real trading account**, and
+use that to justify grouping it with `positions/close-all` behind
+[EPIC-3](sprints/epics/EPIC-3.md)'s guardrails. The claim was written on 2026-08-19 from a
+reading of the operation's name and its position in the loop, not from its description.
+
+Re-read on 2026-08-21 while scoping the write path, `POST /api/v1/drafts/{draftId}/register`
+says the opposite under a heading of its own, *"The loop stops here, deliberately"*:
+
+> This endpoint does **not** deploy the EA to a trading account. Deploying is
+> `POST /api/v1/accounts/{accountId}/strategies`, which requires the separate
+> `strategies:write` scope — so putting an AI-authored EA in front of real money remains a
+> human decision. A key holding only `authoring:*` can author and register, and nothing else.
+
+**Decision**: record the correction. `register` creates a permanently **private**
+`EaDefinition`; a key scoped `authoring:write` cannot reach a trading account at all. The risk
+the claim assigned to it belongs to `POST /accounts/{accountId}/strategies`, which is EPIC-3's
+second row. [US-8.1](sprints/stories/US-8.1-write-substrate-and-create-draft.md) corrects
+EPIC-3 and EPIC-7 in place. **The read spec is not edited** — it is a snapshot of intent, and
+this repo amends rather than rewrites one ([D1](#d1-adopt-koni-docs-as-this-repos-documentation-framework),
+[D5](#d5-raise-the-supported-node-floor-to-2060)); the amendment lives in the
+[write spec](superpowers/specs/2026-08-21-senti-authoring-write-tools-design.md) §Two claims
+this repo makes that are wrong.
+
+**This does not put `register` in scope** — see
+[D37](#d37-authoring-writes-open-epic-8-not-epic-3) and
+[EPIC-8](sprints/epics/EPIC-8.md) §Out of scope, whose reason is a different one: it is the
+only write in the tag that creates a resource **outside** the tag, and no operation in the tag
+can delete it.
+
+**Alternatives considered**:
+
+- **Silently fix the sentences** — rejected. Three documents agreed on a false fact for two
+  days and a fourth was written on top of them. What went wrong is that a risk was inferred
+  from an operation's name rather than read from its description, and that is worth a numbered
+  entry, not a quiet edit.
+- **Leave EPIC-7 alone as a historical snapshot** — rejected for the epic, accepted for the
+  spec. An epic is a living planning artifact that later stories read as current; a design spec
+  is dated and superseded. Different documents, different rules.
+
+**Impact**: `docs/sprints/epics/EPIC-3.md`, `docs/sprints/epics/EPIC-7.md`,
+`docs/sprints/epics/EPIC-8.md`. EPIC-3's operation table also moves from 7 to a stated 7-of-15.
+
+**Date**: 2026-08-21
+**Version**: 2.5.0 (planned)
+
+---
+
+### D37. Authoring writes open EPIC-8, not EPIC-3
+
+**Context**: [EPIC-3](sprints/epics/EPIC-3.md) is the project's write-path epic and has been
+`backlog` since 2026-08-06. The `Authoring` tag's eight writes are writes, so the default move
+is to add them there.
+
+**Decision**: open **[EPIC-8](sprints/epics/EPIC-8.md) — Authoring write path over MCP**, and
+leave EPIC-3 `backlog` with its seven trading writes.
+
+**Rationale**: EPIC-3's cross-cutting invariants are written against operations that move
+money — *"a partial position close is not retry-safe… retrying this write costs real position
+size"*, and best-effort batches that close every open position. Folding text-file edits under
+them forces one of two bad outcomes: either those guardrails apply to `update_draft`, where a
+confirmation on every save destroys the edit loop
+([D42](#d42-confirmation-is-on-the-two-deletes-only)), or they get relaxed for everyone, which
+weakens them where they matter. It would also leave EPIC-3's `done` meaning two unrelated
+things. The two epics get **separate opt-in flags** for the same reason.
+
+**Alternatives considered**:
+
+- **One epic, two invariant sets** — rejected. An epic whose invariants have exceptions is an
+  epic whose invariants get copied wrong.
+- **Rename EPIC-3 to "trading write path"** — not done. Renaming a `backlog` epic churns every
+  file that cites it for a clarification that a cross-reference already carries.
+
+**Impact**: `docs/sprints/epics/EPIC-8.md` (new), `EPIC-3.md`, `EPIC-7.md`,
+`docs/sprints/sprint-2026-W34.md`.
+
+**Date**: 2026-08-21
+**Version**: 2.5.0 (planned)
+
+---
+
+### D38. `registerWriteTool` is a second function, not a flag on `registerReadTool`
+
+**Context**: `src/core/tool.ts` documents its constant annotations as *"a mechanical barrier
+against a write tool reaching this server before EPIC-3 opens"*. Opening the write path needs
+tools annotated `readOnlyHint: false`, and the cheap change is a `readOnly?: boolean` on the
+existing spec.
+
+**Decision**: add a **second** registrar. `registerReadTool` is unchanged and still pins
+`readOnlyHint: true` as a constant; `registerWriteTool` pins `readOnlyHint: false` and takes
+`destructiveHint` / `idempotentHint` from its spec. The `try`/`catch` and result shaping are
+extracted into a shared private helper so the two cannot drift.
+
+**Rationale**: a parameter converts a barrier into a value a caller can get wrong. Two
+functions keep the property that **no call to `registerReadTool` can register a write**, and
+make the diff that would change it a change to `core/`, not to a tool file. A test asserts it
+directly, so the barrier fails a suite rather than a review.
+
+**Consequence, recorded because it falsifies a documented claim**: the confirmation seam needs
+`inputRequired` and `acceptedContent`, which are runtime values. `core/tool.ts` therefore
+becomes the **third** file importing a runtime value out of `@modelcontextprotocol/*`, after
+`src/server.ts` and `src/index.ts`. `AGENTS.md` §Repo structure and the file's own header
+comment both said `server.ts` was the only one; both are corrected in
+[US-8.2](sprints/stories/US-8.2-update-and-delete-draft.md). The narrow-SDK-surface property
+was a consequence worth noting, not an invariant worth contorting the seam to preserve.
+
+**Alternatives considered**:
+
+- **`readOnly?: boolean` on `ReadToolSpec`** — rejected above.
+- **Pass `inputRequired` / `acceptedContent` in from `server.ts` as deps** — rejected. It
+  preserves a cosmetic property by making the confirmation seam harder to read and harder to
+  test, and dependency injection for a pure function is ceremony.
+
+**Impact**: `src/core/tool.ts`, `src/core/tool.test.ts`, `AGENTS.md`.
+
+**Date**: 2026-08-21
+**Version**: 2.5.0 (planned)
+
+---
+
+### D39. A write response does not echo the source it was just sent
+
+**Context**: `POST /api/v1/drafts` and `PUT /api/v1/drafts/{draftId}` return the complete
+draft — up to 192 KiB of `sourceCode` plus five attachments at 64 KiB each. The model supplied
+that source in the same call.
+
+**Decision**: `create_draft` and `update_draft` parse the response with the full-fidelity
+`DraftSchema`, then cut `sourceCode` to `sourceBytes` and every attachment's `sourceCode` to
+`sourceBytes`, and note what was lost. The two attachment writes do the same at smaller
+numbers. **There is no parameter that turns this off.**
+
+**Rationale**: returning the source bills it a third and fourth time — once in `content`, once
+in `structuredContent`, both of which reach the model
+([D34](#d34-a-tools-payload-cost-is-what-both-content-and-structuredcontent-carry-not-either-alone)) —
+for content the model already holds. This is
+[D32](#d32-list_drafts-returns-no-source-and-the-cut-is-not-optional)'s rule applied to a
+larger absurdity: `list_drafts` cuts source the model has never seen, and this cuts source the
+model wrote seconds ago.
+
+The note follows [D25](#d25-breakdowns-is-cut-five-ways-not-four-only-a-cut-that-loses-something-writes-a-note):
+it reports **loss**, not activity. A write of an empty file cut nothing and writes no note.
+
+**A before/after byte delta is not rendered.** It would need the pre-write size, which the
+`PUT` response does not carry — only a second `GET` supplies it, and a hidden read doubles the
+latency of every edit and races any concurrent writer. `update_draft` renders the new size and
+the words *full replace*.
+
+**Alternatives considered**:
+
+- **Return the draft whole, reusing `shapeDraft` from `get_draft`** — rejected on the
+  arithmetic. Consistency with the read tool is not worth ~105,000 tokens per save in the worst
+  case.
+- **A `returnSource: true` opt-out** — rejected, same refusal as D32. An opt-out is a footgun
+  with a documented safety catch, and this one has no use case that `get_draft` does not serve.
+
+**Impact**: `src/tools/authoring/write-result.ts` and the four body-carrying write tools.
+
+**Date**: 2026-08-21
+**Version**: 2.5.0 (planned)
+
+---
+
+### D40. The write path has no retry; `Retry-After` is reported, not slept on
+
+**Context**: the write path introduces `429`, `502`, `503` and `504`, and `503` carries a
+`Retry-After` header. `POST /drafts/{draftId}/compile` runs one compile per account and the
+compile server is **globally serial** across all accounts.
+
+**Decision**: nothing is retried automatically, at any status, anywhere in
+[EPIC-8](sprints/epics/EPIC-8.md). `Retry-After` is read and quoted in the error message and
+never slept on. A `503` **without** `Retry-After` is reported as meaning a retry cannot help,
+which is exactly what the API documents (*"Absent when retrying cannot help (e.g. a
+misconfigured compile host)"*).
+
+**Rationale**: a retry policy that is harmless on a read is a denial-of-service on a globally
+serial slot. And a tool call that sleeps holds the host's turn open for an interval the server
+chose, which is a cost the model cannot see and the user cannot interrupt. Reporting the wait
+gives the decision to the agent and its human, where it belongs.
+
+**The 15-second timeout is not raised for `compile_draft`.** A typical compile is about a
+second and contention surfaces as `503` rather than as a hang. What matters is the message when
+the abort fires: **aborting the fetch does not cancel the server-side compile**, the account's
+slot stays busy, and the next call returns `409` — so the message says so and sends the model
+to `get_draft` for `lastCompileStatus`.
+
+**Alternatives considered**:
+
+- **Retry `503` once, honouring `Retry-After`** — rejected. One client's polite retry is fine;
+  every client's is the contention that produced the `503`.
+- **A longer timeout for `compile_draft` alone** — rejected. It trades a clear failure for a
+  longer silence, and the failure is already actionable.
+
+**Impact**: `src/core/client.ts`, `src/tools/authoring/compile-draft.ts`.
+
+**Date**: 2026-08-21
+**Version**: 2.5.0 (planned)
+
+---
+
+### D41. `Idempotency-Key` is server-minted and derived from the request
+
+**Context**: two of the seven operations accept `Idempotency-Key` — `POST /drafts` and
+`POST /drafts/{draftId}/attachments`. Both create a resource a duplicated request would
+duplicate. The API scopes a record to the request target (method + path).
+
+**Decision**: the server mints the key as the first 32 hex characters of
+`sha256(method + "\n" + path + "\n" + JSON.stringify(body))`. **It is never a tool parameter.**
+
+**Rationale**: a model-supplied key lives in the model's context, and a model that reuses one
+across two genuinely different creates gets the first one's response replayed for the second —
+the same reasoning that keeps the API key out of every `inputSchema`.
+
+A **random** key per call would satisfy the header and buy nothing. With no automatic retry
+([D40](#d40-the-write-path-has-no-retry-retry-after-is-reported-not-slept-on)), the only
+duplicate this server can emit is a model calling the tool twice with the same arguments, and
+two random keys make that two creates. A request-derived key makes the identical repeat replay
+the original `201` instead of colliding with `409`, which is what the header is for.
+
+**Open risk, carried rather than resolved**: the API does not document how long an idempotency
+record is retained. Under a long retention, `create_draft` → `delete_draft` →
+byte-identical `create_draft` could replay the first response and hand back a `draftId` that no
+longer exists. It is detectable — the next `get_draft` returns `404` — and
+`TASK-8.1.1` measures it against the live service. If retention proves long enough to matter,
+the fallback is a random key per call, forfeiting the dedup; that trade is made against a
+measurement, not in advance.
+
+**Alternatives considered**:
+
+- **Accept an optional `idempotencyKey` argument** — rejected above.
+- **Send no key at all** — rejected. The header exists precisely for the duplicate this design
+  can actually produce.
+
+**Impact**: `src/core/client.ts` (`idempotencyKeyFor`), `create_draft`,
+`add_draft_attachment`.
+
+**Date**: 2026-08-21
+**Version**: 2.5.0 (planned)
+
+---
+
+### D42. Confirmation is on the two deletes only
+
+**Context**: [EPIC-3](sprints/epics/EPIC-3.md)'s invariant reads *"every write tool pauses for
+an explicit human confirmation before the underlying `POST` fires"*. Seven authoring write
+tools inherit that by default.
+
+**Decision**: `delete_draft` and `delete_draft_attachment` confirm. The other five do not; they
+carry accurate `destructiveHint` / `idempotentHint` annotations and rely on the host's own
+tool-approval surface, which every IDE MCP client already has.
+
+**Rationale**: the intended use is a developer iterating on an EA in their editor, where
+`update_draft` fires on every save. A confirmation a user sees fifty times in a session is one
+they stop reading, and a rubber-stamp laundered into the appearance of consent is **worse** than
+no prompt, because it transfers responsibility without transferring attention. The two deletes
+are the only operations in [EPIC-8](sprints/epics/EPIC-8.md) that no other tool in EPIC-8 can
+undo, which is the line drawn.
+
+**This does not relax EPIC-3.** That epic's calculus is about money, this one's is about text
+files, and D37 keeps them in separate epics precisely so this decision cannot leak.
+
+**Two mechanics the seam needs, recorded because both are easy to get wrong:**
+
+1. **The round is identified by a minted `requestState`, not by the answer.**
+   `acceptedContent()` returns `undefined` for a *declined* elicitation exactly as it does for
+   a *missing* one, so branching on it alone re-asks on every decline and spins until the
+   client's `maxRounds` cap. A forged `requestState` cannot skip the confirmation: it lands in
+   the cancel branch, because only *accepted* content reaches the request.
+2. **A declined confirmation is a success, not an error** — and it still carries
+   `structuredContent`, because the SDK rejects a non-error result that declares an
+   `outputSchema` and supplies none. `DeleteOutputSchema` is therefore
+   `{ id: string | null, deleted: boolean, notes: string[] }`, and a cancellation is
+   `{ id: null, deleted: false, … }`. `isError: true` would tell a model something
+   malfunctioned and invite a retry; a user saying no is neither.
+
+**A host without elicitation support cannot use the two delete tools.** Accepted rather than
+worked around: a silent fallback to deleting without confirmation would make the guardrail a
+function of the client, which is the one property a guardrail must not have. The trigger to
+revisit is a real user blocked on a real host, and the answer would be a second opt-in flag that
+trades the confirmation away **explicitly**.
+
+**Alternatives considered**:
+
+- **Confirm every write** — rejected above.
+- **Confirm nothing, rely on annotations alone** — rejected. `destructiveHint` is a hint a host
+  may ignore, and these two operations have no undo in this server.
+
+**Impact**: `src/core/tool.ts`, `src/tools/authoring/delete-draft.ts`,
+`src/tools/authoring/delete-draft-attachment.ts`, `src/tools/authoring/write-result.ts`.
+
+**Date**: 2026-08-21
+**Version**: 2.6.0 (planned)
