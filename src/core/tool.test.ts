@@ -191,3 +191,120 @@ describe('the two registrars are separate', () => {
     expect(tools[0]?.annotations?.destructiveHint).toBeUndefined();
   });
 });
+
+function confirmingServer(ran: { count: number }) {
+  const server = new McpServer({ name: 'test', version: '0.0.0' });
+
+  registerWriteTool(server, {
+    name: 'drop_draft',
+    title: 'Drop',
+    description: 'Delete a draft.',
+    inputSchema: z.object({ draftId: z.string() }),
+    outputSchema: EchoOutput,
+    destructive: true,
+    idempotent: true,
+    confirm: {
+      message: (args) => `Delete draft ${args.draftId}? This cannot be undone.`,
+      cancelled: () => ({ text: 'Cancelled — nothing was deleted.', structured: { echoed: '' } }),
+    },
+    run: async (args) => {
+      ran.count += 1;
+      return { text: `dropped ${args.draftId}`, structured: { echoed: args.draftId } };
+    },
+  });
+
+  return server;
+}
+
+/** The wire shape an elicitation result may carry — not `unknown`, deliberately. */
+type ElicitAnswer =
+  | { action: 'accept'; content: Record<string, string | number | boolean | string[]> }
+  | { action: 'decline' };
+
+async function connectAnswering(server: McpServer, answer: ElicitAnswer) {
+  const seen: string[] = [];
+  const client = new Client(
+    { name: 'test-client', version: '0.0.0' },
+    { capabilities: { elicitation: {} } },
+  );
+
+  client.setRequestHandler('elicitation/create', async (request) => {
+    seen.push(String((request.params as { message?: unknown }).message ?? ''));
+    return answer;
+  });
+
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+
+  return { client, seen };
+}
+
+describe('registerWriteTool confirmation', () => {
+  test('asks before running, quoting the arguments in the question', async () => {
+    const ran = { count: 0 };
+    const { client, seen } = await connectAnswering(confirmingServer(ran), {
+      action: 'accept',
+      content: { confirm: true },
+    });
+
+    const result = (await client.callTool({
+      name: 'drop_draft',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(seen).toEqual(['Delete draft d-1? This cannot be undone.']);
+    expect(ran.count).toBe(1);
+    expect(result.content[0]?.text).toBe('dropped d-1');
+  });
+
+  test('runs nothing when the confirmation is declined', async () => {
+    const ran = { count: 0 };
+    const { client } = await connectAnswering(confirmingServer(ran), { action: 'decline' });
+
+    const result = (await client.callTool({
+      name: 'drop_draft',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(ran.count).toBe(0);
+    expect(result.isError).toBeFalsy();
+    expect(result.content[0]?.text).toContain('Cancelled');
+    expect(result.structuredContent).toEqual({ echoed: '' });
+  });
+
+  test('runs nothing when the answer is an explicit no', async () => {
+    const ran = { count: 0 };
+    const { client } = await connectAnswering(confirmingServer(ran), {
+      action: 'accept',
+      content: { confirm: false },
+    });
+
+    const result = (await client.callTool({
+      name: 'drop_draft',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(ran.count).toBe(0);
+    expect(result.content[0]?.text).toContain('Cancelled');
+  });
+
+  test('asks exactly once — a decline does not re-ask until the round cap', async () => {
+    const ran = { count: 0 };
+    const { client, seen } = await connectAnswering(confirmingServer(ran), { action: 'decline' });
+
+    await client.callTool({ name: 'drop_draft', arguments: { draftId: 'd-1' } });
+
+    expect(seen).toHaveLength(1);
+  });
+
+  test('a tool with no confirm spec never elicits', async () => {
+    const { client, seen } = await connectAnswering(serverWithWrite(), {
+      action: 'accept',
+      content: { confirm: true },
+    });
+
+    await client.callTool({ name: 'touch_draft', arguments: { draftId: 'd-1' } });
+
+    expect(seen).toEqual([]);
+  });
+});

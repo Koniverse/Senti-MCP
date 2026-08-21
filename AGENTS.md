@@ -147,7 +147,10 @@ src/
   config.ts             ← loadConfig(env) → frozen Config; SERVER_NAME/SERVER_VERSION
   config.test.ts
   server.ts             ← createServer(config, deps); registers every read tool. The
-                          only file importing the SDK's main entry
+                          only tool-registering file importing the SDK's main
+                          entry. `core/tool.ts` also imports two runtime values
+                          from it — inputRequired and acceptedContent, for the
+                          confirmation seam (v2.6.0)
   server.test.ts
   smoke.test.ts         ← opt-in, one live call; hardcoded path in package.json
 

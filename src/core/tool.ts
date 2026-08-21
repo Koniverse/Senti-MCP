@@ -1,6 +1,11 @@
+import { acceptedContent, inputRequired } from '@modelcontextprotocol/server';
 import type { McpServer } from '@modelcontextprotocol/server';
 import type * as z from 'zod/v4';
 import { describeError } from './errors.js';
+
+const CONFIRM_KEY = 'confirm';
+/** Opaque, and load-bearing only against re-asking — see the seam below. */
+const CONFIRM_ASKED = 'confirm-asked';
 
 type ToolRun<Args, Structured> = (
   args: Args,
@@ -49,9 +54,10 @@ async function resultOf<Args, Structured>(
  * its arguments. Write tools go through `registerWriteTool` below — a separate
  * door with its own name, not a flag on this one (CONTEXT D38).
  *
- * Imports from the SDK are `import type` and erase at build time, so
- * `src/server.ts` and `src/index.ts` remain the only files that pull a runtime
- * value out of `@modelcontextprotocol/*`.
+ * This file pulls two runtime values out of `@modelcontextprotocol/*` —
+ * `inputRequired` and `acceptedContent`, for the confirmation seam — so it is
+ * the third such file alongside `src/server.ts` and `src/index.ts`. Everything
+ * else it imports from the SDK is `import type` and erases at build time.
  */
 export function registerReadTool<Args, Structured>(
   server: McpServer,
@@ -82,6 +88,16 @@ export type WriteToolSpec<Args, Structured> = {
    */
   destructive: boolean;
   idempotent: boolean;
+  /**
+   * Present only on operations no other tool in this server can undo
+   * (CONTEXT D42). `cancelled` supplies the payload for a declined
+   * confirmation, because a non-error result must still satisfy
+   * `outputSchema`.
+   */
+  confirm?: {
+    message: (args: Args) => string;
+    cancelled: (args: Args) => { text: string; structured: Structured };
+  };
   run: ToolRun<Args, Structured>;
 };
 
@@ -111,6 +127,47 @@ export function registerWriteTool<Args, Structured>(
         openWorldHint: true,
       },
     },
-    async (args, ctx) => resultOf(spec.run, args, ctx.mcpReq.signal),
+    async (args, ctx) => {
+      if (spec.confirm) {
+        // The round is identified by the state we minted, not by the answer:
+        // `acceptedContent` reports a decline and a first entry identically —
+        // both `undefined` — so branching on it alone re-asks on every decline
+        // and spins until the client's round cap. A forged state cannot skip
+        // the confirmation; it lands in the cancel branch, because only
+        // accepted content reaches `run`.
+        if (ctx.mcpReq.requestState() === undefined) {
+          return inputRequired({
+            requestState: CONFIRM_ASKED,
+            inputRequests: {
+              [CONFIRM_KEY]: inputRequired.elicit({
+                message: spec.confirm.message(args),
+                requestedSchema: {
+                  type: 'object',
+                  properties: {
+                    confirm: { type: 'boolean', description: 'Confirm this deletion.' },
+                  },
+                  required: [CONFIRM_KEY],
+                },
+              }),
+            },
+          });
+        }
+
+        const answer = acceptedContent<{ confirm?: boolean }>(
+          ctx.mcpReq.inputResponses,
+          CONFIRM_KEY,
+        );
+
+        if (answer?.confirm !== true) {
+          // Not an error: `isError` tells a model something malfunctioned and
+          // invites a retry, and a user saying no is neither.
+          const { text, structured } = spec.confirm.cancelled(args);
+
+          return { content: [{ type: 'text' as const, text }], structuredContent: structured };
+        }
+      }
+
+      return resultOf(spec.run, args, ctx.mcpReq.signal);
+    },
   );
 }
