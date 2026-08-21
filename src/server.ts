@@ -7,6 +7,7 @@ import { registerCreateDraft } from './tools/authoring/create-draft.js';
 import { registerGetDraft } from './tools/authoring/get-draft.js';
 import { registerListDraftAttachments } from './tools/authoring/list-draft-attachments.js';
 import { registerListDrafts } from './tools/authoring/list-drafts.js';
+import { registerUpdateDraft } from './tools/authoring/update-draft.js';
 import { registerListBrokers } from './tools/brokers/list-brokers.js';
 import { registerGetPerformanceBreakdowns } from './tools/performance/breakdowns.js';
 import { registerGetAccountPerformance } from './tools/performance/summary.js';
@@ -59,6 +60,7 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
   // path has a flag of its own that this one does not turn on.
   if (config.authoringWrite) {
     registerCreateDraft(server, client);
+    registerUpdateDraft(server, client);
   }
 
   return server;

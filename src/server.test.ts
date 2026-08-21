@@ -2033,6 +2033,7 @@ async function connectWithWrites(fetchImpl: typeof fetch = okFetch) {
 /** Grows by one row per write tool as EPIC-8 lands; asserted against tools/list. */
 const WRITE_TOOL_ANNOTATIONS: Record<string, { destructive: boolean; idempotent: boolean }> = {
   create_draft: { destructive: false, idempotent: false },
+  update_draft: { destructive: true, idempotent: true },
 };
 
 const READ_TOOL_COUNT = 14;
