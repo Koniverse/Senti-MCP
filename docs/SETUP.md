@@ -65,6 +65,7 @@ SENTI_SMOKE_KEY=sq_live_…
 | `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | API root. Set to `https://be-dev.sentitrade.xyz` for development. |
 | `SENTI_ENABLE_AUTHORING_WRITE` | no | unset (off) | **Added in v2.5.0.** `1` or `true` registers the authoring write tools; anything else, including `0`, `false`, `no` and `off`, leaves them unregistered. Requires `authoring:write` on the key. Enables **no** trading write — that surface has a flag of its own that does not exist yet. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only, read from `.env.local` by `npm run test:smoke`. |
+| `SENTI_SMOKE_WRITES` | no | unset (off) | **Added in v2.8.0.** Test-only. `1` makes `npm run test:smoke` additionally **create and delete a real draft** on the account the smoke key belongs to — create, attach, compile, delete — to cover the write path live. Needs `authoring:write`. Left unset, the read smoke runs alone and writes nothing. |
 
 > ### Six scopes, or seven with writes on
 >

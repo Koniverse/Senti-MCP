@@ -1,7 +1,7 @@
 ---
 id: EPIC-8
 title: "Authoring write path over MCP"
-status: in-progress
+status: done
 created: 2026-08-21
 updated: 2026-08-21
 ---
@@ -140,10 +140,10 @@ restated because copying an earlier tool into a later one is how they get broken
 
 | US | Title | Pri | Points | Status | Ships |
 |---|---|---|---|---|---|
-| [US-8.1](../stories/US-8.1-write-substrate-and-create-draft.md) | Write substrate, the opt-in, and `create_draft` | P1 | 5 | 🟢 ready | `2.5.0` |
-| [US-8.2](../stories/US-8.2-update-and-delete-draft.md) | `update_draft` and `delete_draft` | P1 | 3 | 🟢 ready | `2.6.0` |
-| [US-8.3](../stories/US-8.3-attachment-writes.md) | The three attachment writes | P1 | 3 | 🟢 ready | `2.7.0` |
-| [US-8.4](../stories/US-8.4-compile-draft-and-epic-close.md) | `compile_draft`, write smoke test, and EPIC-8's close | P1 | 3 | 🟢 ready | `2.8.0` |
+| [US-8.1](../stories/US-8.1-write-substrate-and-create-draft.md) | Write substrate, the opt-in, and `create_draft` | P1 | 5 | ✅ done | `2.5.0` |
+| [US-8.2](../stories/US-8.2-update-and-delete-draft.md) | `update_draft` and `delete_draft` | P1 | 3 | ✅ done | `2.6.0` |
+| [US-8.3](../stories/US-8.3-attachment-writes.md) | The three attachment writes | P1 | 3 | ✅ done | `2.7.0` |
+| [US-8.4](../stories/US-8.4-compile-draft-and-epic-close.md) | `compile_draft`, write smoke test, and EPIC-8's close | P1 | 3 | ✅ done | `2.8.0` |
 
 **Total: 14 points**, all in [sprint-2026-W34](../sprint-2026-W34.md).
 
@@ -153,16 +153,32 @@ US-8.2 introduces the confirmation seam because `delete_draft` is the first tool
 US-8.3 depends on both. US-8.4 is last because `compile_draft` is the only tool with `502`,
 `503` and `504`, and because its smoke test needs the other six to exist.
 
-## What this epic will not claim on close
+## What this close does not claim
 
-Written before the work starts, so closing is a matter of moving rows out rather than
-remembering to add them.
+**This epic closed `done` on 2026-08-21**: seven of the `Authoring` tag's eight write
+operations have a tool, shipped across `2.5.0` → `2.8.0`. The table below was written **before
+the work started**, so closing would be a matter of moving rows out rather than remembering to
+add them. One moved.
+
+| Gap | Status at close |
+|---|---|
+| `register` is unimplemented | **Still open.** §Out of scope. The loop ends at a green build; turning one into a private EA needs a story that decides the delete-asymmetry question first |
+| The two delete tools on a host without elicitation support | **Still open, and deliberate.** A silent fallback to deleting without confirmation would make the guardrail a function of the client. The trigger to revisit is a real user blocked on a real host, and the answer would be a second opt-in flag that trades the confirmation away **explicitly** |
+| The idempotency retention window | **Discharged, and it reversed a decision.** Measured by `TASK-8.1.1`: a record **outlives a delete**, so the content-derived key specified by the design replayed a `draftId` that no longer existed. Replaced with a fresh `randomUUID()` per call before `create_draft` shipped ([CONTEXT D43](../../CONTEXT.md), revising [D41](../../CONTEXT.md)) |
+
+**Three things this close does not cover, added during the work:**
 
 | Gap | Why | What would discharge it |
 |---|---|---|
-| `register` is unimplemented | §Out of scope. The loop ends at a green build | A story that decides the delete-asymmetry question |
-| The two delete tools on a host without elicitation support | Accepted rather than worked around: a silent fallback to deleting without confirmation would make the guardrail a function of the client | A second opt-in flag that trades the confirmation away **explicitly** — never a silent fallback |
-| The idempotency retention window | Undocumented by the API. Decides whether create → delete → identical-create can replay a dead `draftId` | Measured by `TASK-8.1.1` against the live service |
+| No write tool has been called against **production** | Every live measurement was taken against `be-dev`. The key holds `authoring:write` on both, verified by probe, but only `be-dev` has had a draft created on it by this server | One deliberate run against `api.sentitrade.xyz` |
+| The `413` branch is test-covered only | Provoking it needs a body over the gateway's 1 MB limit, which is a deliberately wasteful live request | A live call with an oversized body, if anyone judges it worth the bandwidth |
+| The attachment **cap** and **draft cap** `403`s are test-covered only | The smoke account holds 4 drafts against a cap of 20 and no draft has 5 attachments. `DRAFT_CAP_OR_SCOPE` and `ATTACHMENT_CAP_OR_SCOPE` have never been produced by the real service | Filling either cap on a throwaway account |
+
+**Two gaps this epic discharged for [EPIC-7](EPIC-7.md)**, both of which needed a write and so
+could not be closed there: no draft in a `FAILED` state had ever been observed, and the smoke
+account held zero attachments. The write smoke test produces both. EPIC-7's §Open question is
+answered in the same pass — the shapes match, and the parse stays loose anyway
+([CONTEXT D44](../../CONTEXT.md)).
 
 ## Cross-references
 

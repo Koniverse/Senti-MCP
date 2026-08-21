@@ -2349,3 +2349,66 @@ this entry is where the current behaviour lives.
 
 **Date**: 2026-08-21
 **Version**: 2.5.0 (planned)
+
+---
+
+### D44. The `GET`'s diagnostics match the compile response's — and the parse stays loose anyway
+
+**Context**: [EPIC-7](sprints/epics/EPIC-7.md) §Open question this epic carries asked whether
+`lastCompileDiagnostics` on the two `GET` paths really carries the same shape as
+`diagnostics` on `POST /drafts/{draftId}/compile`. The document types the compile response's
+items fully and the `GET`s' as an untyped object
+([contract audit F2](../senti-api-contract-audit.md)), while the `GET` description points the
+reader at `lastCompileDiagnostics` as *"the machine-readable, never-truncated form — parse
+that"*. EPIC-7 could not settle it: **every live draft's array was empty**, and producing a
+non-empty one required a compile, which is a write.
+
+**The observation**, 2026-08-21 against `be-dev`, made possible by
+[EPIC-8](sprints/epics/EPIC-8.md):
+
+```
+POST /api/v1/drafts/<id>/compile  → 200
+  diagnostics[0]           {"severity":"error","file":"…mq5","line":3,"column":24,
+                            "code":"256","message":"undeclared identifier 'undeclaredThing'"}
+GET  /api/v1/drafts/<id>
+  lastCompileDiagnostics[0] {"code":"256","file":"…mq5","line":3,"column":24,
+                             "message":"undeclared identifier 'undeclaredThing'","severity":"error"}
+```
+
+**Identical** — same six keys, same values; only JSON key order differs, which is not shape.
+`lastCompileStatus` was `FAILED` and `compiledUpToDate` `true`.
+
+**Decision**: the render path in `get_draft` is **confirmed**, and `DraftSchema` keeps
+`z.array(z.unknown())` regardless. The [read spec](superpowers/specs/2026-08-19-senti-authoring-read-tools-design.md)
+predicted exactly this disposition — *"If the shapes match, the render path is confirmed and
+the parse stays loose anyway"* — and the reason has not changed: **the observation is about the
+service, and the parse is a bet on the contract.** The document still declares the array as
+`object` with `additionalProperties: {}`, so tightening `DraftSchema` would take `get_draft`
+and `list_drafts` down together the day the service and the undocumented shape diverge, in
+exchange for a strictness the document never promised.
+
+`compile_draft` is the exception and always was: its own route *does* declare the shape, so it
+parses strictly. That asymmetry is now evidence-backed rather than merely cautious — the two
+tools parse differently because their two routes document differently, not because one is
+trusted more.
+
+**What would change this**: the API adding a shared `CompileDiagnostic` component and `$ref`-ing
+it from all three sites — item F2 of the contract review already sent. Then the parse tightens
+and this entry closes.
+
+**Also observed, and recorded because nobody documented it**:
+
+- **A draft's `name` derives the `.mq5` filename with non-alphanumerics replaced by
+  underscores.** `senti-mcp-diag-compare-…` compiled as `senti_mcp_diag_compare_….mq5`, and
+  that derived name is what appears in `diagnostics[].file`. A model matching a diagnostic back
+  to a draft by name will not find it by string equality.
+- **The compiler log carries the compile host's absolute Windows path**, including the draft id:
+  `C:\MT5\compile_jobs\<draftId>\<name>.mq5`. It is not a secret, but it is infrastructure
+  detail in a field that reaches the model, and it is CRLF-terminated.
+
+**Impact**: no code change. [EPIC-7](sprints/epics/EPIC-7.md) §Open question closes;
+[US-8.4](sprints/stories/US-8.4-compile-draft-and-epic-close.md) §Implementation notes carries
+the raw observation.
+
+**Date**: 2026-08-21
+**Version**: 2.8.0

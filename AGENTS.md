@@ -17,13 +17,15 @@ Trading, and Authoring. An MCP host cannot call it directly: something has to ow
 API key, present typed tools whose descriptions let a model choose correctly, and turn
 API errors into text a model can act on. This server is that something.
 
-**Current state: `2.7.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
+**Current state: `2.8.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
 `1.0.1` is the version that carried it to the registry
 ([CONTEXT D11, D12](docs/CONTEXT.md)). **Fourteen read tools are registered unconditionally**
-in `src/server.ts`, and **six write tools — `create_draft`, `update_draft`, `delete_draft`,
-`add_draft_attachment`, `update_draft_attachment` and `delete_draft_attachment` — are
-registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set**, so a host that does not opt in
-sees the same fourteen it saw in `2.4.0`. The read tools:
+in `src/server.ts`, and **seven write tools — `create_draft`, `update_draft`, `delete_draft`,
+`add_draft_attachment`, `update_draft_attachment`, `delete_draft_attachment` and
+`compile_draft` — are registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set**, so a host
+that does not opt in sees the same fourteen it saw in `2.4.0`. That closes
+[EPIC-8](docs/sprints/epics/EPIC-8.md): seven of the `Authoring` tag's eight write operations
+have a tool, `register` being the deliberate exception. The read tools:
 `get_authoring_conventions`, `list_drafts`, `get_draft`, `list_draft_attachments`,
 `list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
 `list_positions`, `list_pending_orders`, `list_deals`, `get_account_performance`,
@@ -199,6 +201,9 @@ src/
                           delete-draft-attachment.ts (v2.7.0) — the indicator
                           sub-resource. The replace takes no filename: the API
                           forbids the rename
+                          compile-draft.ts (v2.8.0) — the only tool that parses
+                          diagnostics strictly, because its route is the only
+                          one that declares their shape. ok:false is a success
     accounts/           ← list-accounts.ts — AccountSchema (16 fields), parseAccounts,
                           formatAccounts. Imports no MCP SDK, so it is tested by direct
                           calls. Shipped in v0.1.0, relocated here in v0.2.0
@@ -386,6 +391,7 @@ that shows it, since the path is gitignored. `vitest.config.ts` scopes collectio
 | `SENTI_API_KEY` | yes | — | First-party key, `sq_live_…`. The server exits at startup without it. |
 | `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. Must be absolute `https:` or `http:`, with no query string or fragment. |
 | `SENTI_ENABLE_AUTHORING_WRITE` | no | unset (off) | `1` or `true` registers the authoring write tools; anything else, including `0`, `false`, `no` and `off`, leaves them unregistered. Requires `authoring:write` on the key. Enables **no** trading write. |
+| `SENTI_SMOKE_WRITES` | no | unset (off) | Test-only. `1` makes `npm run test:smoke` additionally create and delete a real draft — create, attach, compile, delete — to cover the write path live. Needs `authoring:write`. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only. Read from a gitignored `.env.local` by `npm run test:smoke`. If `.env.local` exists but doesn't set this, the suite skips cleanly; if `.env.local` doesn't exist at all, `node --env-file` fails to start (`node: .env.local: not found`, exit 9) rather than skipping. |
 
 **The key must belong to the same environment `SENTI_API_BASE_URL` points at.** Keys

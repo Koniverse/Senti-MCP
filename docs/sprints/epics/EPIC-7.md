@@ -204,6 +204,17 @@ falling back to raw output. A mismatch costs a less readable line, never a faile
 This has been raised with the API as a contract defect. If it is fixed by a shared
 `CompileDiagnostic` component, the parse can tighten and this question closes.
 
+**Answered 2026-08-21, by [EPIC-8](EPIC-8.md).** The shapes are identical: a live
+`POST …/compile` and a `GET /drafts/{draftId}` on the same failed draft returned the same six
+keys with the same values. The render path is **confirmed**, and the parse **stays loose**,
+exactly as this section anticipated — the observation is about the service, and the parse is a
+bet on the contract, which still declares the array untyped. See
+[CONTEXT D44](../../CONTEXT.md).
+
+Settling it required a compile, which is a write, which is why this epic could not do it. Rows
+1 and 2 of §What this close does not claim are discharged by the same work — the write smoke
+test creates the attachment the smoke account never had.
+
 ## Cross-references
 
 - [Authoring read-tool design spec](../../superpowers/specs/2026-08-19-senti-authoring-read-tools-design.md) — the approved design

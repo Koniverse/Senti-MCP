@@ -28,6 +28,7 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | `add_draft_attachment` | `draftId`, `filename` (a bare `.mq5` basename), `sourceCode` | **Write tool, behind the opt-in.** Attaches one MQL5 indicator source to a draft so the EA can embed it. Filenames are unique within a draft **case-insensitively** — `MyInd.mq5` collides with `myind.mq5`, because the compile host writes them into one flat Windows directory. **Attaching does not wire it up**: the text names the exact `#resource "<stem>.ex5"` and `iCustom(…)` lines the EA still needs, which means an `update_draft` afterwards, or the file is compiled and never used. The response does not echo your source back. |
 | `update_draft_attachment` | `draftId`, `attachmentId`, `sourceCode` | **Write tool, behind the opt-in.** Replaces one indicator's source. **The filename cannot be changed and this tool takes no filename** — an EA embeds an indicator by name, so a rename would orphan every reference; to rename, delete, re-add and update the EA source. A full replace of that file's contents, so send the complete indicator. A `404` here may also mean the attachment belongs to a different draft. |
 | `delete_draft_attachment` | `draftId`, `attachmentId` | **Write tool, behind the opt-in — and it asks first.** Removes one indicator from a draft. **Cannot be undone.** Afterwards the EA still references it: remove its `#resource` and `iCustom` lines with `update_draft`, or the next `compile_draft` fails on a file that is no longer there — the text says so. Also how to free a slot when the attachment cap is full, and the only way to rename a file. **Needs a host that supports MCP elicitation.** |
+| `compile_draft` | `draftId` | **Write tool, behind the opt-in.** Runs the static-safety scan and the MQL5 compiler over a draft and every indicator attached to it, and returns the verdict, the diagnostics and the compiler log. **A check only** — it registers and deploys nothing. **A failed build is not an error**: the tool succeeds and reports `ok: false` with diagnostics, so read the result rather than retrying. The compile slot is **one per account** and the compile server is globally serial, so a second concurrent call is a `409` and contention is a `503` with a wait — this server reports both and retries neither. If the 15s client timeout fires, the compile keeps running on the server: the message says so and sends you to `get_draft` for `lastCompileStatus`. |
 
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
@@ -77,8 +78,9 @@ never sets it never sees one in `tools/list`, so there is nothing for a model to
 call by accident.
 
 Turning it on gives an agent the ability to **create, replace and delete MQL5
-drafts and their indicator files, and to compile them**. The key must also hold
-`authoring:write`.
+drafts and their indicator files, and to compile them** — the whole
+write → build → read the errors → write again loop, without leaving the editor.
+The key must also hold `authoring:write`.
 
 **The two delete tools pause for a human.** `delete_draft` and
 `delete_draft_attachment` ask for an explicit confirmation through MCP elicitation
@@ -134,11 +136,11 @@ No install step — `npx` fetches the published package on first run:
 Restart the client; all fourteen tools should appear — every `GET` operation the Senti
 Quant Public API exposes now has one, the last four added over the `Authoring` tag
 [EPIC-7](docs/sprints/epics/EPIC-7.md) shipped.
-`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.7.0` as
+`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.8.0` as
 of this release.
-It carries `2.4.0`'s fourteen read tools plus six write tools — `create_draft`,
-`update_draft`, `delete_draft`, `add_draft_attachment`, `update_draft_attachment` and
-`delete_draft_attachment` — which are registered **only** when
+It carries `2.4.0`'s fourteen read tools plus **seven** write tools — `create_draft`,
+`update_draft`, `delete_draft`, `add_draft_attachment`, `update_draft_attachment`,
+`delete_draft_attachment` and `compile_draft` — which are registered **only** when
 `SENTI_ENABLE_AUTHORING_WRITE` is set, so an installation that does not set it sees the same
 fourteen tools `2.4.0` did.
 `2.4.0` carries the ten tools of `1.4.0` plus `get_authoring_conventions`, `get_draft`,
@@ -161,7 +163,7 @@ others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
 expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@2.7.0"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@2.8.0"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server

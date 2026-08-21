@@ -18,7 +18,7 @@ goal: 'Give a sprint file one scope table, retrofit the two written before that 
 | US-8.1 | Write substrate, the opt-in, and `create_draft` *(added 2026-08-21)*     | EPIC-8 | P1  | 5      | ✅ done | [link](stories/US-8.1-write-substrate-and-create-draft.md)         |
 | US-8.2 | `update_draft` and `delete_draft` *(added 2026-08-21)*                   | EPIC-8 | P1  | 3      | ✅ done | [link](stories/US-8.2-update-and-delete-draft.md)                  |
 | US-8.3 | The three attachment writes *(added 2026-08-21)*                         | EPIC-8 | P1  | 3      | ✅ done | [link](stories/US-8.3-attachment-writes.md)                        |
-| US-8.4 | `compile_draft`, write smoke test, and EPIC-8's close *(added 2026-08-21)* | EPIC-8 | P1 | 3      | 🟢 ready | [link](stories/US-8.4-compile-draft-and-epic-close.md)             |
+| US-8.4 | `compile_draft`, write smoke test, and EPIC-8's close *(added 2026-08-21)* | EPIC-8 | P1 | 3      | ✅ done | [link](stories/US-8.4-compile-draft-and-epic-close.md)             |
 
 **Total: 10 stories / 27 points.** This sprint opened with no committed scope. US-6.1 and
 US-6.2 joined it on its first day, and are the first stories written to the shape they

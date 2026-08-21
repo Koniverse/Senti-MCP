@@ -379,3 +379,52 @@ failure one level up. There, a filter selected zero tests and exited 0; here, a 
 real assertions and exercises none of the code under test. Both are green runs that report
 on something other than what the author meant, and in both the fix is to read what actually
 ran rather than what was intended to run.
+
+## 9. An idempotency key derived from the request replayed a resource the delete had already removed
+
+**Where**: [US-8.1](sprints/stories/US-8.1-write-substrate-and-create-draft.md), `2.5.0`.
+The [write-tool design spec](superpowers/specs/2026-08-21-senti-authoring-write-tools-design.md)
+§Idempotency specified a key derived from method, path and body, so that a model calling
+`create_draft` twice with identical arguments would replay the original `201` instead of
+colliding with a `409`. It named the retention window as the one thing that could invalidate
+that, and refused to guess: *"that trade is made against a measurement, not in advance."*
+
+**What happened**: the measurement, taken as the story's first task before any code was
+written, killed the design.
+
+```
+POST /api/v1/drafts  Idempotency-Key: f658441a…  → 201  id=d6722f60-…
+DELETE /api/v1/drafts/d6722f60-…                 → 200
+POST /api/v1/drafts  Idempotency-Key: f658441a…  → replayed id=d6722f60-…
+```
+
+**An idempotency record outlives the resource it created.** The second create returned a
+`draftId` deleted seconds earlier — one the next `get_draft` would `404` on, with nothing in
+the response to say why.
+
+**Why**: the failing sequence is not exotic. *Create, delete, create again* is what iterating
+on a draft looks like, and delete-then-recreate is the API's **own prescribed way** to rename an
+attachment — so the tools actively encourage the sequence that breaks. And the benefit being
+bought was smaller than it looked: the duplicate the derived key protected against already had
+a good outcome without any key, a `409` reading *"you already have a draft with that name"*,
+which tells the model exactly what it needs. The design traded a clear `409` for a silently
+stale id and did not notice, because the trade only looks bad once you know the retention
+outlives a delete.
+
+**How to avoid**:
+- **When a design's correctness rests on an undocumented service behaviour, measure it before
+  the code, not after.** The story's `TASK-8.x.1` — "check the contract against the live service
+  before any code is written" — is what caught this, and it is the same task that caught two
+  false claims about `register` in this repo's own docs the day before.
+- **Write the open question into the spec with the fallback already chosen.** §Open questions
+  said what to do if retention proved long: revert to a random key and forfeit the dedup. That
+  made the reversal a ten-minute change instead of a debate.
+- **Ask what the duplicate actually costs.** A dedup mechanism is only worth having if the thing
+  it prevents is worse than the thing it can cause. Here a `409` was strictly better than a
+  stale id, which should have been visible from the error table without a measurement at all.
+
+**Pattern**: [1](#1-a-green-suite-after-a-mutation-is-not-evidence-the-mutation-landed) and
+[8](#8-a-fixture-that-only-defeats-the-naive-implementation-stops-testing-the-moment-you-write-yours)
+are about tests that report on something other than what the author meant. This is the same
+failure one layer out — a *design* reasoning about a behaviour it had assumed rather than
+observed. In all three the fix is identical: run the thing and read what actually happened.

@@ -2,13 +2,14 @@
 id: US-8.4
 title: "compile_draft, write smoke test, and EPIC-8's close"
 epic: EPIC-8
-status: ready
+status: done
 priority: P1
 points: 3
 sprint: sprint-2026-W34
 assignee: bluezdot
 created: 2026-08-21
 updated: 2026-08-21
+version_shipped: 2.8.0
 ---
 
 ## Goal
@@ -74,11 +75,11 @@ smoke test in this story closes both, without anyone opening the web Studio.
 
 ## Tasks
 
-- [ ] **TASK-8.4.1** — Check the contract against the live service: compile a draft that fails,
+- [x] **TASK-8.4.1** — Check the contract against the live service: compile a draft that fails,
   and record the first real diagnostic element this repo has ever observed
-- [ ] **TASK-8.4.2** — `compile_draft` (AC: 1–7)
-- [ ] **TASK-8.4.3** — The write smoke test (AC: 8, 9)
-- [ ] **TASK-8.4.4** — The `2.8.0` release and EPIC-8's close (AC: 10, 11)
+- [x] **TASK-8.4.2** — `compile_draft` (AC: 1–7)
+- [x] **TASK-8.4.3** — The write smoke test (AC: 8, 9)
+- [x] **TASK-8.4.4** — The `2.8.0` release and EPIC-8's close (AC: 10, 11)
 
 ## Dev notes
 
@@ -101,4 +102,61 @@ smoke test in this story closes both, without anyone opening the web Studio.
 
 ## Implementation notes
 
-_Written during implementation._
+### `TASK-8.4.1` — the first live compile diagnostic this repo has ever seen
+
+2026-08-21 against `be-dev`, on a draft written to fail on purpose
+(`int x = undeclaredThing;`):
+
+```json
+{"severity":"error","file":"senti_mcp_compile_observe_1787307619.mq5","line":4,"column":24,
+ "code":"256","message":"undeclared identifier 'undeclaredThing'"}
+```
+
+`ok: false`, `errors: 1`, `warnings: 0`, `logTruncated: false`, and the whole thing arrived as
+**HTTP 200** — confirming live what AC-2 asserts against a fixture.
+
+### The `GET`'s diagnostics match, and the parse still does not tighten
+
+A second draft was compiled and then read back through `GET /drafts/{draftId}`:
+`lastCompileDiagnostics[0]` was identical to `diagnostics[0]` — same six keys, same values,
+only JSON key order differing. `lastCompileStatus: FAILED`, `compiledUpToDate: true`.
+
+That closes [EPIC-7](../epics/EPIC-7.md) §Open question. `DraftSchema` keeps
+`z.array(z.unknown())` anyway: the observation is about the *service*, and the parse is a bet on
+the *contract*, which still declares the array untyped. Recorded as
+[CONTEXT D44](../../CONTEXT.md).
+
+### Two undocumented behaviours found on the way
+
+- **A draft's `name` derives the `.mq5` filename with non-alphanumerics replaced by
+  underscores.** `senti-mcp-diag-compare-…` compiled as `senti_mcp_diag_compare_….mq5`, and
+  that derived name is what `diagnostics[].file` carries — so matching a diagnostic back to a
+  draft by name will not work by string equality.
+- **The compiler log carries the compile host's absolute Windows path**, draft id included:
+  `C:\MT5\compile_jobs\<draftId>\<name>.mq5`, CRLF-terminated. Not a secret, but
+  infrastructure detail in a field that reaches the model.
+
+### The smoke cleanup had to be allowed to retry, and that is not a contradiction
+
+The first live run of this suite hit **HTTP 429** — the rate limit is 60 per window, this test
+spends five requests, and repeated runs exhaust it. The `429` landed on the `DELETE`, so the
+`finally` failed and **a draft was left on the account** (`156288bc-…`, removed by hand).
+
+The cleanup now retries a `429` up to four times. That is the only retry anywhere in this repo
+and it does not weaken [CONTEXT D40](../../CONTEXT.md): the no-retry rule is a claim about the
+*tool surface*, made because retrying against a globally serial compile slot is a
+denial-of-service. Cleanup is the opposite case — a cleanup that gives up on a transient status
+leaks state into the next run, which is what happened.
+
+### `vitest` swallows `console.error`, so the observations above came from `curl`
+
+The `[smoke]` lines this suite writes never appeared in `npm run test:smoke` output under this
+config — including the pre-existing `[smoke] breakdowns` line. The measurements were taken with
+direct requests instead. The `console.error` calls stay, because they cost nothing and a future
+config change may surface them; but nobody should treat them as the record.
+
+### EPIC-8 closed without `register`
+
+Not for the reason the repo carried until 2026-08-21 — see
+[CONTEXT D36](../../CONTEXT.md) — but because it is the only write in the tag that creates a
+resource **outside** it, which no operation in the tag can then delete.

@@ -15,6 +15,59 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.8.0] — 2026-08-21 — `compile_draft`, and EPIC-8's close
+
+The tool that closes the loop. `compile_draft` runs the static-safety scan and the MQL5
+compiler over a draft and every indicator attached to it, and returns the verdict, the
+diagnostics and the compiler log ([US-8.4](sprints/stories/US-8.4-compile-draft-and-epic-close.md)).
+It is the seventh and last tool of [EPIC-8](sprints/epics/EPIC-8.md), and like the other six it
+is registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set.
+
+**A failed build is not an error.** The API returns `200` with `ok: false` and diagnostics; the
+tool returns a **success** result carrying them. Marking it `isError` would tell a model its
+call malfunctioned, and a model's correct response to that is to retry — against a globally
+serial compile slot, for a build that will fail again identically.
+
+**Nothing retries, and the abort message says why that matters here.** The compile slot is one
+per account and the compile server is serial across all accounts, so a `409` means someone
+else's compile is running and a `503` carries a wait this server reports rather than sleeps on.
+The 15-second client timeout is *not* raised — but aborting the fetch **does not cancel the
+compile**, so the account's slot stays busy and the next call would be a `409`. The message says
+exactly that and sends the model to `get_draft` for `lastCompileStatus`.
+
+**It is the only tool in this repo that parses diagnostics strictly**, because
+`POST /drafts/{draftId}/compile` is the only route in the whole document that declares their
+shape. `get_draft` and `list_drafts` parse theirs loosely and will keep doing so — see below.
+
+### The write smoke test, and the two things it settled
+
+`npm run test:smoke` with `SENTI_SMOKE_WRITES=1` now creates a real draft, attaches an
+indicator, compiles it and deletes it, cleaning up in a `finally`. It exists to discharge two
+gaps [EPIC-7](sprints/epics/EPIC-7.md) closed with, **both of which needed a write**:
+
+**1. The `GET`'s diagnostics match the compile response's — and the parse stays loose anyway.**
+No live draft had ever carried a non-empty `lastCompileDiagnostics`, so `get_draft`'s
+loose-parse/tight-render pair had never met real data. Measured on a deliberately broken draft:
+the two arrays are identical, same six keys, same values. The render path is confirmed. The
+parse does **not** tighten, because the observation is about the service and the parse is a bet
+on the contract — which still declares the array untyped ([CONTEXT D44](CONTEXT.md)).
+
+**2. An attachment existed for the first time.** The smoke account has held zero attachments
+since `2.2.0`, so every attachment branch in `list_draft_attachments` was test-covered and none
+was live-covered. The write smoke creates one.
+
+**Two undocumented behaviours found on the way**, recorded in [CONTEXT D44](CONTEXT.md): a
+draft's `name` derives its `.mq5` filename with non-alphanumerics replaced by underscores — so
+`diagnostics[].file` will not string-match the draft name — and the compiler log carries the
+compile host's absolute Windows path, `C:\MT5\compile_jobs\<draftId>\…`, CRLF-terminated.
+
+### EPIC-8 closes
+
+Seven of the `Authoring` tag's eight write operations now have a tool. What the close does
+**not** claim is in [EPIC-8](sprints/epics/EPIC-8.md) §What this close does not claim:
+`register` is unimplemented, and the two delete tools are unusable on a host without MCP
+elicitation support.
+
 ## [2.7.0] — 2026-08-21 — the three attachment writes
 
 `add_draft_attachment`, `update_draft_attachment` and `delete_draft_attachment` complete the
