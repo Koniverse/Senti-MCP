@@ -9,6 +9,7 @@ import { registerDeleteDraft } from './tools/authoring/delete-draft.js';
 import { registerGetDraft } from './tools/authoring/get-draft.js';
 import { registerListDraftAttachments } from './tools/authoring/list-draft-attachments.js';
 import { registerListDrafts } from './tools/authoring/list-drafts.js';
+import { registerUpdateDraftAttachment } from './tools/authoring/update-draft-attachment.js';
 import { registerUpdateDraft } from './tools/authoring/update-draft.js';
 import { registerListBrokers } from './tools/brokers/list-brokers.js';
 import { registerGetPerformanceBreakdowns } from './tools/performance/breakdowns.js';
@@ -65,6 +66,7 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
     registerUpdateDraft(server, client);
     registerDeleteDraft(server, client);
     registerAddDraftAttachment(server, client);
+    registerUpdateDraftAttachment(server, client);
   }
 
   return server;
