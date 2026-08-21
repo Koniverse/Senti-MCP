@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/server';
 import { createClient } from './core/client.js';
 import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
 import { registerListAccounts } from './tools/accounts/list-accounts.js';
+import { registerAddDraftAttachment } from './tools/authoring/add-draft-attachment.js';
 import { registerGetAuthoringConventions } from './tools/authoring/conventions.js';
 import { registerCreateDraft } from './tools/authoring/create-draft.js';
 import { registerDeleteDraft } from './tools/authoring/delete-draft.js';
@@ -63,6 +64,7 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
     registerCreateDraft(server, client);
     registerUpdateDraft(server, client);
     registerDeleteDraft(server, client);
+    registerAddDraftAttachment(server, client);
   }
 
   return server;

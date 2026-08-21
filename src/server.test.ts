@@ -2035,6 +2035,7 @@ const WRITE_TOOL_ANNOTATIONS: Record<string, { destructive: boolean; idempotent:
   create_draft: { destructive: false, idempotent: false },
   update_draft: { destructive: true, idempotent: true },
   delete_draft: { destructive: true, idempotent: true },
+  add_draft_attachment: { destructive: false, idempotent: false },
 };
 
 const READ_TOOL_COUNT = 14;
