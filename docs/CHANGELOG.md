@@ -15,6 +15,41 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.7.0] — 2026-08-21 — the three attachment writes
+
+`add_draft_attachment`, `update_draft_attachment` and `delete_draft_attachment` complete the
+indicator sub-resource ([US-8.3](sprints/stories/US-8.3-attachment-writes.md)), whose read
+half [US-7.4](sprints/stories/US-7.4-list-draft-attachments-tool.md) shipped in `2.4.0`. All
+three are registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set.
+
+**Filenames collide case-insensitively, and the message says why.** `MyInd.mq5` and
+`myind.mq5` are the same file to this platform, because the compile host writes every
+attachment into one flat Windows directory. A `409` from `add_draft_attachment` reports that
+rather than a bare "already exists", so a model does not try the same name in another case.
+
+**The filename is immutable, so `update_draft_attachment` does not accept one.** An EA embeds
+an indicator by name — `#resource "MyInd.ex5"` — and a rename would orphan every reference and
+turn a working draft into a static-safety violation. To rename: delete, re-add, and update the
+EA source. Accepting a `filename` the API would ignore is worse than not accepting one, so the
+input schema is `draftId`, `attachmentId`, `sourceCode` and nothing else.
+
+**Attaching does not wire up, and deleting does not unwire.** `add_draft_attachment` names the
+exact `#resource "<stem>.ex5"` and `iCustom(_Symbol, _Period, "::<stem>.ex5", …)` lines the EA
+still needs, derived from the filename you gave it. `delete_draft_attachment` says the opposite
+thing: the EA still references a file that is gone, and the next `compile_draft` fails on it
+unless `update_draft` removes those lines first. A draft that compiles a file it never
+references reads as a success otherwise, and one that references a file it no longer has reads
+as a compiler problem.
+
+`delete_draft_attachment` is the second and last tool in [EPIC-8](sprints/epics/EPIC-8.md)
+that pauses for a human confirmation, on the same reasoning as `delete_draft`
+([CONTEXT D42](CONTEXT.md)).
+
+**A `404` on either attachment-id tool carries a cause the draft `404` does not**: the
+attachment may exist and belong to a *different* draft. That is an easy mistake to make with
+two ids in one path, and a message that only said "not found" would send the reader to check
+the wrong one.
+
 ## [2.6.0] — 2026-08-21 — `update_draft` and `delete_draft`
 
 The two draft writes that can destroy work, and the first tool in this server that pauses for

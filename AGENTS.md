@@ -17,12 +17,13 @@ Trading, and Authoring. An MCP host cannot call it directly: something has to ow
 API key, present typed tools whose descriptions let a model choose correctly, and turn
 API errors into text a model can act on. This server is that something.
 
-**Current state: `2.6.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
+**Current state: `2.7.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
 `1.0.1` is the version that carried it to the registry
 ([CONTEXT D11, D12](docs/CONTEXT.md)). **Fourteen read tools are registered unconditionally**
-in `src/server.ts`, and **three write tools — `create_draft`, `update_draft` and
-`delete_draft` — are registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set**, so a host
-that does not opt in sees the same fourteen it saw in `2.4.0`. The read tools:
+in `src/server.ts`, and **six write tools — `create_draft`, `update_draft`, `delete_draft`,
+`add_draft_attachment`, `update_draft_attachment` and `delete_draft_attachment` — are
+registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set**, so a host that does not opt in
+sees the same fourteen it saw in `2.4.0`. The read tools:
 `get_authoring_conventions`, `list_drafts`, `get_draft`, `list_draft_attachments`,
 `list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
 `list_positions`, `list_pending_orders`, `list_deals`, `get_account_performance`,
@@ -194,6 +195,10 @@ src/
                           destructive despite its name
                           delete-draft.ts (v2.6.0) — the first tool that pauses
                           for a human (D42)
+                          add-draft-attachment.ts, update-draft-attachment.ts,
+                          delete-draft-attachment.ts (v2.7.0) — the indicator
+                          sub-resource. The replace takes no filename: the API
+                          forbids the rename
     accounts/           ← list-accounts.ts — AccountSchema (16 fields), parseAccounts,
                           formatAccounts. Imports no MCP SDK, so it is tested by direct
                           calls. Shipped in v0.1.0, relocated here in v0.2.0

@@ -5,6 +5,7 @@ import { registerListAccounts } from './tools/accounts/list-accounts.js';
 import { registerAddDraftAttachment } from './tools/authoring/add-draft-attachment.js';
 import { registerGetAuthoringConventions } from './tools/authoring/conventions.js';
 import { registerCreateDraft } from './tools/authoring/create-draft.js';
+import { registerDeleteDraftAttachment } from './tools/authoring/delete-draft-attachment.js';
 import { registerDeleteDraft } from './tools/authoring/delete-draft.js';
 import { registerGetDraft } from './tools/authoring/get-draft.js';
 import { registerListDraftAttachments } from './tools/authoring/list-draft-attachments.js';
@@ -67,6 +68,7 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
     registerDeleteDraft(server, client);
     registerAddDraftAttachment(server, client);
     registerUpdateDraftAttachment(server, client);
+    registerDeleteDraftAttachment(server, client);
   }
 
   return server;

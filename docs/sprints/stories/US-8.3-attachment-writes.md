@@ -2,13 +2,14 @@
 id: US-8.3
 title: "The three attachment writes"
 epic: EPIC-8
-status: ready
+status: done
 priority: P1
 points: 3
 sprint: sprint-2026-W34
 assignee: bluezdot
 created: 2026-08-21
 updated: 2026-08-21
+version_shipped: 2.7.0
 ---
 
 ## Goal
@@ -59,12 +60,12 @@ is test-covered and none is live-covered.
 
 ## Tasks
 
-- [ ] **TASK-8.3.1** — Check the contract against the live service: attach a file, confirm the
+- [x] **TASK-8.3.1** — Check the contract against the live service: attach a file, confirm the
   case-insensitive `409` by re-attaching the same name in different case, and confirm `PUT`
   rejects a `filename` field
-- [ ] **TASK-8.3.2** — `add_draft_attachment` (AC: 1–5, 10)
-- [ ] **TASK-8.3.3** — `update_draft_attachment` (AC: 6–8, 10)
-- [ ] **TASK-8.3.4** — `delete_draft_attachment` and the `2.7.0` release (AC: 8, 9, 11)
+- [x] **TASK-8.3.2** — `add_draft_attachment` (AC: 1–5, 10)
+- [x] **TASK-8.3.3** — `update_draft_attachment` (AC: 6–8, 10)
+- [x] **TASK-8.3.4** — `delete_draft_attachment` and the `2.7.0` release (AC: 8, 9, 11)
 
 ## Dev notes
 
@@ -87,4 +88,24 @@ is test-covered and none is live-covered.
 
 ## Implementation notes
 
-_Written during implementation._
+### The three things a model gets wrong, all handled in text rather than in code
+
+The case-insensitive collision, the immutable filename and the not-wired-up gap are all stated
+by the API and none is enforceable client-side without duplicating a rule the API owns. Each is
+carried in the tool's **text** instead: the `409` message names the flat Windows directory,
+`update_draft_attachment` has no `filename` field at all, and both `add_` and `delete_` name
+the `#resource` / `iCustom` lines the EA still needs or still has.
+
+### `formatAttachmentWrite` derives the `.ex5` name case-insensitively
+
+`Trend.MQ5` becomes `Trend.ex5`, not `Trend.MQ5.ex5`. Tested, because the filename rule this
+platform enforces is itself case-insensitive and a case-sensitive `.replace` would have been
+consistent with nothing.
+
+### No live attachment existed when this shipped
+
+The smoke account has held **zero** attachments since `2.2.0`, so all three tools are
+test-covered and none is live-covered as of `2.7.0`. That is the same gap
+[EPIC-7 §What this close does not claim](../epics/EPIC-7.md) records for the read half, and it
+is discharged in [US-8.4](US-8.4-compile-draft-and-epic-close.md) by the write smoke test —
+which can finally create one, because creating one needed a write.
