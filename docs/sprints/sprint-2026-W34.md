@@ -16,7 +16,7 @@ goal: 'Give a sprint file one scope table, retrofit the two written before that 
 | US-7.3 | `list_drafts` tool *(added 2026-08-19)*                                  | EPIC-7 | P1  | 3      | ✅ done | [link](stories/US-7.3-list-drafts-tool.md)                         |
 | US-7.4 | `list_draft_attachments` tool *(added 2026-08-19)*                       | EPIC-7 | P1  | 2      | ✅ done | [link](stories/US-7.4-list-draft-attachments-tool.md)              |
 | US-8.1 | Write substrate, the opt-in, and `create_draft` *(added 2026-08-21)*     | EPIC-8 | P1  | 5      | ✅ done | [link](stories/US-8.1-write-substrate-and-create-draft.md)         |
-| US-8.2 | `update_draft` and `delete_draft` *(added 2026-08-21)*                   | EPIC-8 | P1  | 3      | 🟢 ready | [link](stories/US-8.2-update-and-delete-draft.md)                  |
+| US-8.2 | `update_draft` and `delete_draft` *(added 2026-08-21)*                   | EPIC-8 | P1  | 3      | ✅ done | [link](stories/US-8.2-update-and-delete-draft.md)                  |
 | US-8.3 | The three attachment writes *(added 2026-08-21)*                         | EPIC-8 | P1  | 3      | 🟢 ready | [link](stories/US-8.3-attachment-writes.md)                        |
 | US-8.4 | `compile_draft`, write smoke test, and EPIC-8's close *(added 2026-08-21)* | EPIC-8 | P1 | 3      | 🟢 ready | [link](stories/US-8.4-compile-draft-and-epic-close.md)             |
 

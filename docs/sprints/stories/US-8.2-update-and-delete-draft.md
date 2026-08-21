@@ -2,13 +2,14 @@
 id: US-8.2
 title: "update_draft and delete_draft"
 epic: EPIC-8
-status: ready
+status: done
 priority: P1
 points: 3
 sprint: sprint-2026-W34
 assignee: bluezdot
 created: 2026-08-21
 updated: 2026-08-21
+version_shipped: 2.6.0
 ---
 
 ## Goal
@@ -78,11 +79,11 @@ tell a model something malfunctioned and invite a retry; a user saying no is nei
 
 ## Tasks
 
-- [ ] **TASK-8.2.1** — Check the contract against the live service: confirm `PUT` rejects a body
+- [x] **TASK-8.2.1** — Check the contract against the live service: confirm `PUT` rejects a body
   missing `name`, and that `DELETE` on a nonexistent id answers `404` rather than `200`
-- [ ] **TASK-8.2.2** — `core/tool.ts` confirmation seam (AC: 5–7)
-- [ ] **TASK-8.2.3** — `update_draft` (AC: 1–4)
-- [ ] **TASK-8.2.4** — `delete_draft` and the `2.6.0` release (AC: 5–10)
+- [x] **TASK-8.2.2** — `core/tool.ts` confirmation seam (AC: 5–7)
+- [x] **TASK-8.2.3** — `update_draft` (AC: 1–4)
+- [x] **TASK-8.2.4** — `delete_draft` and the `2.6.0` release (AC: 5–10)
 
 ## Dev notes
 
@@ -104,4 +105,46 @@ tell a model something malfunctioned and invite a retry; a user saying no is nei
 
 ## Implementation notes
 
-_Written during implementation._
+### `TASK-8.2.1` — checked live before any code
+
+2026-08-21, against `be-dev`. `DELETE /api/v1/drafts/<a nonexistent uuid>` answers `404` with
+the standard envelope rather than a silent `200`, so `parseDeleted`'s `{ id }` shape is only
+ever reached on a real deletion. The same probe run for `TASK-8.1.1` had already established
+that the key holds `authoring:write` on both environments.
+
+### The confirmation seam had a spin bug the plan did not anticipate
+
+The obvious implementation — return `inputRequired` whenever `acceptedContent()` is
+`undefined` — **loops**. `acceptedContent()` returns `undefined` for a *declined* elicitation
+exactly as it does for a *missing* one, so a decline re-asks, and re-asks, until the client's
+`maxRounds` cap. The seam therefore mints an opaque `requestState` on the first round and
+treats its presence as "already asked".
+
+That is safe in the direction that matters: a forged `requestState` **cannot** skip the
+confirmation, because it lands in the cancel branch — only *accepted* content reaches `run`.
+The test `asks exactly once — a decline does not re-ask until the round cap` is what pins it.
+
+### The declined branch could not return bare text
+
+Found while writing the plan, confirmed here. `validateToolOutput` in the SDK rejects a
+non-error result that declares an `outputSchema` and supplies no `structuredContent`
+(`isError` and input-required results are the only exemptions). So `DeleteOutputSchema` is
+`{ id: string | null, deleted: boolean, notes: string[] }` rather than the spec's bare
+`{ id }`, and a cancellation is a legitimate success saying nothing happened.
+
+### A typecheck-only failure the test run could not see
+
+`vitest` transpiles without checking, so the elicitation handler's
+`content: Record<string, unknown>` passed every test and failed `tsc -p tsconfig.test.json`:
+the wire shape is `Record<string, string | number | boolean | string[]>`. This is exactly what
+[the `typecheck` script existing separately](../../../AGENTS.md) is for — a green suite is not
+a typecheck.
+
+### Confirmation is asked before the path is validated
+
+A traversal `draftId` produces the elicitation first and the rejection second, so a user can
+be asked to confirm deleting `../../admin` before the tool discovers it is not a legal id. It
+is harmless — no request is ever sent — and the test
+`rejects a traversal draftId before the confirmation is even asked` records the actual order
+rather than the one its name assumes. Reordering would mean validating inside the registrar,
+which is `core/`'s business rather than a tool's.

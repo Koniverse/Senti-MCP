@@ -23,6 +23,8 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | `list_drafts` | none | Lists the MQL5 drafts this API key owns, most recently updated first, with each draft's compile status, size, attachment count and registered-EA id. Use it to find a `draftId`, or to answer "what am I working on" and "which of my drafts are broken". **This response is shaped.** `GET /api/v1/drafts` is the largest payload the API can produce — up to 10.3 MiB across 20 drafts — so source code, compiler logs and diagnostics are ALL dropped; what was cut is listed in `notes`, and the note only ever names a category that actually lost something — with a byte figure only where bytes were measured. Measured live on 2026-08-20: 19,853 B → 1,898 B, 90.4% removed; worst case at `maxDrafts` with 5 attachments per draft is roughly **5,000–7,000 tokens**, counting both response channels. Call `get_draft` for one draft's source and compiler output, or `list_draft_attachments` for its indicator sources. There is no option to request the unshaped response. |
 | `list_draft_attachments` | `draftId` (the `id` field from `list_drafts`), plus optional `filename` | Reads the indicator source files a draft's EA embeds via `#resource` — the source `get_draft` deliberately leaves out. Pass `filename` to read at most one attachment whole, by exact name; that is also how to read one a default call had to leave out — if more than one attachment shares that filename, only the first is returned and `notes` says how many were skipped. A filtered read says so in its text and names the draft's real attachment count, so `content` alone is never read as the whole set. **This response is budgeted, not truncated.** With `filename` omitted, attachments are returned whole while the running total stays within a 64 KiB budget — the first attachment is always returned whole regardless of size, and once one is cut every later one is cut too, and `notes` says exactly that rather than claiming each cut file exceeded the budget; a cut attachment keeps its metadata and reports `sourceCode: null`, never a partial source. `notes` says whether a cut happened. Worst case, counting both response channels, is roughly **33,000 tokens**. |
 | `create_draft` | `name` (1–120 chars, unique per user), `sourceCode` (the complete EA) | **Write tool — registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set** (see [Enabling the write path](#enabling-the-write-path)). Creates a new MQL5 draft from source you have written, and returns its `id`. Call `get_authoring_conventions` first: code that breaks the platform rules is rejected by a static scan before it reaches the compiler, and this tool does not check them for you. **The response does not echo your source back** — you just sent it — so it returns the new id, the byte count written and the compile state, and `notes` points at `get_draft` for a read-back. Nothing is compiled until you call `compile_draft`. A `409` means the name is taken; a `403` means either the key lacks `authoring:write` or your draft cap is full, and the message says both because the API does not distinguish them. |
+| `update_draft` | `draftId`, `name`, `sourceCode` | **Write tool, behind the opt-in.** Replaces an existing draft. **THIS IS A FULL REPLACE, NOT A PATCH** — both fields are always written, so send the complete draft every time; sending only what you changed deletes the rest of the file, because the API has no partial-update verb. Call `get_draft` first if you do not have the current source. Annotated `destructiveHint` for exactly that reason, despite the name. Reports the bytes written, not a before/after delta — the `PUT` response carries only the new draft, and this server does not make a hidden second request to invent the missing figure. Compiles nothing; if a previous compile no longer matches, the text says so and points at `compile_draft`. |
+| `delete_draft` | `draftId` | **Write tool, behind the opt-in — and it asks first.** Deletes one draft and every indicator attached to it. **Cannot be undone**, and no tool here restores one, so it pauses for an explicit human confirmation before anything is sent; declining returns a success saying nothing was deleted, not an error. An EA already registered from the draft is unaffected — a separate resource. Use it to free a slot when `create_draft` reports the draft cap is full. **Needs a host that supports MCP elicitation**; on one that does not, this tool cannot be used, and that is deliberate rather than degraded to a silent delete. |
 
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
@@ -75,6 +77,14 @@ Turning it on gives an agent the ability to **create, replace and delete MQL5
 drafts and their indicator files, and to compile them**. The key must also hold
 `authoring:write`.
 
+**The two delete tools pause for a human.** `delete_draft` and
+`delete_draft_attachment` ask for an explicit confirmation through MCP elicitation
+before anything is sent, because they are the only operations here that no other
+tool can undo. The other five do not ask: `update_draft` fires on every save in an
+edit loop, and a prompt seen fifty times a session gets rubber-stamped, which is
+worse than no prompt. On a host that does not support elicitation the two delete
+tools cannot be used — deliberately, rather than degraded to a silent delete.
+
 **It does not enable any trading write.** Closing a position, cancelling an order
 and deploying a strategy to an account are a different surface, gated by a
 different scope (`strategies:write`, `trading:write`) and by a flag that does not
@@ -121,11 +131,12 @@ No install step — `npx` fetches the published package on first run:
 Restart the client; all fourteen tools should appear — every `GET` operation the Senti
 Quant Public API exposes now has one, the last four added over the `Authoring` tag
 [EPIC-7](docs/sprints/epics/EPIC-7.md) shipped.
-`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.5.0` as
+`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.6.0` as
 of this release.
-It carries `2.4.0`'s fourteen read tools plus one write tool, `create_draft`, which is
-registered **only** when `SENTI_ENABLE_AUTHORING_WRITE` is set — so an installation that
-does not set it sees the same fourteen tools `2.4.0` did.
+It carries `2.4.0`'s fourteen read tools plus three write tools — `create_draft`,
+`update_draft` and `delete_draft` — which are registered **only** when
+`SENTI_ENABLE_AUTHORING_WRITE` is set, so an installation that does not set it sees the same
+fourteen tools `2.4.0` did.
 `2.4.0` carries the ten tools of `1.4.0` plus `get_authoring_conventions`, `get_draft`,
 `list_drafts` and `list_draft_attachments`, fourteen in total, and no write tool at any
 setting. `2.3.0` carries those same
@@ -146,7 +157,7 @@ others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
 expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@2.5.0"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@2.6.0"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server

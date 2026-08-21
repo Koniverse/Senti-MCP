@@ -2034,6 +2034,7 @@ async function connectWithWrites(fetchImpl: typeof fetch = okFetch) {
 const WRITE_TOOL_ANNOTATIONS: Record<string, { destructive: boolean; idempotent: boolean }> = {
   create_draft: { destructive: false, idempotent: false },
   update_draft: { destructive: true, idempotent: true },
+  delete_draft: { destructive: true, idempotent: true },
 };
 
 const READ_TOOL_COUNT = 14;

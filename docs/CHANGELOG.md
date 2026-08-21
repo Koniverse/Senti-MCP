@@ -15,6 +15,50 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.6.0] — 2026-08-21 — `update_draft` and `delete_draft`
+
+The two draft writes that can destroy work, and the first tool in this server that pauses for
+a human ([US-8.2](sprints/stories/US-8.2-update-and-delete-draft.md)). Both are registered
+only when `SENTI_ENABLE_AUTHORING_WRITE` is set.
+
+**`update_draft` is a FULL REPLACE, and it is annotated `destructiveHint: true` despite its
+name.** The API declares no partial-update verb: `name` and `sourceCode` are both always
+written, so a model that sends only the function it changed deletes the rest of the file. The
+warning is in the tool's description, where a model reads it *before* choosing the argument,
+which is the only place a warning about a destructive argument can still help.
+
+**It reports the bytes it wrote, not the bytes it replaced.** A before/after delta would need
+the pre-write size, and the `PUT` response carries only the new draft — a hidden `GET` would
+double the latency of every edit and race any concurrent writer. When a previous compile no
+longer matches the new source, the text says so and names `compile_draft`.
+
+**`delete_draft` asks first, and a "no" is not an error.** It is one of two tools in
+[EPIC-8](sprints/epics/EPIC-8.md) that pause for an explicit human confirmation; the other
+five do not. That is a deliberate line, not an oversight: `update_draft` fires on every save
+in an edit loop, and a confirmation a user sees fifty times in a session is one they stop
+reading — a rubber-stamp laundered into the appearance of consent is worse than no prompt
+([CONTEXT D42](CONTEXT.md)). The two deletes are the only operations in this epic that no
+other tool in it can undo.
+
+A declined confirmation returns a **success** carrying `{ id: null, deleted: false }` and a
+note saying no request was sent. `isError: true` would tell a model something malfunctioned
+and invite a retry, and a user saying no is neither.
+
+**Two mechanics worth knowing if you build on the seam.** It identifies the round by an opaque
+`requestState` it mints, not by the answer: `acceptedContent()` reports a decline and a first
+entry identically — both `undefined` — so branching on the answer alone re-asks on every
+decline and spins until the client's round cap. And a forged `requestState` cannot skip the
+confirmation, because only *accepted* content reaches the request.
+
+**A host without elicitation support cannot use `delete_draft`.** That is accepted rather than
+worked around: a silent fallback to deleting without confirmation would make the guardrail a
+function of the client, which is the one property a guardrail must not have. Every other tool
+in this release works normally on such a host.
+
+`core/tool.ts` now imports two runtime values from `@modelcontextprotocol/server`
+(`inputRequired`, `acceptedContent`), so it joins `src/server.ts` and `src/index.ts` as the
+third file that does. `AGENTS.md` said `server.ts` was the only one; corrected.
+
 ## [2.5.0] — 2026-08-21 — `create_draft`, and the write path opens
 
 The first tool in this server that changes something. `create_draft` calls
