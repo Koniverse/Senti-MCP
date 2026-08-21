@@ -2277,3 +2277,75 @@ trades the confirmation away **explicitly**.
 
 **Date**: 2026-08-21
 **Version**: 2.6.0 (planned)
+
+---
+
+### D43. The idempotency key is random per call, not derived from the request (revision of D41)
+
+**Context**: [D41](#d41-idempotency-key-is-server-minted-and-derived-from-the-request) chose a
+key derived from method, path and body — `sha256(...)` truncated to 32 hex characters — so that
+a model calling `create_draft` twice with identical arguments would replay the original `201`
+instead of colliding with a `409`. It named one open risk and refused to resolve it in advance:
+
+> the API does not document how long an idempotency record is retained. Under a long retention,
+> `create_draft` → `delete_draft` → byte-identical `create_draft` could replay the first
+> response and hand back a `draftId` that no longer exists. […] that trade is made against a
+> measurement, not in advance.
+
+**The measurement, taken 2026-08-21 against `be-dev.sentitrade.xyz`** as `TASK-8.1.1` required:
+
+```
+POST /api/v1/drafts  Idempotency-Key: f658441a…  → 201  id=d6722f60-06ec-4e9a-889b-7461f6b476f1
+DELETE /api/v1/drafts/d6722f60-…                 → 200
+POST /api/v1/drafts  Idempotency-Key: f658441a…  → replayed id=d6722f60-06ec-4e9a-889b-7461f6b476f1
+```
+
+**An idempotency record outlives the resource it created.** The second create returned a
+`draftId` that had been deleted seconds earlier — a draft the next `get_draft` would `404` on.
+
+**Decision**: mint a **fresh `randomUUID()` per call**. `idempotencyKeyFor(method, path, body)`
+is replaced by `newIdempotencyKey()`, which takes no arguments because it must not depend on
+any.
+
+**Rationale**: the risk is not exotic. *Create, delete, create again* is what iterating on a
+draft looks like, and delete-then-recreate is the API's own prescribed way to rename an
+attachment — so the failing sequence is one the tools actively encourage.
+
+And the benefit D41 was buying is smaller than it looked. The duplicate it protected against —
+a model calling `create_draft` twice with the same arguments — already has a good outcome
+without any key: a `409` carrying *"You already have a draft with that name"*, which tells the
+model exactly what it needs to know. Trading a clear `409` for a silently stale `draftId` is
+the wrong direction.
+
+**A random key still earns its place.** It is the header's core purpose: if the transport
+delivers one request twice — a proxy replay, an HTTP-layer retry this server did not ask for —
+only one draft is created. That protection is unaffected by retention, because each call
+carries a key no earlier call used.
+
+**What this does not change**: the key is still **server-minted and never a tool parameter**,
+which is the half of D41 that stands. A model-supplied key still reaches transcripts and can
+still be reused across two different creates.
+
+**Alternatives considered**:
+
+- **Keep the derived key and accept the stale replay** — rejected on the sequence above.
+- **Derive the key but add a nonce that changes on delete** — rejected. There is no state this
+  server may keep between tool calls, and inventing one to work around an undocumented
+  retention policy is a cache with no eviction rule.
+- **Send no key at all** — rejected. It gives up the transport-duplicate protection for
+  nothing; a UUID costs one call to `randomUUID()`.
+- **Ask the API to document the retention window** — worth doing, and does not change this
+  decision. A documented long retention is still a long retention.
+
+**Impact**: `src/core/client.ts` (`newIdempotencyKey` replaces `idempotencyKeyFor`),
+`src/tools/authoring/create-draft.ts`, `src/core/client.test.ts`,
+`src/tools/authoring/create-draft.test.ts`, and
+[US-8.1](sprints/stories/US-8.1-write-substrate-and-create-draft.md) §Implementation notes.
+[D41](#d41-idempotency-key-is-server-minted-and-derived-from-the-request) is unchanged (RULE-7);
+this entry revises it. The
+[write-tool design spec](superpowers/specs/2026-08-21-senti-authoring-write-tools-design.md)
+§Idempotency and its Open question 1 are **not** edited — a spec is a snapshot of intent, and
+this entry is where the current behaviour lives.
+
+**Date**: 2026-08-21
+**Version**: 2.5.0 (planned)

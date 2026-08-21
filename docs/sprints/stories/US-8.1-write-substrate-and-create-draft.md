@@ -2,13 +2,14 @@
 id: US-8.1
 title: "Write substrate, the opt-in, and create_draft"
 epic: EPIC-8
-status: ready
+status: done
 priority: P1
 points: 5
 sprint: sprint-2026-W34
 assignee: bluezdot
 created: 2026-08-21
 updated: 2026-08-21
+version_shipped: 2.5.0
 ---
 
 ## Goal
@@ -77,19 +78,19 @@ in advance.
 
 ## Tasks
 
-- [ ] **TASK-8.1.1** — Check the contract against the live service before writing code
-  - [ ] Confirm the smoke key holds `authoring:write` (a `PUT` to a nonexistent draft id
+- [x] **TASK-8.1.1** — Check the contract against the live service before writing code
+  - [x] Confirm the smoke key holds `authoring:write` (a `PUT` to a nonexistent draft id
         answers `404`, not `403`)
-  - [ ] **Measure the idempotency retention window**: create a draft with a derived key,
+  - [x] **Measure the idempotency retention window**: create a draft with a derived key,
         delete it, re-issue the byte-identical create with the same key, and record whether
         the response is a replay of the dead draft or a fresh `201`
-  - [ ] Record both in §Implementation notes
-- [ ] **TASK-8.1.2** — `core/client.ts` error branches (AC: 1–3)
-- [ ] **TASK-8.1.3** — `core/client.ts` `send()` and `idempotencyKeyFor()` (AC: 4–6)
-- [ ] **TASK-8.1.4** — `config.ts` opt-in (AC: 7)
-- [ ] **TASK-8.1.5** — `core/tool.ts` `registerWriteTool` (AC: 8)
-- [ ] **TASK-8.1.6** — `tools/authoring/write-result.ts` shaping (AC: 10)
-- [ ] **TASK-8.1.7** — `create_draft`, registration and the `2.5.0` release (AC: 9–13)
+  - [x] Record both in §Implementation notes
+- [x] **TASK-8.1.2** — `core/client.ts` error branches (AC: 1–3)
+- [x] **TASK-8.1.3** — `core/client.ts` `send()` and `idempotencyKeyFor()` (AC: 4–6)
+- [x] **TASK-8.1.4** — `config.ts` opt-in (AC: 7)
+- [x] **TASK-8.1.5** — `core/tool.ts` `registerWriteTool` (AC: 8)
+- [x] **TASK-8.1.6** — `tools/authoring/write-result.ts` shaping (AC: 10)
+- [x] **TASK-8.1.7** — `create_draft`, registration and the `2.5.0` release (AC: 9–13)
 
 ## Dev notes
 
@@ -111,4 +112,75 @@ in advance.
 
 ## Implementation notes
 
-_Written during implementation._
+### The key holds `authoring:write` on both environments
+
+`TASK-8.1.1`, 2026-08-21. `PUT /api/v1/drafts/zzzzzzzz-0000-0000-0000-000000000000` with the
+smoke key answered **`404` `{"error":{"code":"NOT_FOUND","message":"Draft not found."}}`** on
+both `be-dev.sentitrade.xyz` and `api.sentitrade.xyz` — not `403`. A non-mutating probe: the
+id passes `PATH_SEGMENT` and cannot exist.
+
+### The idempotency record outlives a delete — and that reversed a design decision
+
+The measurement `TASK-8.1.1` existed for, taken against `be-dev`:
+
+```
+POST /api/v1/drafts  Idempotency-Key: f658441a…  → 201  id=d6722f60-06ec-4e9a-889b-7461f6b476f1
+DELETE /api/v1/drafts/d6722f60-…                 → 200
+POST /api/v1/drafts  Idempotency-Key: f658441a…  → replayed id=d6722f60-06ec-4e9a-889b-7461f6b476f1
+```
+
+The second create returned a `draftId` deleted seconds earlier — one the next `get_draft`
+would `404` on. The [design spec](../../superpowers/specs/2026-08-21-senti-authoring-write-tools-design.md)
+§Idempotency had specified a **content-derived** key and named this as the open risk that
+would decide it. It decided it: `idempotencyKeyFor(method, path, body)` was replaced by
+`newIdempotencyKey()`, a fresh `randomUUID()` per call, before `create_draft` shipped.
+
+**Why this was the right way round.** *Create, delete, create again* is what iterating on a
+draft looks like, and delete-then-recreate is the API's own prescribed way to rename an
+attachment — so the failing sequence is one the tools actively encourage. And the duplicate
+the derived key protected against already had a good outcome without it: a `409` saying *"you
+already have a draft with that name"* tells the model exactly what it needs to know. A random
+key still earns its place, because one request delivered twice by the transport must still
+create one draft. Recorded as [CONTEXT D43](../../CONTEXT.md), revising
+[D41](../../CONTEXT.md); the spec is not edited, being a snapshot of intent.
+
+### A test that passed for the wrong reason
+
+The first `403`/`forbiddenMeans` test called the same stub twice. A `Response` body reads
+once, so the second call rejected with `TypeError: Body is unusable`, and the
+`.not.toThrow(/not that the account is off limits/)` assertion passed against *that* rather
+than against the message it meant to check. Rewritten to capture one rejection and assert both
+ways against the single message. `client.test.ts`'s `stub()` takes a thunk form for the cases
+that genuinely need two responses.
+
+### `write-result.ts` was mutation-checked instead of test-first
+
+It was written before its tests, against the plan's TDD order. Rather than pretend otherwise,
+the two load-bearing behaviours were verified by mutation: dropping the source cut fails
+*"replaces the source with its byte count"*, and firing the note when nothing was lost fails
+*"writes no note at all when there was nothing to cut"*. Each mutation failed exactly one
+test, and only that test.
+
+### `release:verify-pack` had to learn about a conditional tool
+
+Not anticipated by the plan. The gate spawns the packaged server and compares its
+`tools/list` against the README's tool table; with `create_draft` documented but registered
+only behind a flag the verifier does not set, it failed —
+
+```
+missing from the packaged server: create_draft (README tool table vs packaged server)
+```
+
+— which was the gate working, not a false alarm. It now spawns the packaged binary **twice**:
+once with `SENTI_ENABLE_AUTHORING_WRITE=1`, which is what the README's table is a claim about,
+and once without. The second spawn is a new assertion rather than a workaround: it proves the
+flag still gates in the *shipped artifact*, which no unit test can observe. It also fails if
+the opt-in ever *removes* a tool instead of adding one. Whether the right tools are gated
+stays `src/server.test.ts`'s job.
+
+### `core/tool.ts` still imports the SDK by type only
+
+The confirmation seam that will change this lands in
+[US-8.2](US-8.2-update-and-delete-draft.md); as of `2.5.0`, `src/server.ts` and
+`src/index.ts` remain the only files pulling a runtime value out of
+`@modelcontextprotocol/*`.

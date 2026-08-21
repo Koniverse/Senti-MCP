@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-21 09:49:48 UTC
+> Last generated: 2026-08-21 10:06:21 UTC
 > Total stories: 33
 
 ## ⏰ Deadlines (0)
@@ -12,11 +12,10 @@ _No stories carry an explicit deadline._
 
 _No stories_
 
-## 🟢 Ready (4)
+## 🟢 Ready (3)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
-| US-8.1 | Write substrate, the opt-in, and create_draft | EPIC-8 | P1 | 5 | sprint-2026-W34 | bluezdot |
 | US-8.2 | update_draft and delete_draft | EPIC-8 | P1 | 3 | sprint-2026-W34 | bluezdot |
 | US-8.3 | The three attachment writes | EPIC-8 | P1 | 3 | sprint-2026-W34 | bluezdot |
 | US-8.4 | compile_draft, write smoke test, and EPIC-8's close | EPIC-8 | P1 | 3 | sprint-2026-W34 | bluezdot |
@@ -29,7 +28,7 @@ _No stories_
 
 _No stories_
 
-## ✅ Done (29)
+## ✅ Done (30)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
@@ -62,6 +61,7 @@ _No stories_
 | US-7.2 | get_draft tool | EPIC-7 | P1 | 2 | sprint-2026-W34 | bluezdot |
 | US-7.3 | list_drafts tool | EPIC-7 | P1 | 3 | sprint-2026-W34 | bluezdot |
 | US-7.4 | list_draft_attachments tool, and EPIC-7's close | EPIC-7 | P1 | 2 | sprint-2026-W34 | bluezdot |
+| US-8.1 | Write substrate, the opt-in, and create_draft | EPIC-8 | P1 | 5 | sprint-2026-W34 | bluezdot |
 
 ## 🚫 Blocked (0)
 
@@ -76,10 +76,10 @@ _No stories_
 ## Summary
 
 - 📋 **Backlog**: 0
-- 🟢 **Ready**: 4
+- 🟢 **Ready**: 3
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0
-- ✅ **Done**: 29
+- ✅ **Done**: 30
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 

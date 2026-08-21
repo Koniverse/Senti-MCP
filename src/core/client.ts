@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { SERVER_NAME, SERVER_VERSION, type Config } from '../config.js';
 import { ApiError } from './errors.js';
 
@@ -113,16 +113,18 @@ export type SentiClient = {
 };
 
 /**
- * A key that identifies the request, not the attempt. A random key per call
- * would satisfy the header and dedupe nothing: with no automatic retry
- * anywhere, the only duplicate this server emits is the same tool called twice
- * with the same arguments, and that is exactly what this makes replay.
+ * A fresh key per call, protecting against a duplicate delivery of one request
+ * by the transport — which is what the header is for.
+ *
+ * It deliberately does NOT derive from the request body. A content-derived key
+ * would make an identical repeat replay the original 201 instead of colliding
+ * with a 409, which sounds better and is not: measured against be-dev on
+ * 2026-08-21, an idempotency record **outlives a delete**, so
+ * create → delete → byte-identical create replayed a `draftId` that no longer
+ * existed. See CONTEXT D43, which revises D41.
  */
-export function idempotencyKeyFor(method: WriteMethod, path: string, body: unknown): string {
-  return createHash('sha256')
-    .update(`${method}\n${path}\n${JSON.stringify(body)}`)
-    .digest('hex')
-    .slice(0, 32);
+export function newIdempotencyKey(): string {
+  return randomUUID();
 }
 
 /** Render a query string, or the empty string when nothing survives. */

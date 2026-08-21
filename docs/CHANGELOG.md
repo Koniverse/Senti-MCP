@@ -15,6 +15,69 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.5.0] — 2026-08-21 — `create_draft`, and the write path opens
+
+The first tool in this server that changes something. `create_draft` calls
+`POST /api/v1/drafts` under a **seventh** scope, `authoring:write`, and is the first of
+seven tools [EPIC-8](sprints/epics/EPIC-8.md) opens over the `Authoring` tag's write
+operations ([US-8.1](sprints/stories/US-8.1-write-substrate-and-create-draft.md)).
+
+**It is not registered unless you ask for it.** `SENTI_ENABLE_AUTHORING_WRITE=1` (or
+`true`) registers the authoring write tools; anything else — including `0`, `false`, `no`
+and `off` — leaves them unregistered, and a host that never sets it sees the same fourteen
+read tools `2.4.0` shipped. **The flag is authoring-only**: it enables no trading write at
+any setting, because closing a position is a different surface with a flag of its own that
+does not exist yet ([EPIC-3](sprints/epics/EPIC-3.md)). Keeping them separate is the point —
+enabling an agent to edit MQL5 must never be the same act as enabling it to close a
+position.
+
+**The response does not echo your source back.** `POST /drafts` returns the complete draft,
+up to 192 KiB of source plus five attachments at 64 KiB each — content the model supplied in
+the same call. Returning it would bill it a third and fourth time, through `content` and
+`structuredContent` both ([CONTEXT D34](CONTEXT.md)). The tool returns the new `id`, the
+byte count written, the compile state and an attachment summary, and `notes` points at
+`get_draft` for a read-back ([CONTEXT D39](CONTEXT.md)). A note records *loss*, so creating
+an empty draft writes none.
+
+**The `Idempotency-Key` is a fresh UUID per call, not one derived from the body.** The
+design specified a content-derived key so that an identical repeat would replay the original
+`201` instead of colliding with a `409`, and left the retention window as the open question
+that would decide it. Measured against `be-dev` on 2026-08-21: **an idempotency record
+outlives a delete.** Create → delete → byte-identical create replayed the original response
+and returned a `draftId` that no longer existed. Since *create, delete, create again* is what
+iterating on a draft looks like — and delete-then-recreate is the API's own prescribed way to
+rename an attachment — the derived key was replaced with `randomUUID()`, which still gives the
+protection the header is actually for: one request delivered twice by the transport creates
+one draft ([CONTEXT D43](CONTEXT.md), revising [D41](CONTEXT.md)).
+
+**Nothing retries anything.** The write path adds `413`, `422`, `502`, `503` and `504`, and
+none of them is retried. `Retry-After` is read and quoted in the message, never slept on: a
+tool call that waits holds the host's turn open for an interval the server chose. A `503`
+*without* `Retry-After` is reported as meaning a retry cannot help, which is what the API
+documents ([CONTEXT D40](CONTEXT.md)).
+
+**A `403` no longer assumes it is about a scope.** On every read it was; on `create_draft` it
+also means the draft cap is full, and against that cause the old wording — *"the key is
+missing that scope, not that the account is off limits"* — sends the reader to mint a key
+they already hold. The new `forbiddenMeans` option lets each endpoint say what its `403`
+means, and the read tools keep the old wording byte for byte by passing nothing.
+
+**`registerWriteTool` is a second registrar, not a flag.** `registerReadTool` is unchanged
+and still pins `readOnlyHint: true` as a constant, so no call to it can produce a write
+whatever its arguments ([CONTEXT D38](CONTEXT.md)). A test asserts it directly.
+
+**Also corrected in this release:** three files in this repo stated that
+`POST /drafts/{draftId}/register` puts an EA into a real trading account. It does not — it
+creates a permanently private `EaDefinition`, and deploying is
+`POST /accounts/{accountId}/strategies` under the separate `strategies:write` scope. The
+claim had been inferred from the operation's name rather than read from its description
+([CONTEXT D36](CONTEXT.md)). `register` is still out of scope, for a different reason: it is
+the only write in the tag that creates a resource the tag cannot then delete.
+
+**What this release does not do:** compile, update, delete or attach anything. Those are
+`2.6.0` through `2.8.0`. `create_draft` writes a draft and stops; nothing is compiled until
+`compile_draft` exists.
+
 ## [2.4.0] — 2026-08-20 — `list_draft_attachments`: the fourteenth tool, and EPIC-7's close
 
 `list_draft_attachments` reads `GET /api/v1/drafts/{draftId}/attachments` under

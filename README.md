@@ -22,6 +22,7 @@ assistant (Claude Code, Claude Desktop, Cursor, …) read trading data from the
 | `get_draft` | `draftId` (the `id` field from `list_drafts`) | Reads one MQL5 draft the API key owns: its full source code, its compiler log, its diagnostics, and whether the last compile still matches the current source. Answers "why did this fail to compile" or "show me the code". **The response can be large** — a draft may hold up to 192 KiB of source plus 16 KiB of compiler log, and this server returns that content twice, once as text and once as structured data — roughly **105,000 tokens** worst case. Attachment source is NOT included; attachments are listed with their size, and `list_draft_attachments` returns their code — `notes` points there only when an attachment actually carried source to lose. |
 | `list_drafts` | none | Lists the MQL5 drafts this API key owns, most recently updated first, with each draft's compile status, size, attachment count and registered-EA id. Use it to find a `draftId`, or to answer "what am I working on" and "which of my drafts are broken". **This response is shaped.** `GET /api/v1/drafts` is the largest payload the API can produce — up to 10.3 MiB across 20 drafts — so source code, compiler logs and diagnostics are ALL dropped; what was cut is listed in `notes`, and the note only ever names a category that actually lost something — with a byte figure only where bytes were measured. Measured live on 2026-08-20: 19,853 B → 1,898 B, 90.4% removed; worst case at `maxDrafts` with 5 attachments per draft is roughly **5,000–7,000 tokens**, counting both response channels. Call `get_draft` for one draft's source and compiler output, or `list_draft_attachments` for its indicator sources. There is no option to request the unshaped response. |
 | `list_draft_attachments` | `draftId` (the `id` field from `list_drafts`), plus optional `filename` | Reads the indicator source files a draft's EA embeds via `#resource` — the source `get_draft` deliberately leaves out. Pass `filename` to read at most one attachment whole, by exact name; that is also how to read one a default call had to leave out — if more than one attachment shares that filename, only the first is returned and `notes` says how many were skipped. A filtered read says so in its text and names the draft's real attachment count, so `content` alone is never read as the whole set. **This response is budgeted, not truncated.** With `filename` omitted, attachments are returned whole while the running total stays within a 64 KiB budget — the first attachment is always returned whole regardless of size, and once one is cut every later one is cut too, and `notes` says exactly that rather than claiming each cut file exceeded the budget; a cut attachment keeps its metadata and reports `sourceCode: null`, never a partial source. `notes` says whether a cut happened. Worst case, counting both response channels, is roughly **33,000 tokens**. |
+| `create_draft` | `name` (1–120 chars, unique per user), `sourceCode` (the complete EA) | **Write tool — registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set** (see [Enabling the write path](#enabling-the-write-path)). Creates a new MQL5 draft from source you have written, and returns its `id`. Call `get_authoring_conventions` first: code that breaks the platform rules is rejected by a static scan before it reaches the compiler, and this tool does not check them for you. **The response does not echo your source back** — you just sent it — so it returns the new id, the byte count written and the compile state, and `notes` points at `get_draft` for a read-back. Nothing is compiled until you call `compile_draft`. A `409` means the name is taken; a `403` means either the key lacks `authoring:write` or your draft cap is full, and the message says both because the API does not distinguish them. |
 
 The `id` a tool returns is the `accountId` other Senti endpoints take. `login` is
 the MT5 account number, not a key.
@@ -48,6 +49,11 @@ the MT5 account number, not a key.
   (`get_account_performance`, `get_performance_breakdowns`, `get_equity_timeseries`)
   and `authoring:read` (`get_authoring_conventions`, `get_draft`, `list_drafts`,
   `list_draft_attachments`).
+- **A seventh scope, `authoring:write`, only if you turn the write tools on.**
+  As of v2.5.0 `SENTI_ENABLE_AUTHORING_WRITE` registers tools that create and
+  change MQL5 drafts, and those need it. A key without it runs the entire read
+  surface unaffected, and a key *with* it changes nothing while the flag is
+  unset — no write tool is registered, so none can be called.
 
 ## Configuration
 
@@ -55,6 +61,28 @@ the MT5 account number, not a key.
 |----------|----------|---------|---------|
 | `SENTI_API_KEY` | ✅ | — | First-party key. The server exits at startup without it. |
 | `SENTI_API_BASE_URL` | | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. |
+| `SENTI_ENABLE_AUTHORING_WRITE` | | unset (off) | `1` or `true` registers the authoring write tools. See below. |
+
+### Enabling the write path
+
+**Every tool is read-only unless you opt in.** Set `SENTI_ENABLE_AUTHORING_WRITE=1`
+in the server's `env` block and the authoring write tools are registered; leave it
+unset — or set it to `0`, `false`, `no` or `off` — and they are not. A host that
+never sets it never sees one in `tools/list`, so there is nothing for a model to
+call by accident.
+
+Turning it on gives an agent the ability to **create, replace and delete MQL5
+drafts and their indicator files, and to compile them**. The key must also hold
+`authoring:write`.
+
+**It does not enable any trading write.** Closing a position, cancelling an order
+and deploying a strategy to an account are a different surface, gated by a
+different scope (`strategies:write`, `trading:write`) and by a flag that does not
+exist yet — see [EPIC-3](docs/sprints/epics/EPIC-3.md). No setting of
+`SENTI_ENABLE_AUTHORING_WRITE` reaches them. Registering an authored EA as a
+private strategy is also **not** available: that is `POST …/register`, deliberately
+left out of [EPIC-8](docs/sprints/epics/EPIC-8.md) because no operation in the
+authoring surface can delete what it creates.
 
 > **The key and the base URL must belong to the same environment.** Keys are
 > environment-bound, and the default base URL is **production**
@@ -93,10 +121,14 @@ No install step — `npx` fetches the published package on first run:
 Restart the client; all fourteen tools should appear — every `GET` operation the Senti
 Quant Public API exposes now has one, the last four added over the `Authoring` tag
 [EPIC-7](docs/sprints/epics/EPIC-7.md) shipped.
-`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.4.0` as
+`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.5.0` as
 of this release.
-It carries the ten tools of `1.4.0` plus `get_authoring_conventions`, `get_draft`,
-`list_drafts` and `list_draft_attachments`, fourteen in total. `2.3.0` carries those same
+It carries `2.4.0`'s fourteen read tools plus one write tool, `create_draft`, which is
+registered **only** when `SENTI_ENABLE_AUTHORING_WRITE` is set — so an installation that
+does not set it sees the same fourteen tools `2.4.0` did.
+`2.4.0` carries the ten tools of `1.4.0` plus `get_authoring_conventions`, `get_draft`,
+`list_drafts` and `list_draft_attachments`, fourteen in total, and no write tool at any
+setting. `2.3.0` carries those same
 ten tools plus `get_authoring_conventions`, `get_draft` and `list_drafts`, thirteen in
 total. `2.2.0` carries those same ten tools plus `get_authoring_conventions` and
 `get_draft`, twelve in total. `2.1.0` carries those same ten tools plus
@@ -114,7 +146,7 @@ others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
 expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@2.4.0"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@2.5.0"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server

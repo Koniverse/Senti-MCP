@@ -17,9 +17,12 @@ Trading, and Authoring. An MCP host cannot call it directly: something has to ow
 API key, present typed tools whose descriptions let a model choose correctly, and turn
 API errors into text a model can act on. This server is that something.
 
-**Current state: `2.4.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
+**Current state: `2.5.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
 `1.0.1` is the version that carried it to the registry
-([CONTEXT D11, D12](docs/CONTEXT.md)). **Fourteen** tools are registered in `src/server.ts`:
+([CONTEXT D11, D12](docs/CONTEXT.md)). **Fourteen read tools are registered unconditionally**
+in `src/server.ts`, and **one write tool, `create_draft`, is registered only when
+`SENTI_ENABLE_AUTHORING_WRITE` is set** — so a host that does not opt in sees the same
+fourteen it saw in `2.4.0`. The read tools:
 `get_authoring_conventions`, `list_drafts`, `get_draft`, `list_draft_attachments`,
 `list_accounts`, `list_brokers`, `list_strategies`, `list_account_strategies`,
 `list_positions`, `list_pending_orders`, `list_deals`, `get_account_performance`,
@@ -75,6 +78,17 @@ operations now have a tool. The budget and the `filename` filter are proven only
 synthetic sizes — the smoke account holds 4 drafts and 0 attachments in all 4 — and
 EPIC-7's close states that rather than letting a green suite imply otherwise.
 
+**`2.5.0` opens the authoring write path**, tracked as
+[US-8.1](docs/sprints/stories/US-8.1-write-substrate-and-create-draft.md) under
+[EPIC-8](docs/sprints/epics/EPIC-8.md). It adds `client.send()` beside `get()`, a second
+registrar `registerWriteTool`, the `SENTI_ENABLE_AUTHORING_WRITE` switch, the five status
+branches the read path never saw (`413`, `422`, `502`, `503`, `504`), and one tool —
+`create_draft`. The write response **does not echo the source it was just sent**
+([CONTEXT D39](docs/CONTEXT.md)), and the `Idempotency-Key` is a fresh UUID per call rather
+than one derived from the body: measured live on 2026-08-21, an idempotency record outlives
+a delete, so a derived key replayed a `draftId` that no longer existed
+([CONTEXT D43](docs/CONTEXT.md), revising [D41](docs/CONTEXT.md)).
+
 **Neither `2.0.0` nor `2.0.1` ships a tool.** `2.0.0` is a **support-policy** release: the
 Node floor moved from `>=20.6.0` to `>=22.11.0` because Node 20 reached end of life on
 2026-04-30 ([CONTEXT D27](docs/CONTEXT.md),
@@ -90,17 +104,38 @@ before touching anything under `src/`.
 
 ### The read/write split
 
-This is the project's load-bearing architectural boundary. **Only read operations are
-exposed.** 15 of the 29 operations are writes — two of them `positions/close-all` and
-`orders/cancel-all`, eight more added by the `Authoring` tag's `POST /drafts`, its
-`PUT`/`DELETE`, its three attachment writes, and its `compile` and `register` actions.
-`register` puts an EA into a real trading account and `compile` consumes a globally
-serial slot, so a retry policy that is harmless on a read is a denial-of-service on
-either. A tool an LLM can call that closes every open position is not a bigger version
-of a tool that lists accounts — it needs an opt-in switch, an `Idempotency-Key`, and
-user confirmation before execution. It gets its own epic
-([EPIC-3](docs/sprints/epics/EPIC-3.md)) and its own design spec. Do not register a
-write tool, and do not add one "ready to enable".
+This is the project's load-bearing architectural boundary. It moved in `2.5.0`; it did not
+disappear.
+
+**15 of the 29 operations are writes.** Seven are trading writes — `positions/close-all`,
+`orders/cancel-all`, the per-ticket close and cancel, the two strategy operations and
+`POST /accounts`. Eight belong to the `Authoring` tag: `POST /drafts`, its `PUT`/`DELETE`,
+its three attachment writes, and its `compile` and `register` actions.
+
+The rule, as of `2.5.0`:
+
+- **No trading write tool exists, at any setting of anything.** A tool an LLM can call that
+  closes every open position is not a bigger version of a tool that lists accounts. It gets
+  its own epic ([EPIC-3](docs/sprints/epics/EPIC-3.md)), its own design spec, and its own
+  opt-in flag, which does not exist yet. Do not register one, and do not add one "ready to
+  enable".
+- **Authoring write tools exist, and are unregistered unless the operator opts in.**
+  [EPIC-8](docs/sprints/epics/EPIC-8.md) owns seven of the tag's eight operations behind
+  `SENTI_ENABLE_AUTHORING_WRITE`. They go through `registerWriteTool`, never
+  `registerReadTool`, whose `readOnlyHint: true` stays a constant so that no call to it can
+  produce a write ([CONTEXT D38](docs/CONTEXT.md)).
+- **`register` is out of EPIC-8's scope**, and not for the reason this file used to give.
+  It does **not** put an EA into a real trading account: it creates a private
+  `EaDefinition`, and deploying is `POST /accounts/{accountId}/strategies` under the
+  separate `strategies:write` scope ([CONTEXT D36](docs/CONTEXT.md)). It is deferred because
+  it is the only write in the tag that creates a resource **outside** the tag, which no
+  operation in the tag can then delete.
+- **`compile` consumes a globally serial slot**, so a retry policy that is harmless on a
+  read is a denial-of-service on it. Nothing on the write path retries anything
+  ([CONTEXT D40](docs/CONTEXT.md)).
+
+The two flags are separate on purpose: enabling an agent to edit MQL5 must never be the same
+act as enabling it to close a position.
 
 ## Repo structure
 
@@ -117,16 +152,21 @@ src/
   smoke.test.ts         ← opt-in, one live call; hardcoded path in package.json
 
   core/                 ← infrastructure; imports nothing from tools/
-    client.ts           ← createClient(config, deps).get(); owns the Authorization
-                          header, the 15s timeout, status→message mapping, query
-                          parameters, the accountPath/draftPath path builders over a
-                          shared private segmentPath guard, and 404/409 branches
+    client.ts           ← createClient(config, deps).get() and .send(); both over one
+                          private request(). Owns the Authorization header, the 15s
+                          timeout, status→message mapping (401/403/404/409/413/422/
+                          429/502/503/504), query parameters, the accountPath/draftPath
+                          builders over a shared private segmentPath guard, the
+                          `…Means` message overrides, and newIdempotencyKey().
+                          Nothing here retries; Retry-After is reported (D40)
     client.test.ts
     errors.ts           ← ApiError (status + envelope code); describeError flattens
                           the cause chain, which is what makes fetch failures readable
     errors.test.ts
-    tool.ts             ← registerReadTool helper: the try/catch, scope-naming and
-                          success/error shaping every tool shares
+    tool.ts             ← registerReadTool and registerWriteTool: two registrars over
+                          one shared try/catch. The read one pins readOnlyHint: true as
+                          a constant, which is the barrier — write tools use the other
+                          door, never a flag on this one (D38)
     tool.test.ts
     parse.ts            ← parseOrThrow helper: turns a zod failure into the
                           "API may have changed" message every tool throws on
@@ -142,6 +182,11 @@ src/
                           produce; four cuts, one note (CONTEXT D32)
                           list-draft-attachments.ts (v2.4.0) — a byte budget checked
                           after inclusion, not a truncation; closes EPIC-7
+                          write-result.ts (v2.5.0) — the shaping every body-carrying
+                          write shares. Imports DraftSchema/AttachmentSchema rather
+                          than redeclaring them
+                          create-draft.ts (v2.5.0) — the first write tool. Registered
+                          only when SENTI_ENABLE_AUTHORING_WRITE is set
     accounts/           ← list-accounts.ts — AccountSchema (16 fields), parseAccounts,
                           formatAccounts. Imports no MCP SDK, so it is tested by direct
                           calls. Shipped in v0.1.0, relocated here in v0.2.0
@@ -210,11 +255,14 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/sprints/epics/](docs/sprints/epics/) — EPIC-1 (foundation), EPIC-2 (read path),
   EPIC-3 (write path, backlog), EPIC-4 (the package release process, backlog), EPIC-5
   (supported runtime and dependency currency, W33 §Phase 4), EPIC-6 (sprint files as
-  planning surfaces, backlog and unscheduled)
+  planning surfaces, backlog and unscheduled), EPIC-7 (authoring read path, done),
+  EPIC-8 (authoring write path, W34)
 - [docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design
 - [docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md](docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 plan, task by task
 - [docs/superpowers/plans/2026-08-06-senti-read-tools-w33.md](docs/superpowers/plans/2026-08-06-senti-read-tools-w33.md) — W33 plan, task by task
+- [docs/superpowers/specs/2026-08-21-senti-authoring-write-tools-design.md](docs/superpowers/specs/2026-08-21-senti-authoring-write-tools-design.md) — the authoring **write** design
+- [docs/superpowers/plans/2026-08-21-senti-authoring-write-tools-w34.md](docs/superpowers/plans/2026-08-21-senti-authoring-write-tools-w34.md) — its plan, task by task
 - [VERSION](VERSION) — current semver
 
 There is still no `PRD.md`, `ARCHITECTURE.md`, or `DEPLOY.md`. Each absence is a
@@ -312,7 +360,9 @@ that shows it, since the path is gitignored. `vitest.config.ts` scopes collectio
 | Know what's in flight | Read the active sprint file in [docs/sprints/](docs/sprints/) and the generated [STATUS.md](docs/sprints/STATUS.md) |
 | Start a story | Flip `status: in-progress`, confirm it is in the sprint scope table |
 | Record a decision | Append the next `D<N>` to [docs/CONTEXT.md](docs/CONTEXT.md) |
-| Add a tool | Read [EPIC-2](docs/sprints/epics/EPIC-2.md) invariants first, then the design spec |
+| Add a read tool | Read [EPIC-2](docs/sprints/epics/EPIC-2.md) invariants first, then the design spec |
+| Add an authoring write tool | Read [EPIC-8](docs/sprints/epics/EPIC-8.md) §Cross-cutting invariants, then the [write design spec](docs/superpowers/specs/2026-08-21-senti-authoring-write-tools-design.md). Register through `registerWriteTool`, never `registerReadTool`, and add a row to `WRITE_TOOL_ANNOTATIONS` in `src/server.test.ts` |
+| Add a **trading** write tool | Don't. See §The read/write split — [EPIC-3](docs/sprints/epics/EPIC-3.md) has no flag yet |
 | Ship a version | **Walk [docs/RELEASE.md](docs/RELEASE.md)** — it does not end at the bump. Bump [VERSION](VERSION) + the CHANGELOG entry in the same commit (RULE-1); the version lives in **five** places — `VERSION`, `package.json`, `package-lock.json`, `SERVER_VERSION` in `src/config.ts`, and the git tag. `src/config.test.ts` fails if the first, second and fourth drift; `release:check` covers all five. Then `npm run release:check` and `npm run release:verify-pack` must exit 0, and the annotated `vX.Y.Z` tag push is what publishes |
 | Add an env var | [docs/SETUP.md](docs/SETUP.md) **and** `.env.example`, same commit (RULE-11) |
 | Commit | Walk the checklist in [docs/README.md](docs/README.md) |
@@ -323,6 +373,7 @@ that shows it, since the path is gitignored. `vitest.config.ts` scopes collectio
 |---|---|---|---|
 | `SENTI_API_KEY` | yes | — | First-party key, `sq_live_…`. The server exits at startup without it. |
 | `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. Must be absolute `https:` or `http:`, with no query string or fragment. |
+| `SENTI_ENABLE_AUTHORING_WRITE` | no | unset (off) | `1` or `true` registers the authoring write tools; anything else, including `0`, `false`, `no` and `off`, leaves them unregistered. Requires `authoring:write` on the key. Enables **no** trading write. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only. Read from a gitignored `.env.local` by `npm run test:smoke`. If `.env.local` exists but doesn't set this, the suite skips cleanly; if `.env.local` doesn't exist at all, `node --env-file` fails to start (`node: .env.local: not found`, exit 9) rather than skipping. |
 
 **The key must belong to the same environment `SENTI_API_BASE_URL` points at.** Keys
@@ -330,7 +381,11 @@ are environment-bound and the default base URL is production, so a key issued
 elsewhere returns 401 however valid it is. That is the first thing to check on a 401,
 ahead of regenerating the key.
 
-`SENTI_API_KEY` needs six read scopes for the full tool surface: `accounts:read`,
+`SENTI_API_KEY` needs a **seventh** scope, `authoring:write`, once
+`SENTI_ENABLE_AUTHORING_WRITE` is set — and by nothing else, so a key without it runs the
+whole read surface unaffected, and a key with it changes nothing while the flag is unset.
+
+`SENTI_API_KEY` needs six read scopes for the full read tool surface: `accounts:read`,
 `brokers:read`, `strategies:read`, `performance:read`, `trading:read`, and — as of
 `2.1.0` — `authoring:read` (`get_authoring_conventions`, `get_draft` in `2.2.0`,
 `list_drafts` in `2.3.0`, `list_draft_attachments` in `2.4.0`). There is no

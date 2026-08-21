@@ -63,14 +63,18 @@ SENTI_SMOKE_KEY=sq_live_…
 |---|---|---|---|
 | `SENTI_API_KEY` | yes | — | First-party key, `sq_live_…`. The server exits 1 at startup without it. |
 | `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | API root. Set to `https://be-dev.sentitrade.xyz` for development. |
+| `SENTI_ENABLE_AUTHORING_WRITE` | no | unset (off) | **Added in v2.5.0.** `1` or `true` registers the authoring write tools; anything else, including `0`, `false`, `no` and `off`, leaves them unregistered. Requires `authoring:write` on the key. Enables **no** trading write — that surface has a flag of its own that does not exist yet. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only, read from `.env.local` by `npm run test:smoke`. |
 
-> ### Six scopes, not one
+> ### Six scopes, or seven with writes on
 >
-> As of v2.1.0 the tool surface needs `accounts:read`, `brokers:read`,
+> As of v2.1.0 the read tool surface needs `accounts:read`, `brokers:read`,
 > `strategies:read`, `performance:read`, `trading:read`, and `authoring:read`.
-> Create the key with all six at once — scopes are fixed at creation, so a key
-> created with fewer means going back to the dashboard later.
+> As of v2.5.0 a **seventh**, `authoring:write`, is needed by the tools that
+> `SENTI_ENABLE_AUTHORING_WRITE` registers — and by nothing else, so a key
+> without it runs the whole read surface unaffected.
+> Create the key with every scope you will want at once — scopes are fixed at
+> creation, so a key created with fewer means going back to the dashboard later.
 >
 > **There is no key-introspection endpoint**, so a missing scope cannot be detected at
 > startup. It surfaces as a `403` naming the missing scope the first time a tool that
@@ -82,9 +86,12 @@ SENTI_SMOKE_KEY=sq_live_…
 > `list_deals`), `performance:read` (`get_account_performance`,
 > `get_performance_breakdowns`, `get_equity_timeseries`), and `authoring:read`
 > (`get_authoring_conventions`, `get_draft`, `list_drafts`, `list_draft_attachments`) —
-> see [EPIC-7](sprints/epics/EPIC-7.md), which closed `done` in v2.4.0. Creating the key
-> with all six at once still saves a trip back to the dashboard the day a write tool
-> needs a scope this server does not use yet.
+> see [EPIC-7](sprints/epics/EPIC-7.md), which closed `done` in v2.4.0.
+>
+> `authoring:write` is exercised only when `SENTI_ENABLE_AUTHORING_WRITE` is set —
+> `create_draft` in v2.5.0, and the rest of [EPIC-8](sprints/epics/EPIC-8.md) after it.
+> A key that holds it while the flag is unset changes nothing: no write tool is
+> registered, so none can be called.
 
 > ### The key and the base URL must match environments
 >

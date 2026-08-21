@@ -2014,3 +2014,77 @@ describe('invariants across every registered tool', () => {
     }
   });
 });
+
+const writeConfig = loadConfig({
+  SENTI_API_KEY: 'sq_live_supersecret',
+  SENTI_API_BASE_URL: 'https://be-dev.sentitrade.xyz',
+  SENTI_ENABLE_AUTHORING_WRITE: '1',
+});
+
+async function connectWithWrites(fetchImpl: typeof fetch = okFetch) {
+  const server = createServer(writeConfig, { fetch: fetchImpl });
+  const client = new Client({ name: 'test-client', version: '0.0.0' });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  return client;
+}
+
+/** Grows by one row per write tool as EPIC-8 lands; asserted against tools/list. */
+const WRITE_TOOL_ANNOTATIONS: Record<string, { destructive: boolean; idempotent: boolean }> = {
+  create_draft: { destructive: false, idempotent: false },
+};
+
+const READ_TOOL_COUNT = 14;
+
+describe('the authoring write opt-in', () => {
+  test('registers no write tool when the flag is unset', async () => {
+    const client = await connect();
+
+    const { tools } = await client.listTools();
+
+    expect(tools).toHaveLength(READ_TOOL_COUNT);
+    for (const name of Object.keys(WRITE_TOOL_ANNOTATIONS)) {
+      expect(tools.map((tool) => tool.name)).not.toContain(name);
+    }
+  });
+
+  test('registers every write tool when the flag is set', async () => {
+    const client = await connectWithWrites();
+
+    const { tools } = await client.listTools();
+
+    expect(tools).toHaveLength(READ_TOOL_COUNT + Object.keys(WRITE_TOOL_ANNOTATIONS).length);
+    for (const name of Object.keys(WRITE_TOOL_ANNOTATIONS)) {
+      expect(tools.map((tool) => tool.name)).toContain(name);
+    }
+  });
+
+  test('every write tool carries the annotations the design table states', async () => {
+    const client = await connectWithWrites();
+
+    const { tools } = await client.listTools();
+
+    for (const [name, expected] of Object.entries(WRITE_TOOL_ANNOTATIONS)) {
+      const tool = tools.find((candidate) => candidate.name === name);
+
+      expect(tool, name).toBeDefined();
+      expect(tool?.annotations?.readOnlyHint, name).toBe(false);
+      expect(tool?.annotations?.destructiveHint, name).toBe(expected.destructive);
+      expect(tool?.annotations?.idempotentHint, name).toBe(expected.idempotent);
+      expect(tool?.annotations?.openWorldHint, name).toBe(true);
+    }
+  });
+
+  test('the read tools are unchanged by the flag', async () => {
+    const client = await connectWithWrites();
+
+    const { tools } = await client.listTools();
+    const reads = tools.filter((tool) => !(tool.name in WRITE_TOOL_ANNOTATIONS));
+
+    expect(reads).toHaveLength(READ_TOOL_COUNT);
+    for (const tool of reads) {
+      expect(tool.annotations?.readOnlyHint, `${tool.name} readOnlyHint`).toBe(true);
+    }
+  });
+});

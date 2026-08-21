@@ -6,7 +6,7 @@ import {
   DRAFT_CAP_OR_SCOPE,
   DRAFT_NOT_FOUND,
   draftPath,
-  idempotencyKeyFor,
+  newIdempotencyKey,
 } from './client.js';
 import { ApiError } from './errors.js';
 import { loadConfig } from '../config.js';
@@ -606,26 +606,23 @@ describe('createClient.send', () => {
   });
 });
 
-describe('idempotencyKeyFor', () => {
-  test('is stable for the same request', () => {
-    const body = { name: 'Gold', sourceCode: '// x' };
+describe('newIdempotencyKey', () => {
+  test('is a fresh key every call', () => {
+    expect(newIdempotencyKey()).not.toBe(newIdempotencyKey());
+  });
 
-    expect(idempotencyKeyFor('POST', '/api/v1/drafts', body)).toBe(
-      idempotencyKeyFor('POST', '/api/v1/drafts', body),
+  test('is a UUID, which the API accepts as an opaque string', () => {
+    expect(newIdempotencyKey()).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
   });
 
-  test('differs when the body, the path or the method differs', () => {
-    const key = idempotencyKeyFor('POST', '/api/v1/drafts', { name: 'Gold' });
+  test('does not derive from the request, so a delete-then-recreate cannot replay a dead id', () => {
+    // Measured 2026-08-21: an idempotency record outlives a delete, so a
+    // content-derived key replayed the original 201 and handed back a draftId
+    // that no longer existed (CONTEXT D43).
+    const keys = new Set(Array.from({ length: 50 }, () => newIdempotencyKey()));
 
-    expect(idempotencyKeyFor('POST', '/api/v1/drafts', { name: 'Silver' })).not.toBe(key);
-    expect(idempotencyKeyFor('POST', '/api/v1/drafts/d-1/attachments', { name: 'Gold' })).not.toBe(
-      key,
-    );
-    expect(idempotencyKeyFor('PUT', '/api/v1/drafts', { name: 'Gold' })).not.toBe(key);
-  });
-
-  test('is 32 hex characters', () => {
-    expect(idempotencyKeyFor('POST', '/api/v1/drafts', {})).toMatch(/^[0-9a-f]{32}$/);
+    expect(keys.size).toBe(50);
   });
 });

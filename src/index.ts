@@ -22,7 +22,10 @@ function main(): void {
       console.error(`${SERVER_NAME}: transport error — ${error.message}`);
     },
   });
-  console.error(`${SERVER_NAME} ${SERVER_VERSION} ready — serving ${config.baseUrl}`);
+  const mode = config.authoringWrite ? 'authoring writes ENABLED' : 'read-only';
+  console.error(
+    `${SERVER_NAME} ${SERVER_VERSION} ready — serving ${config.baseUrl} (${mode})`,
+  );
 
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.once(signal, () => {
