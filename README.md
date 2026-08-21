@@ -201,10 +201,14 @@ schema. A tool parameter would live in the model's context, and from there in
 transcripts and logs; an environment variable does not. The test suite asserts
 the key appears in no error message.
 
-This server registers **read-only tools only**. The Senti API's write operations
-— closing positions, cancelling orders, stopping strategies — are deliberately
-not exposed. Adding any of them requires its own design: an opt-in switch,
-`Idempotency-Key` support, and user confirmation before execution.
+**The trading write operations are not exposed.** Closing positions, cancelling
+orders and stopping strategies have no tool, deliberately, and adding one needs
+its own design. The authoring writes that `SENTI_ENABLE_AUTHORING_WRITE` turns
+on (v2.5.0) are the only writes this server can make: they create, replace,
+delete and compile MQL5 drafts, and touch no account, position or order. They
+ship with the three things this section has always demanded of a write — an
+opt-in switch, `Idempotency-Key` support, and user confirmation before either
+delete. Left unset, the server registers read-only tools only.
 
 ## Development
 
