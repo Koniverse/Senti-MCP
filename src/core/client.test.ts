@@ -1,5 +1,12 @@
 import { describe, expect, test, vi } from 'vitest';
-import { ACCOUNT_NOT_FOUND, accountPath, createClient, DRAFT_NOT_FOUND, draftPath } from './client.js';
+import {
+  ACCOUNT_NOT_FOUND,
+  accountPath,
+  createClient,
+  DRAFT_CAP_OR_SCOPE,
+  DRAFT_NOT_FOUND,
+  draftPath,
+} from './client.js';
 import { ApiError } from './errors.js';
 import { loadConfig } from '../config.js';
 
@@ -426,5 +433,103 @@ describe('DRAFT_NOT_FOUND', () => {
 
   test('does not blame the account, which this path does not take', () => {
     expect(DRAFT_NOT_FOUND).not.toMatch(/account/i);
+  });
+});
+
+describe('the status codes the write path adds', () => {
+  test('403 keeps its scope-only wording when no forbiddenMeans is passed', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('FORBIDDEN', 'Insufficient scope.'), 403));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts', {
+      scope: 'authoring:read',
+    });
+
+    await expect(promise).rejects.toThrow(/not that the account is off limits/);
+  });
+
+  test('403 quotes forbiddenMeans instead, so a full cap is not read as a missing scope', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('FORBIDDEN', 'Draft limit reached.'), 403));
+    const client = createClient(config, { fetch: fetchImpl });
+    const options = {
+      scope: 'authoring:write',
+      forbiddenMeans: DRAFT_CAP_OR_SCOPE,
+    };
+
+    await expect(client.get('/api/v1/drafts', options)).rejects.toThrow(/delete_draft/);
+    await expect(client.get('/api/v1/drafts', options)).rejects.not.toThrow(
+      /not that the account is off limits/,
+    );
+  });
+
+  test('413 names the gateway limit rather than a platform cap', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('INVALID_BODY', 'Payload too large.'), 413));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts');
+
+    await expect(promise).rejects.toThrow(/1 MB/);
+  });
+
+  test('422 quotes unprocessableMeans', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('INVALID_BODY', 'Bad filename.'), 422));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts', {
+      unprocessableMeans: 'The filename must be a bare `.mq5` basename.',
+    });
+
+    await expect(promise).rejects.toThrow(/bare `\.mq5` basename/);
+  });
+
+  test('422 without a meaning still says the body was well-formed', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('INVALID_BODY', 'Nope.'), 422));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts');
+
+    await expect(promise).rejects.toThrow(/well-formed/);
+  });
+
+  test('503 reports Retry-After without waiting for it', async () => {
+    const { fetchImpl } = stub(
+      jsonResponse(envelope('UNAVAILABLE', 'Compile server busy.'), 503, { 'retry-after': '7' }),
+    );
+
+    const started = Date.now();
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts');
+
+    await expect(promise).rejects.toThrow(/7 second/);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  test('503 without Retry-After says a retry cannot help', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('UNAVAILABLE', 'Offline.'), 503));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts');
+
+    await expect(promise).rejects.toThrow(/retry cannot help/);
+  });
+
+  test('502 and 504 are distinguishable from this server\'s own timeout', async () => {
+    const { fetchImpl: badGateway } = stub(jsonResponse(envelope('UNAVAILABLE', 'Down.'), 502));
+    const { fetchImpl: gatewayTimeout } = stub(jsonResponse(envelope('UNAVAILABLE', 'Slow.'), 504));
+
+    await expect(
+      createClient(config, { fetch: badGateway }).get('/api/v1/drafts', {
+        upstreamMeans: 'The compile server is unreachable.',
+      }),
+    ).rejects.toThrow(/unreachable/);
+    await expect(
+      createClient(config, { fetch: gatewayTimeout }).get('/api/v1/drafts'),
+    ).rejects.toThrow(/timed out waiting for an upstream service/);
+  });
+
+  test('no new branch leaks the API key', async () => {
+    for (const status of [413, 422, 502, 503, 504]) {
+      const { fetchImpl } = stub(jsonResponse(envelope('INTERNAL', 'Boom.'), status));
+
+      await createClient(config, { fetch: fetchImpl })
+        .get('/api/v1/drafts')
+        .catch((error: unknown) => {
+          expect(String(error), `status ${status}`).not.toContain(KEY);
+        });
+    }
   });
 });
