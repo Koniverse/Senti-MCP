@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { SERVER_NAME, SERVER_VERSION, type Config } from '../config.js';
 import { ApiError } from './errors.js';
 
@@ -96,10 +97,33 @@ export const COMPILE_SLOT_BUSY =
 
 export const COMPILE_UPSTREAM = 'The compile server is unreachable or refused the request.';
 
+export type WriteMethod = 'POST' | 'PUT' | 'DELETE';
+
+export type WriteOptions = RequestOptions & {
+  /** Serialised as JSON. Omitted entirely when undefined — DELETE and compile send none. */
+  body?: unknown;
+  idempotencyKey?: string;
+};
+
 export type SentiClient = {
   /** Returns the parsed JSON body. Validation belongs to the domain module. */
   get(path: string, options?: RequestOptions): Promise<unknown>;
+  /** Same contract as `get`, with a method, an optional body and no retry. */
+  send(method: WriteMethod, path: string, options?: WriteOptions): Promise<unknown>;
 };
+
+/**
+ * A key that identifies the request, not the attempt. A random key per call
+ * would satisfy the header and dedupe nothing: with no automatic retry
+ * anywhere, the only duplicate this server emits is the same tool called twice
+ * with the same arguments, and that is exactly what this makes replay.
+ */
+export function idempotencyKeyFor(method: WriteMethod, path: string, body: unknown): string {
+  return createHash('sha256')
+    .update(`${method}\n${path}\n${JSON.stringify(body)}`)
+    .digest('hex')
+    .slice(0, 32);
+}
 
 /** Render a query string, or the empty string when nothing survives. */
 function queryStringOf(query: QueryParams | undefined): string {
@@ -316,43 +340,56 @@ export function draftPath(draftId: string, ...rest: string[]): string {
 export function createClient(config: Config, deps: ClientDeps = {}): SentiClient {
   const doFetch = deps.fetch ?? fetch;
 
+  async function request(
+    method: 'GET' | WriteMethod,
+    path: string,
+    options: WriteOptions,
+  ): Promise<unknown> {
+    const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
+
+    const headers: Record<string, string> = {
+      authorization: `Bearer ${config.apiKey}`,
+      accept: 'application/json',
+      'user-agent': USER_AGENT,
+    };
+    if (options.body !== undefined) headers['content-type'] = 'application/json';
+    if (options.idempotencyKey) headers['idempotency-key'] = options.idempotencyKey;
+
+    const response = await doFetch(`${config.baseUrl}${path}${queryStringOf(options.query)}`, {
+      method,
+      headers,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      // Whichever fires first wins: the caller cancelling the tool call, or
+      // the timeout.
+      signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout,
+    });
+
+    // Read the body once. An error page from a proxy is not JSON, and
+    // `response.json()` would throw over the top of the real status.
+    const raw = await response.text();
+    let body: unknown;
+    try {
+      body = raw ? JSON.parse(raw) : undefined;
+    } catch {
+      body = undefined;
+    }
+
+    if (!response.ok) {
+      throw failureOf(response.status, response.headers, body, options);
+    }
+
+    if (body === undefined) {
+      throw new ApiError(
+        `Senti API returned HTTP ${response.status} with a body that is not JSON.`,
+        response.status,
+      );
+    }
+
+    return body;
+  }
+
   return {
-    async get(path: string, options: RequestOptions = {}): Promise<unknown> {
-      const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
-
-      const response = await doFetch(`${config.baseUrl}${path}${queryStringOf(options.query)}`, {
-        headers: {
-          authorization: `Bearer ${config.apiKey}`,
-          accept: 'application/json',
-          'user-agent': USER_AGENT,
-        },
-        // Whichever fires first wins: the caller cancelling the tool call, or
-        // the timeout.
-        signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout,
-      });
-
-      // Read the body once. An error page from a proxy is not JSON, and
-      // `response.json()` would throw over the top of the real status.
-      const raw = await response.text();
-      let body: unknown;
-      try {
-        body = raw ? JSON.parse(raw) : undefined;
-      } catch {
-        body = undefined;
-      }
-
-      if (!response.ok) {
-        throw failureOf(response.status, response.headers, body, options);
-      }
-
-      if (body === undefined) {
-        throw new ApiError(
-          `Senti API returned HTTP ${response.status} with a body that is not JSON.`,
-          response.status,
-        );
-      }
-
-      return body;
-    },
+    get: (path, options = {}) => request('GET', path, options),
+    send: (method, path, options = {}) => request(method, path, options),
   };
 }

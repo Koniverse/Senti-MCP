@@ -6,6 +6,7 @@ import {
   DRAFT_CAP_OR_SCOPE,
   DRAFT_NOT_FOUND,
   draftPath,
+  idempotencyKeyFor,
 } from './client.js';
 import { ApiError } from './errors.js';
 import { loadConfig } from '../config.js';
@@ -449,16 +450,19 @@ describe('the status codes the write path adds', () => {
 
   test('403 quotes forbiddenMeans instead, so a full cap is not read as a missing scope', async () => {
     const { fetchImpl } = stub(jsonResponse(envelope('FORBIDDEN', 'Draft limit reached.'), 403));
-    const client = createClient(config, { fetch: fetchImpl });
-    const options = {
-      scope: 'authoring:write',
-      forbiddenMeans: DRAFT_CAP_OR_SCOPE,
-    };
 
-    await expect(client.get('/api/v1/drafts', options)).rejects.toThrow(/delete_draft/);
-    await expect(client.get('/api/v1/drafts', options)).rejects.not.toThrow(
-      /not that the account is off limits/,
-    );
+    const error = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/drafts', { scope: 'authoring:write', forbiddenMeans: DRAFT_CAP_OR_SCOPE })
+      .then(
+        () => new Error('expected a rejection'),
+        (reason: unknown) => reason,
+      );
+
+    // One call, one Response, both assertions against the same message: asking
+    // twice would reject the second with "Body has already been read", and a
+    // `.not.toThrow` would pass against that for the wrong reason.
+    expect(String(error)).toMatch(/delete_draft/);
+    expect(String(error)).not.toMatch(/not that the account is off limits/);
   });
 
   test('413 names the gateway limit rather than a platform cap', async () => {
@@ -531,5 +535,97 @@ describe('the status codes the write path adds', () => {
           expect(String(error), `status ${status}`).not.toContain(KEY);
         });
     }
+  });
+});
+
+describe('createClient.send', () => {
+  test('sends the method, the JSON body and a content-type', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse({ id: 'd-1' }, 201));
+
+    await createClient(config, { fetch: fetchImpl }).send('POST', '/api/v1/drafts', {
+      body: { name: 'Gold', sourceCode: '// x' },
+    });
+
+    expect(calls[0]?.init.method).toBe('POST');
+    expect(calls[0]?.init.body).toBe(JSON.stringify({ name: 'Gold', sourceCode: '// x' }));
+    const headers = calls[0]?.init.headers as Record<string, string>;
+    expect(headers['content-type']).toBe('application/json');
+    expect(headers.authorization).toBe(`Bearer ${KEY}`);
+    expect(headers['user-agent']).toMatch(/^senti-mcp-server\//);
+  });
+
+  test('omits the body and the content-type when there is none', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse({ id: 'd-1' }));
+
+    await createClient(config, { fetch: fetchImpl }).send('DELETE', '/api/v1/drafts/d-1');
+
+    expect(calls[0]?.init.body).toBeUndefined();
+    expect((calls[0]?.init.headers as Record<string, string>)['content-type']).toBeUndefined();
+  });
+
+  test('sends Idempotency-Key only when one is supplied', async () => {
+    // A Response body reads once, and this test calls twice — so the stub gets
+    // the thunk form and mints a fresh one each time.
+    const { calls, fetchImpl } = stub(async () => jsonResponse({ id: 'd-1' }, 201));
+    const client = createClient(config, { fetch: fetchImpl });
+
+    await client.send('POST', '/api/v1/drafts', { body: { name: 'Gold' }, idempotencyKey: 'abc123' });
+    await client.send('POST', '/api/v1/drafts', { body: { name: 'Gold' } });
+
+    expect((calls[0]?.init.headers as Record<string, string>)['idempotency-key']).toBe('abc123');
+    expect((calls[1]?.init.headers as Record<string, string>)['idempotency-key']).toBeUndefined();
+  });
+
+  test('maps failures through the same table get uses', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', 'Name taken.'), 409));
+
+    const promise = createClient(config, { fetch: fetchImpl }).send('POST', '/api/v1/drafts', {
+      body: {},
+      conflictMeans: 'You already have a draft with that name.',
+    });
+
+    await expect(promise).rejects.toThrow(/already have a draft with that name/);
+  });
+
+  test('rejects a 200 whose body is not JSON, rather than reporting success', async () => {
+    const { fetchImpl } = stub(new Response('', { status: 200 }));
+
+    const promise = createClient(config, { fetch: fetchImpl }).send('DELETE', '/api/v1/drafts/d-1');
+
+    await expect(promise).rejects.toThrow(/not JSON/);
+  });
+
+  test('does not retry a 503', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse(envelope('UNAVAILABLE', 'Busy.'), 503));
+
+    await createClient(config, { fetch: fetchImpl })
+      .send('POST', '/api/v1/drafts/d-1/compile')
+      .catch(() => undefined);
+
+    expect(calls).toHaveLength(1);
+  });
+});
+
+describe('idempotencyKeyFor', () => {
+  test('is stable for the same request', () => {
+    const body = { name: 'Gold', sourceCode: '// x' };
+
+    expect(idempotencyKeyFor('POST', '/api/v1/drafts', body)).toBe(
+      idempotencyKeyFor('POST', '/api/v1/drafts', body),
+    );
+  });
+
+  test('differs when the body, the path or the method differs', () => {
+    const key = idempotencyKeyFor('POST', '/api/v1/drafts', { name: 'Gold' });
+
+    expect(idempotencyKeyFor('POST', '/api/v1/drafts', { name: 'Silver' })).not.toBe(key);
+    expect(idempotencyKeyFor('POST', '/api/v1/drafts/d-1/attachments', { name: 'Gold' })).not.toBe(
+      key,
+    );
+    expect(idempotencyKeyFor('PUT', '/api/v1/drafts', { name: 'Gold' })).not.toBe(key);
+  });
+
+  test('is 32 hex characters', () => {
+    expect(idempotencyKeyFor('POST', '/api/v1/drafts', {})).toMatch(/^[0-9a-f]{32}$/);
   });
 });
