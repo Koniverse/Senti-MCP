@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { formatAccounts, parseAccounts } from './tools/accounts/list-accounts.js';
 import { formatConventions, parseConventions } from './tools/authoring/conventions.js';
-import { formatDraft, parseDraft, shapeDraft } from './tools/authoring/get-draft.js';
+import { DiagnosticSchema, formatDraft, parseDraft, shapeDraft } from './tools/authoring/get-draft.js';
 import {
   formatAttachments,
   parseAttachments,
@@ -29,7 +29,17 @@ import {
 import { formatDeals, parseDeals } from './tools/trading/deals.js';
 import { capOrders, formatOrders, parseOrders } from './tools/trading/orders.js';
 import { capPositions, formatPositions, parsePositions } from './tools/trading/positions.js';
-import { accountPath, createClient, draftPath } from './core/client.js';
+import { formatCompile, parseCompile } from './tools/authoring/compile-draft.js';
+import {
+  formatAttachmentWrite,
+  formatDraftWrite,
+  parseDeleted,
+  parseWrittenAttachment,
+  parseWrittenDraft,
+  shapeAttachmentWrite,
+  shapeDraftWrite,
+} from './tools/authoring/write-result.js';
+import { accountPath, createClient, draftPath, newIdempotencyKey } from './core/client.js';
 import { loadConfig } from './config.js';
 
 /**
@@ -288,4 +298,132 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
     expect(shapedSeries.portfolioCaveats).toEqual(series.portfolioCaveats);
     expect(shapedSeries.caveats).toEqual(series.caveats);
   }, 60_000);
+});
+
+/**
+ * Opt-in twice: a real key, and an explicit acknowledgement that this suite
+ * creates and deletes a real draft on the account the key belongs to. The read
+ * smoke above never writes, whatever this is set to.
+ */
+const writeSmoke = process.env.SENTI_SMOKE_WRITES === '1';
+
+/** Cleanup only — see the comment at the call site for why this may retry. */
+async function deleteWithRetry(
+  client: ReturnType<typeof createClient>,
+  draftId: string,
+  attempts = 4,
+): Promise<unknown> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await client.send('DELETE', draftPath(draftId), { scope: 'authoring:write' });
+    } catch (error) {
+      if (attempt >= attempts || !/\b429\b/.test(String(error))) throw error;
+      // The API sends Retry-After on a 429; 15s covers the observed window
+      // without parsing a header this test does not otherwise need.
+      await new Promise((resolve) => setTimeout(resolve, 15_000));
+    }
+  }
+}
+
+describe.skipIf(!smokeKey || !writeSmoke)('smoke: live Senti authoring write path', () => {
+  test('creates, attaches, compiles and deletes a real draft', async () => {
+    const config = loadConfig({
+      SENTI_API_KEY: smokeKey,
+      SENTI_API_BASE_URL: process.env.SENTI_API_BASE_URL ?? 'https://be-dev.sentitrade.xyz',
+      SENTI_ENABLE_AUTHORING_WRITE: '1',
+    });
+    const client = createClient(config);
+
+    // A name no human would pick, so a leaked draft is identifiable as this
+    // test's. The timestamp keeps two runs from colliding on the unique-name
+    // 409 — this is a live account, not a fixture.
+    const name = `senti-mcp-smoke-${Date.now()}`;
+    const source = [
+      '#property strict',
+      'int OnInit(){ return(INIT_SUCCEEDED); }',
+      'void OnTick(){}',
+      '',
+    ].join('\n');
+
+    const created = shapeDraftWrite(
+      parseWrittenDraft(
+        await client.send('POST', '/api/v1/drafts', {
+          body: { name, sourceCode: source },
+          idempotencyKey: newIdempotencyKey(),
+          scope: 'authoring:write',
+        }),
+        'created draft',
+      ),
+    );
+
+    try {
+      expect(created.sourceBytes).toBe(Buffer.byteLength(source, 'utf8'));
+      expect(formatDraftWrite(created, 'created')).toContain(created.id);
+      // The cut is the point: the source went up, and does not come back.
+      expect(JSON.stringify(created)).not.toContain('OnTick');
+
+      const attachPath = draftPath(created.id, 'attachments');
+      const attached = shapeAttachmentWrite(
+        parseWrittenAttachment(
+          await client.send('POST', attachPath, {
+            body: {
+              filename: 'SmokeInd.mq5',
+              sourceCode: '#property indicator_chart_window\n',
+            },
+            idempotencyKey: newIdempotencyKey(),
+            scope: 'authoring:write',
+          }),
+          'created attachment',
+        ),
+      );
+
+      // EPIC-7 closed with every attachment branch test-covered and none
+      // live-covered, because the smoke account held zero attachments and
+      // creating one needed a write. This is that gap closing.
+      expect(attached.filename).toBe('SmokeInd.mq5');
+      expect(formatAttachmentWrite(attached, 'attached to', created.id)).toContain(
+        '#resource "SmokeInd.ex5"',
+      );
+
+      const listed = parseAttachments(await client.get(attachPath, { scope: 'authoring:read' }));
+      expect(listed.map((entry) => entry.filename)).toContain('SmokeInd.mq5');
+
+      const compiled = parseCompile(
+        await client.send('POST', draftPath(created.id, 'compile'), {
+          scope: 'authoring:write',
+          conflictMeans: 'a compile is already running for this account',
+        }),
+      );
+
+      // A red build is a legitimate outcome of this leg. What is asserted is
+      // that the contract parses and renders, not that the EA is any good.
+      expect(typeof compiled.ok).toBe('boolean');
+      expect(formatCompile(compiled, created.id).length).toBeGreaterThan(0);
+      console.error(
+        `[smoke] compile ok=${compiled.ok} errors=${compiled.errors} ` +
+          `warnings=${compiled.warnings} diagnostics=${compiled.diagnostics.length}`,
+      );
+
+      // EPIC-7's second gap: no diagnostic object had ever been observed live,
+      // so the strict schema had never met real data.
+      for (const entry of compiled.diagnostics) {
+        console.error(`[smoke] diagnostic ${JSON.stringify(entry)}`);
+        expect(DiagnosticSchema.safeParse(entry).success).toBe(true);
+      }
+    } finally {
+      // Runs even when an assertion above fails: a leaked draft counts against
+      // the account's cap and against the next run's unique-name check.
+      //
+      // This is the ONE place in this repo that retries, and it is not a tool.
+      // The no-retry rule (CONTEXT D40) is a claim about the tool surface, made
+      // because a retry against a globally serial compile slot is a
+      // denial-of-service. Cleanup is the opposite case: the rate limit is 60
+      // per window and this test spends five requests, so a run that follows
+      // another can meet a 429 on the DELETE — observed on 2026-08-21, and it
+      // left a draft behind. A cleanup that gives up on a transient status is
+      // a test that leaks state into the next run.
+      const deleted = parseDeleted(await deleteWithRetry(client, created.id), 'deleted draft');
+      expect(deleted.id).toBe(created.id);
+    }
+  }, 120_000);
 });

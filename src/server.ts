@@ -2,10 +2,17 @@ import { McpServer } from '@modelcontextprotocol/server';
 import { createClient } from './core/client.js';
 import { SERVER_NAME, SERVER_VERSION, type Config } from './config.js';
 import { registerListAccounts } from './tools/accounts/list-accounts.js';
+import { registerAddDraftAttachment } from './tools/authoring/add-draft-attachment.js';
+import { registerCompileDraft } from './tools/authoring/compile-draft.js';
 import { registerGetAuthoringConventions } from './tools/authoring/conventions.js';
+import { registerCreateDraft } from './tools/authoring/create-draft.js';
+import { registerDeleteDraftAttachment } from './tools/authoring/delete-draft-attachment.js';
+import { registerDeleteDraft } from './tools/authoring/delete-draft.js';
 import { registerGetDraft } from './tools/authoring/get-draft.js';
 import { registerListDraftAttachments } from './tools/authoring/list-draft-attachments.js';
 import { registerListDrafts } from './tools/authoring/list-drafts.js';
+import { registerUpdateDraftAttachment } from './tools/authoring/update-draft-attachment.js';
+import { registerUpdateDraft } from './tools/authoring/update-draft.js';
 import { registerListBrokers } from './tools/brokers/list-brokers.js';
 import { registerGetPerformanceBreakdowns } from './tools/performance/breakdowns.js';
 import { registerGetAccountPerformance } from './tools/performance/summary.js';
@@ -52,6 +59,19 @@ export function createServer(config: Config, deps: ServerDeps = {}): McpServer {
   registerGetAccountPerformance(server, client);
   registerGetPerformanceBreakdowns(server, client);
   registerGetEquityTimeseries(server, client);
+
+  // Write tools are registered only when the operator opts in. A host that
+  // never sets the flag never sees one in tools/list, and the trading write
+  // path has a flag of its own that this one does not turn on.
+  if (config.authoringWrite) {
+    registerCreateDraft(server, client);
+    registerUpdateDraft(server, client);
+    registerDeleteDraft(server, client);
+    registerAddDraftAttachment(server, client);
+    registerUpdateDraftAttachment(server, client);
+    registerDeleteDraftAttachment(server, client);
+    registerCompileDraft(server, client);
+  }
 
   return server;
 }

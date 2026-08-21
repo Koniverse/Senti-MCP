@@ -1,5 +1,13 @@
 import { describe, expect, test, vi } from 'vitest';
-import { ACCOUNT_NOT_FOUND, accountPath, createClient, DRAFT_NOT_FOUND, draftPath } from './client.js';
+import {
+  ACCOUNT_NOT_FOUND,
+  accountPath,
+  createClient,
+  DRAFT_CAP_OR_SCOPE,
+  DRAFT_NOT_FOUND,
+  draftPath,
+  newIdempotencyKey,
+} from './client.js';
 import { ApiError } from './errors.js';
 import { loadConfig } from '../config.js';
 
@@ -426,5 +434,195 @@ describe('DRAFT_NOT_FOUND', () => {
 
   test('does not blame the account, which this path does not take', () => {
     expect(DRAFT_NOT_FOUND).not.toMatch(/account/i);
+  });
+});
+
+describe('the status codes the write path adds', () => {
+  test('403 keeps its scope-only wording when no forbiddenMeans is passed', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('FORBIDDEN', 'Insufficient scope.'), 403));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts', {
+      scope: 'authoring:read',
+    });
+
+    await expect(promise).rejects.toThrow(/not that the account is off limits/);
+  });
+
+  test('403 quotes forbiddenMeans instead, so a full cap is not read as a missing scope', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('FORBIDDEN', 'Draft limit reached.'), 403));
+
+    const error = await createClient(config, { fetch: fetchImpl })
+      .get('/api/v1/drafts', { scope: 'authoring:write', forbiddenMeans: DRAFT_CAP_OR_SCOPE })
+      .then(
+        () => new Error('expected a rejection'),
+        (reason: unknown) => reason,
+      );
+
+    // One call, one Response, both assertions against the same message: asking
+    // twice would reject the second with "Body has already been read", and a
+    // `.not.toThrow` would pass against that for the wrong reason.
+    expect(String(error)).toMatch(/delete_draft/);
+    expect(String(error)).not.toMatch(/not that the account is off limits/);
+  });
+
+  test('413 names the gateway limit rather than a platform cap', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('INVALID_BODY', 'Payload too large.'), 413));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts');
+
+    await expect(promise).rejects.toThrow(/1 MB/);
+  });
+
+  test('422 quotes unprocessableMeans', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('INVALID_BODY', 'Bad filename.'), 422));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts', {
+      unprocessableMeans: 'The filename must be a bare `.mq5` basename.',
+    });
+
+    await expect(promise).rejects.toThrow(/bare `\.mq5` basename/);
+  });
+
+  test('422 without a meaning still says the body was well-formed', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('INVALID_BODY', 'Nope.'), 422));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts');
+
+    await expect(promise).rejects.toThrow(/well-formed/);
+  });
+
+  test('503 reports Retry-After without waiting for it', async () => {
+    const { fetchImpl } = stub(
+      jsonResponse(envelope('UNAVAILABLE', 'Compile server busy.'), 503, { 'retry-after': '7' }),
+    );
+
+    const started = Date.now();
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts');
+
+    await expect(promise).rejects.toThrow(/7 second/);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  test('503 without Retry-After says a retry cannot help', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('UNAVAILABLE', 'Offline.'), 503));
+
+    const promise = createClient(config, { fetch: fetchImpl }).get('/api/v1/drafts');
+
+    await expect(promise).rejects.toThrow(/retry cannot help/);
+  });
+
+  test('502 and 504 are distinguishable from this server\'s own timeout', async () => {
+    const { fetchImpl: badGateway } = stub(jsonResponse(envelope('UNAVAILABLE', 'Down.'), 502));
+    const { fetchImpl: gatewayTimeout } = stub(jsonResponse(envelope('UNAVAILABLE', 'Slow.'), 504));
+
+    await expect(
+      createClient(config, { fetch: badGateway }).get('/api/v1/drafts', {
+        upstreamMeans: 'The compile server is unreachable.',
+      }),
+    ).rejects.toThrow(/unreachable/);
+    await expect(
+      createClient(config, { fetch: gatewayTimeout }).get('/api/v1/drafts'),
+    ).rejects.toThrow(/timed out waiting for an upstream service/);
+  });
+
+  test('no new branch leaks the API key', async () => {
+    for (const status of [413, 422, 502, 503, 504]) {
+      const { fetchImpl } = stub(jsonResponse(envelope('INTERNAL', 'Boom.'), status));
+
+      await createClient(config, { fetch: fetchImpl })
+        .get('/api/v1/drafts')
+        .catch((error: unknown) => {
+          expect(String(error), `status ${status}`).not.toContain(KEY);
+        });
+    }
+  });
+});
+
+describe('createClient.send', () => {
+  test('sends the method, the JSON body and a content-type', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse({ id: 'd-1' }, 201));
+
+    await createClient(config, { fetch: fetchImpl }).send('POST', '/api/v1/drafts', {
+      body: { name: 'Gold', sourceCode: '// x' },
+    });
+
+    expect(calls[0]?.init.method).toBe('POST');
+    expect(calls[0]?.init.body).toBe(JSON.stringify({ name: 'Gold', sourceCode: '// x' }));
+    const headers = calls[0]?.init.headers as Record<string, string>;
+    expect(headers['content-type']).toBe('application/json');
+    expect(headers.authorization).toBe(`Bearer ${KEY}`);
+    expect(headers['user-agent']).toMatch(/^senti-mcp-server\//);
+  });
+
+  test('omits the body and the content-type when there is none', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse({ id: 'd-1' }));
+
+    await createClient(config, { fetch: fetchImpl }).send('DELETE', '/api/v1/drafts/d-1');
+
+    expect(calls[0]?.init.body).toBeUndefined();
+    expect((calls[0]?.init.headers as Record<string, string>)['content-type']).toBeUndefined();
+  });
+
+  test('sends Idempotency-Key only when one is supplied', async () => {
+    // A Response body reads once, and this test calls twice — so the stub gets
+    // the thunk form and mints a fresh one each time.
+    const { calls, fetchImpl } = stub(async () => jsonResponse({ id: 'd-1' }, 201));
+    const client = createClient(config, { fetch: fetchImpl });
+
+    await client.send('POST', '/api/v1/drafts', { body: { name: 'Gold' }, idempotencyKey: 'abc123' });
+    await client.send('POST', '/api/v1/drafts', { body: { name: 'Gold' } });
+
+    expect((calls[0]?.init.headers as Record<string, string>)['idempotency-key']).toBe('abc123');
+    expect((calls[1]?.init.headers as Record<string, string>)['idempotency-key']).toBeUndefined();
+  });
+
+  test('maps failures through the same table get uses', async () => {
+    const { fetchImpl } = stub(jsonResponse(envelope('CONFLICT', 'Name taken.'), 409));
+
+    const promise = createClient(config, { fetch: fetchImpl }).send('POST', '/api/v1/drafts', {
+      body: {},
+      conflictMeans: 'You already have a draft with that name.',
+    });
+
+    await expect(promise).rejects.toThrow(/already have a draft with that name/);
+  });
+
+  test('rejects a 200 whose body is not JSON, rather than reporting success', async () => {
+    const { fetchImpl } = stub(new Response('', { status: 200 }));
+
+    const promise = createClient(config, { fetch: fetchImpl }).send('DELETE', '/api/v1/drafts/d-1');
+
+    await expect(promise).rejects.toThrow(/not JSON/);
+  });
+
+  test('does not retry a 503', async () => {
+    const { calls, fetchImpl } = stub(jsonResponse(envelope('UNAVAILABLE', 'Busy.'), 503));
+
+    await createClient(config, { fetch: fetchImpl })
+      .send('POST', '/api/v1/drafts/d-1/compile')
+      .catch(() => undefined);
+
+    expect(calls).toHaveLength(1);
+  });
+});
+
+describe('newIdempotencyKey', () => {
+  test('is a fresh key every call', () => {
+    expect(newIdempotencyKey()).not.toBe(newIdempotencyKey());
+  });
+
+  test('is a UUID, which the API accepts as an opaque string', () => {
+    expect(newIdempotencyKey()).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+  });
+
+  test('does not derive from the request, so a delete-then-recreate cannot replay a dead id', () => {
+    // Measured 2026-08-21: an idempotency record outlives a delete, so a
+    // content-derived key replayed the original 201 and handed back a draftId
+    // that no longer existed (CONTEXT D43).
+    const keys = new Set(Array.from({ length: 50 }, () => newIdempotencyKey()));
+
+    expect(keys.size).toBe(50);
   });
 });

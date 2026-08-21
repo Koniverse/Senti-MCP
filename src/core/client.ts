@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { SERVER_NAME, SERVER_VERSION, type Config } from '../config.js';
 import { ApiError } from './errors.js';
 
@@ -32,6 +33,17 @@ export type RequestOptions = {
    * sends the reader to check the one thing that cannot be the cause.
    */
   notFoundMeans?: string;
+  /**
+   * What a 403 means for THIS endpoint. On a read it is always a missing
+   * scope. On a write it is also a full cap — 20 drafts, 5 attachments — and
+   * against that cause the default wording sends the reader to mint a key they
+   * already hold, when the fix is to delete something.
+   */
+  forbiddenMeans?: string;
+  /** What a 422 means for THIS endpoint. */
+  unprocessableMeans?: string;
+  /** Which upstream a 502/503/504 is about, quoted verbatim. */
+  upstreamMeans?: string;
 };
 
 /**
@@ -48,10 +60,72 @@ export const DRAFT_NOT_FOUND =
   'The draft does not exist or is not owned by this API key. ' +
   'Call list_drafts and use its `id`.';
 
+/**
+ * A 404 on an attachment path has a cause `DRAFT_NOT_FOUND` does not cover:
+ * the attachment may exist and belong to another draft.
+ */
+export const ATTACHMENT_NOT_FOUND =
+  'The attachment does not exist, is not owned by this API key, or belongs to a different ' +
+  'draft. Call list_draft_attachments with this draftId and use its `id`.';
+
+export const AUTHORING_WRITE_SCOPE =
+  'The API key is missing the `authoring:write` scope. Create a key with that scope in the ' +
+  'API Keys dashboard.';
+
+export const DRAFT_CAP_OR_SCOPE =
+  'Either the API key is missing the `authoring:write` scope, or you already hold the ' +
+  'maximum number of drafts. If it is the cap, retrying will not help — call list_drafts ' +
+  'and delete_draft to free a slot.';
+
+export const ATTACHMENT_CAP_OR_SCOPE =
+  'Either the API key is missing the `authoring:write` scope, or this draft already holds ' +
+  'the maximum number of attachments. If it is the cap, retrying will not help — call ' +
+  'list_draft_attachments and delete_draft_attachment to free a slot.';
+
+export const DRAFT_NAME_TAKEN =
+  'You already have a draft with that name. Names are unique per user — pick another, or ' +
+  'call list_drafts to see which are taken.';
+
+export const ATTACHMENT_FILENAME_TAKEN =
+  'This draft already has an indicator with that filename, compared case-insensitively — ' +
+  '"MyInd.mq5" collides with "myind.mq5", because the compile host writes them into one ' +
+  'flat Windows directory.';
+
+export const COMPILE_SLOT_BUSY =
+  'A compile is already running for this account. The compile slot is one per account, so ' +
+  'wait for the running compile to finish — call get_draft and read lastCompileStatus.';
+
+export const COMPILE_UPSTREAM = 'The compile server is unreachable or refused the request.';
+
+export type WriteMethod = 'POST' | 'PUT' | 'DELETE';
+
+export type WriteOptions = RequestOptions & {
+  /** Serialised as JSON. Omitted entirely when undefined — DELETE and compile send none. */
+  body?: unknown;
+  idempotencyKey?: string;
+};
+
 export type SentiClient = {
   /** Returns the parsed JSON body. Validation belongs to the domain module. */
   get(path: string, options?: RequestOptions): Promise<unknown>;
+  /** Same contract as `get`, with a method, an optional body and no retry. */
+  send(method: WriteMethod, path: string, options?: WriteOptions): Promise<unknown>;
 };
+
+/**
+ * A fresh key per call, protecting against a duplicate delivery of one request
+ * by the transport — which is what the header is for.
+ *
+ * It deliberately does NOT derive from the request body. A content-derived key
+ * would make an identical repeat replay the original 201 instead of colliding
+ * with a 409, which sounds better and is not: measured against be-dev on
+ * 2026-08-21, an idempotency record **outlives a delete**, so
+ * create → delete → byte-identical create replayed a `draftId` that no longer
+ * existed. See CONTEXT D43, which revises D41.
+ */
+export function newIdempotencyKey(): string {
+  return randomUUID();
+}
 
 /** Render a query string, or the empty string when nothing survives. */
 function queryStringOf(query: QueryParams | undefined): string {
@@ -81,12 +155,19 @@ function envelopeOf(body: unknown): { code?: string; message?: string } {
   };
 }
 
+/** The upstream clause of a 502/503/504, or nothing when the caller named none. */
+function upstream(means: string | undefined): string {
+  return means ? ` ${means}` : '';
+}
+
 /**
  * Turn a failed response into an error a reader can act on.
  *
  * The 403 case earns its wording. Read plainly, "Forbidden" suggests the caller
  * may not touch that account, which sends people to investigate the wrong
- * thing. On this API it always means the key lacks a scope.
+ * thing. On every read it means the key lacks a scope, which is the default
+ * wording; on a write it can also mean a cap is full, which is why the caller
+ * may override it with `forbiddenMeans`.
  */
 function failureOf(
   status: number,
@@ -94,7 +175,8 @@ function failureOf(
   body: unknown,
   options: RequestOptions,
 ): ApiError {
-  const { scope, conflictMeans, notFoundMeans } = options;
+  const { scope, conflictMeans, notFoundMeans, forbiddenMeans, unprocessableMeans, upstreamMeans } =
+    options;
   const { code, message } = envelopeOf(body);
   // Each template below ends its own sentence, so an envelope message that
   // already carries a terminator would render as "…Insufficient scope.. The API
@@ -115,13 +197,12 @@ function failureOf(
 
     case 403: {
       const named = scope ? `the \`${scope}\` scope` : 'a scope this endpoint requires';
-      return new ApiError(
-        `Senti API returned 403${detail}. The API key is missing ${named} — ` +
-          'not that the account is off limits. Create a key with that scope in the ' +
-          'API Keys dashboard.',
-        status,
-        code,
-      );
+      const meaning = forbiddenMeans
+        ? ` ${forbiddenMeans}`
+        : ` The API key is missing ${named} — not that the account is off limits. ` +
+          'Create a key with that scope in the API Keys dashboard.';
+
+      return new ApiError(`Senti API returned 403${detail}.${meaning}`, status, code);
     }
 
     case 429: {
@@ -151,6 +232,58 @@ function failureOf(
 
       return new ApiError(`Senti API returned 409${detail}.${meaning}`, status, code);
     }
+
+    case 413:
+      return new ApiError(
+        `Senti API returned 413${detail}. The request body exceeds the gateway's 1 MB ` +
+          'limit — the transport refusing, before any platform cap is consulted. Send less ' +
+          'in one call.',
+        status,
+        code,
+      );
+
+    case 422: {
+      const meaning = unprocessableMeans
+        ? ` ${unprocessableMeans}`
+        : ' The body was well-formed but the API rejected its contents.';
+
+      return new ApiError(`Senti API returned 422${detail}.${meaning}`, status, code);
+    }
+
+    case 502:
+      return new ApiError(
+        `Senti API returned 502${detail}.${upstream(upstreamMeans)} An upstream service the ` +
+          'API depends on is unreachable.',
+        status,
+        code,
+      );
+
+    case 503: {
+      // Reported, never slept on: a tool call that waits holds the host's turn
+      // open for an interval the server chose. The absence of the header is
+      // itself documented as meaning a retry cannot help.
+      const retryAfter = headers.get('retry-after');
+      const guidance = retryAfter
+        ? ` Retry after ${retryAfter} second(s) — this server neither waits for you nor ` +
+          'retries on your behalf.'
+        : ' No Retry-After header was sent, which this API documents as meaning a retry ' +
+          'cannot help.';
+
+      return new ApiError(
+        `Senti API returned 503${detail}.${upstream(upstreamMeans)}${guidance}`,
+        status,
+        code,
+      );
+    }
+
+    case 504:
+      return new ApiError(
+        `Senti API returned 504${detail}.${upstream(upstreamMeans)} The API timed out ` +
+          "waiting for an upstream service. This is the API's own timeout, not this " +
+          "server's 15-second one.",
+        status,
+        code,
+      );
 
     default:
       return new ApiError(`Senti API request failed: HTTP ${status}${detail}.`, status, code);
@@ -209,43 +342,56 @@ export function draftPath(draftId: string, ...rest: string[]): string {
 export function createClient(config: Config, deps: ClientDeps = {}): SentiClient {
   const doFetch = deps.fetch ?? fetch;
 
+  async function request(
+    method: 'GET' | WriteMethod,
+    path: string,
+    options: WriteOptions,
+  ): Promise<unknown> {
+    const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
+
+    const headers: Record<string, string> = {
+      authorization: `Bearer ${config.apiKey}`,
+      accept: 'application/json',
+      'user-agent': USER_AGENT,
+    };
+    if (options.body !== undefined) headers['content-type'] = 'application/json';
+    if (options.idempotencyKey) headers['idempotency-key'] = options.idempotencyKey;
+
+    const response = await doFetch(`${config.baseUrl}${path}${queryStringOf(options.query)}`, {
+      method,
+      headers,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      // Whichever fires first wins: the caller cancelling the tool call, or
+      // the timeout.
+      signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout,
+    });
+
+    // Read the body once. An error page from a proxy is not JSON, and
+    // `response.json()` would throw over the top of the real status.
+    const raw = await response.text();
+    let body: unknown;
+    try {
+      body = raw ? JSON.parse(raw) : undefined;
+    } catch {
+      body = undefined;
+    }
+
+    if (!response.ok) {
+      throw failureOf(response.status, response.headers, body, options);
+    }
+
+    if (body === undefined) {
+      throw new ApiError(
+        `Senti API returned HTTP ${response.status} with a body that is not JSON.`,
+        response.status,
+      );
+    }
+
+    return body;
+  }
+
   return {
-    async get(path: string, options: RequestOptions = {}): Promise<unknown> {
-      const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
-
-      const response = await doFetch(`${config.baseUrl}${path}${queryStringOf(options.query)}`, {
-        headers: {
-          authorization: `Bearer ${config.apiKey}`,
-          accept: 'application/json',
-          'user-agent': USER_AGENT,
-        },
-        // Whichever fires first wins: the caller cancelling the tool call, or
-        // the timeout.
-        signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout,
-      });
-
-      // Read the body once. An error page from a proxy is not JSON, and
-      // `response.json()` would throw over the top of the real status.
-      const raw = await response.text();
-      let body: unknown;
-      try {
-        body = raw ? JSON.parse(raw) : undefined;
-      } catch {
-        body = undefined;
-      }
-
-      if (!response.ok) {
-        throw failureOf(response.status, response.headers, body, options);
-      }
-
-      if (body === undefined) {
-        throw new ApiError(
-          `Senti API returned HTTP ${response.status} with a body that is not JSON.`,
-          response.status,
-        );
-      }
-
-      return body;
-    },
+    get: (path, options = {}) => request('GET', path, options),
+    send: (method, path, options = {}) => request(method, path, options),
   };
 }

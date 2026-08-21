@@ -101,3 +101,27 @@ describe('SERVER_VERSION', () => {
     expect(SERVER_VERSION).toBe(versionFile);
   });
 });
+
+describe('SENTI_ENABLE_AUTHORING_WRITE', () => {
+  const base = { SENTI_API_KEY: 'sq_live_x' };
+
+  test('is off when unset', () => {
+    expect(loadConfig(base).authoringWrite).toBe(false);
+  });
+
+  test('is on for "1" and "true", case-insensitively and ignoring surrounding space', () => {
+    for (const value of ['1', 'true', 'TRUE', ' True ']) {
+      expect(loadConfig({ ...base, SENTI_ENABLE_AUTHORING_WRITE: value }).authoringWrite, value).toBe(
+        true,
+      );
+    }
+  });
+
+  test('is off for every other value, so "0" and "false" are not surprises', () => {
+    for (const value of ['0', 'false', 'no', 'off', 'yes', '', 'enabled']) {
+      expect(loadConfig({ ...base, SENTI_ENABLE_AUTHORING_WRITE: value }).authoringWrite, value).toBe(
+        false,
+      );
+    }
+  });
+});

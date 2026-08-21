@@ -3,7 +3,7 @@ id: EPIC-3
 title: "Write-path access to Senti Quant over MCP"
 status: backlog
 created: 2026-08-06
-updated: 2026-08-06
+updated: 2026-08-21
 ---
 
 ## Goal
@@ -37,7 +37,17 @@ support where the API accepts it, and user confirmation before execution — non
 which a read tool needs at all. Registering a write tool without those three is not a
 smaller version of this epic; it is the failure this epic exists to prevent.
 
-**The seven write operations**, per the design spec's §Write path:
+**This epic owns 7 of the API's 15 write operations.** The figure of "seven write
+operations" below described the whole API when this file was written on 2026-08-06; the
+API has since grown an `Authoring` tag whose eight writes belong to
+[EPIC-8](EPIC-8.md), not here. Corrected 2026-08-21 by
+[US-8.1](../stories/US-8.1-write-substrate-and-create-draft.md), which also corrects the
+claim about `register` that this repo carried in two other files — **`register` creates a
+private `EaDefinition` and does not deploy to a trading account**; deploying is
+`POST /api/v1/accounts/{accountId}/strategies`, the second row of the table below, under
+the separate `strategies:write` scope ([CONTEXT D36](../../CONTEXT.md)).
+
+**The seven trading write operations this epic owns**, per the design spec's §Write path:
 
 | Operation | Notes |
 |---|---|
@@ -51,6 +61,10 @@ smaller version of this epic; it is the failure this epic exists to prevent.
 
 ### Out of scope
 
+- **The eight `Authoring` write operations** — owned by [EPIC-8](EPIC-8.md) as of
+  2026-08-21, behind their own `SENTI_ENABLE_AUTHORING_WRITE` flag. This epic's flag is a
+  separate one, so enabling an agent to edit MQL5 is never the same act as enabling it to
+  close a position.
 - **All ten read operations** — owned by [EPIC-2](EPIC-2.md). This epic never
   registers a read tool; it consumes the `accountId` and `ticket` values EPIC-2's
   tools produce.
@@ -91,6 +105,8 @@ No stories yet. Story planning opens once [EPIC-2](EPIC-2.md) closes — see
 
 ## Cross-references
 
+- [EPIC-8](EPIC-8.md) — the authoring write path, which owns the other 8 write operations
+  and hands this epic `send`, `registerWriteTool`, the confirmation seam and the no-retry rule
 - [EPIC-2](EPIC-2.md) — the read-path epic this one follows, and the source of the
   `accountId` / `ticket` values every future write tool here will consume
 - [Design spec §Write path](../../superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md)

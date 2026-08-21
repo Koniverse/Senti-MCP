@@ -1,12 +1,20 @@
 export const SERVER_NAME = 'senti-mcp-server';
-export const SERVER_VERSION = '2.4.0';
+export const SERVER_VERSION = '2.8.0';
 const DEFAULT_BASE_URL = 'https://api.sentitrade.xyz';
 const ALLOWED_PROTOCOLS: readonly string[] = ['https:', 'http:'];
+/** Nothing else enables a write. "0", "false" and "no" must not be surprises. */
+const TRUTHY: readonly string[] = ['1', 'true'];
 
 export type Config = {
   /** API root, without a trailing slash. */
   baseUrl: string;
   apiKey: string;
+  /**
+   * Whether the authoring write tools are registered at all. Authoring-only by
+   * design: the trading write path gets its own flag, so enabling an agent to
+   * edit MQL5 is never the same act as enabling it to close a position.
+   */
+  authoringWrite: boolean;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
@@ -45,5 +53,6 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   return Object.freeze({
     baseUrl: base.href.replace(/\/+$/, ''),
     apiKey,
+    authoringWrite: TRUTHY.includes((env.SENTI_ENABLE_AUTHORING_WRITE ?? '').trim().toLowerCase()),
   });
 }

@@ -15,6 +15,201 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.8.0] — 2026-08-21 — `compile_draft`, and EPIC-8's close
+
+The tool that closes the loop. `compile_draft` runs the static-safety scan and the MQL5
+compiler over a draft and every indicator attached to it, and returns the verdict, the
+diagnostics and the compiler log ([US-8.4](sprints/stories/US-8.4-compile-draft-and-epic-close.md)).
+It is the seventh and last tool of [EPIC-8](sprints/epics/EPIC-8.md), and like the other six it
+is registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set.
+
+**A failed build is not an error.** The API returns `200` with `ok: false` and diagnostics; the
+tool returns a **success** result carrying them. Marking it `isError` would tell a model its
+call malfunctioned, and a model's correct response to that is to retry — against a globally
+serial compile slot, for a build that will fail again identically.
+
+**Nothing retries, and the abort message says why that matters here.** The compile slot is one
+per account and the compile server is serial across all accounts, so a `409` means someone
+else's compile is running and a `503` carries a wait this server reports rather than sleeps on.
+The 15-second client timeout is *not* raised — but aborting the fetch **does not cancel the
+compile**, so the account's slot stays busy and the next call would be a `409`. The message says
+exactly that and sends the model to `get_draft` for `lastCompileStatus`.
+
+**It is the only tool in this repo that parses diagnostics strictly**, because
+`POST /drafts/{draftId}/compile` is the only route in the whole document that declares their
+shape. `get_draft` and `list_drafts` parse theirs loosely and will keep doing so — see below.
+
+### The write smoke test, and the two things it settled
+
+`npm run test:smoke` with `SENTI_SMOKE_WRITES=1` now creates a real draft, attaches an
+indicator, compiles it and deletes it, cleaning up in a `finally`. It exists to discharge two
+gaps [EPIC-7](sprints/epics/EPIC-7.md) closed with, **both of which needed a write**:
+
+**1. The `GET`'s diagnostics match the compile response's — and the parse stays loose anyway.**
+No live draft had ever carried a non-empty `lastCompileDiagnostics`, so `get_draft`'s
+loose-parse/tight-render pair had never met real data. Measured on a deliberately broken draft:
+the two arrays are identical, same six keys, same values. The render path is confirmed. The
+parse does **not** tighten, because the observation is about the service and the parse is a bet
+on the contract — which still declares the array untyped ([CONTEXT D44](CONTEXT.md)).
+
+**2. An attachment existed for the first time.** The smoke account has held zero attachments
+since `2.2.0`, so every attachment branch in `list_draft_attachments` was test-covered and none
+was live-covered. The write smoke creates one.
+
+**Two undocumented behaviours found on the way**, recorded in [CONTEXT D44](CONTEXT.md): a
+draft's `name` derives its `.mq5` filename with non-alphanumerics replaced by underscores — so
+`diagnostics[].file` will not string-match the draft name — and the compiler log carries the
+compile host's absolute Windows path, `C:\MT5\compile_jobs\<draftId>\…`, CRLF-terminated.
+
+### EPIC-8 closes
+
+Seven of the `Authoring` tag's eight write operations now have a tool. What the close does
+**not** claim is in [EPIC-8](sprints/epics/EPIC-8.md) §What this close does not claim:
+`register` is unimplemented, and the two delete tools are unusable on a host without MCP
+elicitation support.
+
+## [2.7.0] — 2026-08-21 — the three attachment writes
+
+`add_draft_attachment`, `update_draft_attachment` and `delete_draft_attachment` complete the
+indicator sub-resource ([US-8.3](sprints/stories/US-8.3-attachment-writes.md)), whose read
+half [US-7.4](sprints/stories/US-7.4-list-draft-attachments-tool.md) shipped in `2.4.0`. All
+three are registered only when `SENTI_ENABLE_AUTHORING_WRITE` is set.
+
+**Filenames collide case-insensitively, and the message says why.** `MyInd.mq5` and
+`myind.mq5` are the same file to this platform, because the compile host writes every
+attachment into one flat Windows directory. A `409` from `add_draft_attachment` reports that
+rather than a bare "already exists", so a model does not try the same name in another case.
+
+**The filename is immutable, so `update_draft_attachment` does not accept one.** An EA embeds
+an indicator by name — `#resource "MyInd.ex5"` — and a rename would orphan every reference and
+turn a working draft into a static-safety violation. To rename: delete, re-add, and update the
+EA source. Accepting a `filename` the API would ignore is worse than not accepting one, so the
+input schema is `draftId`, `attachmentId`, `sourceCode` and nothing else.
+
+**Attaching does not wire up, and deleting does not unwire.** `add_draft_attachment` names the
+exact `#resource "<stem>.ex5"` and `iCustom(_Symbol, _Period, "::<stem>.ex5", …)` lines the EA
+still needs, derived from the filename you gave it. `delete_draft_attachment` says the opposite
+thing: the EA still references a file that is gone, and the next `compile_draft` fails on it
+unless `update_draft` removes those lines first. A draft that compiles a file it never
+references reads as a success otherwise, and one that references a file it no longer has reads
+as a compiler problem.
+
+`delete_draft_attachment` is the second and last tool in [EPIC-8](sprints/epics/EPIC-8.md)
+that pauses for a human confirmation, on the same reasoning as `delete_draft`
+([CONTEXT D42](CONTEXT.md)).
+
+**A `404` on either attachment-id tool carries a cause the draft `404` does not**: the
+attachment may exist and belong to a *different* draft. That is an easy mistake to make with
+two ids in one path, and a message that only said "not found" would send the reader to check
+the wrong one.
+
+## [2.6.0] — 2026-08-21 — `update_draft` and `delete_draft`
+
+The two draft writes that can destroy work, and the first tool in this server that pauses for
+a human ([US-8.2](sprints/stories/US-8.2-update-and-delete-draft.md)). Both are registered
+only when `SENTI_ENABLE_AUTHORING_WRITE` is set.
+
+**`update_draft` is a FULL REPLACE, and it is annotated `destructiveHint: true` despite its
+name.** The API declares no partial-update verb: `name` and `sourceCode` are both always
+written, so a model that sends only the function it changed deletes the rest of the file. The
+warning is in the tool's description, where a model reads it *before* choosing the argument,
+which is the only place a warning about a destructive argument can still help.
+
+**It reports the bytes it wrote, not the bytes it replaced.** A before/after delta would need
+the pre-write size, and the `PUT` response carries only the new draft — a hidden `GET` would
+double the latency of every edit and race any concurrent writer. When a previous compile no
+longer matches the new source, the text says so and names `compile_draft`.
+
+**`delete_draft` asks first, and a "no" is not an error.** It is one of two tools in
+[EPIC-8](sprints/epics/EPIC-8.md) that pause for an explicit human confirmation; the other
+five do not. That is a deliberate line, not an oversight: `update_draft` fires on every save
+in an edit loop, and a confirmation a user sees fifty times in a session is one they stop
+reading — a rubber-stamp laundered into the appearance of consent is worse than no prompt
+([CONTEXT D42](CONTEXT.md)). The two deletes are the only operations in this epic that no
+other tool in it can undo.
+
+A declined confirmation returns a **success** carrying `{ id: null, deleted: false }` and a
+note saying no request was sent. `isError: true` would tell a model something malfunctioned
+and invite a retry, and a user saying no is neither.
+
+**Two mechanics worth knowing if you build on the seam.** It identifies the round by an opaque
+`requestState` it mints, not by the answer: `acceptedContent()` reports a decline and a first
+entry identically — both `undefined` — so branching on the answer alone re-asks on every
+decline and spins until the client's round cap. And a forged `requestState` cannot skip the
+confirmation, because only *accepted* content reaches the request.
+
+**A host without elicitation support cannot use `delete_draft`.** That is accepted rather than
+worked around: a silent fallback to deleting without confirmation would make the guardrail a
+function of the client, which is the one property a guardrail must not have. Every other tool
+in this release works normally on such a host.
+
+`core/tool.ts` now imports two runtime values from `@modelcontextprotocol/server`
+(`inputRequired`, `acceptedContent`), so it joins `src/server.ts` and `src/index.ts` as the
+third file that does. `AGENTS.md` said `server.ts` was the only one; corrected.
+
+## [2.5.0] — 2026-08-21 — `create_draft`, and the write path opens
+
+The first tool in this server that changes something. `create_draft` calls
+`POST /api/v1/drafts` under a **seventh** scope, `authoring:write`, and is the first of
+seven tools [EPIC-8](sprints/epics/EPIC-8.md) opens over the `Authoring` tag's write
+operations ([US-8.1](sprints/stories/US-8.1-write-substrate-and-create-draft.md)).
+
+**It is not registered unless you ask for it.** `SENTI_ENABLE_AUTHORING_WRITE=1` (or
+`true`) registers the authoring write tools; anything else — including `0`, `false`, `no`
+and `off` — leaves them unregistered, and a host that never sets it sees the same fourteen
+read tools `2.4.0` shipped. **The flag is authoring-only**: it enables no trading write at
+any setting, because closing a position is a different surface with a flag of its own that
+does not exist yet ([EPIC-3](sprints/epics/EPIC-3.md)). Keeping them separate is the point —
+enabling an agent to edit MQL5 must never be the same act as enabling it to close a
+position.
+
+**The response does not echo your source back.** `POST /drafts` returns the complete draft,
+up to 192 KiB of source plus five attachments at 64 KiB each — content the model supplied in
+the same call. Returning it would bill it a third and fourth time, through `content` and
+`structuredContent` both ([CONTEXT D34](CONTEXT.md)). The tool returns the new `id`, the
+byte count written, the compile state and an attachment summary, and `notes` points at
+`get_draft` for a read-back ([CONTEXT D39](CONTEXT.md)). A note records *loss*, so creating
+an empty draft writes none.
+
+**The `Idempotency-Key` is a fresh UUID per call, not one derived from the body.** The
+design specified a content-derived key so that an identical repeat would replay the original
+`201` instead of colliding with a `409`, and left the retention window as the open question
+that would decide it. Measured against `be-dev` on 2026-08-21: **an idempotency record
+outlives a delete.** Create → delete → byte-identical create replayed the original response
+and returned a `draftId` that no longer existed. Since *create, delete, create again* is what
+iterating on a draft looks like — and delete-then-recreate is the API's own prescribed way to
+rename an attachment — the derived key was replaced with `randomUUID()`, which still gives the
+protection the header is actually for: one request delivered twice by the transport creates
+one draft ([CONTEXT D43](CONTEXT.md), revising [D41](CONTEXT.md)).
+
+**Nothing retries anything.** The write path adds `413`, `422`, `502`, `503` and `504`, and
+none of them is retried. `Retry-After` is read and quoted in the message, never slept on: a
+tool call that waits holds the host's turn open for an interval the server chose. A `503`
+*without* `Retry-After` is reported as meaning a retry cannot help, which is what the API
+documents ([CONTEXT D40](CONTEXT.md)).
+
+**A `403` no longer assumes it is about a scope.** On every read it was; on `create_draft` it
+also means the draft cap is full, and against that cause the old wording — *"the key is
+missing that scope, not that the account is off limits"* — sends the reader to mint a key
+they already hold. The new `forbiddenMeans` option lets each endpoint say what its `403`
+means, and the read tools keep the old wording byte for byte by passing nothing.
+
+**`registerWriteTool` is a second registrar, not a flag.** `registerReadTool` is unchanged
+and still pins `readOnlyHint: true` as a constant, so no call to it can produce a write
+whatever its arguments ([CONTEXT D38](CONTEXT.md)). A test asserts it directly.
+
+**Also corrected in this release:** three files in this repo stated that
+`POST /drafts/{draftId}/register` puts an EA into a real trading account. It does not — it
+creates a permanently private `EaDefinition`, and deploying is
+`POST /accounts/{accountId}/strategies` under the separate `strategies:write` scope. The
+claim had been inferred from the operation's name rather than read from its description
+([CONTEXT D36](CONTEXT.md)). `register` is still out of scope, for a different reason: it is
+the only write in the tag that creates a resource the tag cannot then delete.
+
+**What this release does not do:** compile, update, delete or attach anything. Those are
+`2.6.0` through `2.8.0`. `create_draft` writes a draft and stops; nothing is compiled until
+`compile_draft` exists.
+
 ## [2.4.0] — 2026-08-20 — `list_draft_attachments`: the fourteenth tool, and EPIC-7's close
 
 `list_draft_attachments` reads `GET /api/v1/drafts/{draftId}/attachments` under

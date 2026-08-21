@@ -39,6 +39,13 @@ export function auditTarball(paths) {
 }
 
 /**
+ * The opt-in every authoring write tool is registered behind, as of 2.5.0. The
+ * README's tool table documents them, so the packaged server has to be asked
+ * with the flag on before the two can be compared.
+ */
+const WRITES_ON = { SENTI_ENABLE_AUTHORING_WRITE: '1' };
+
+/**
  * The tool names README.md's `## Tools` table documents — an independent claim
  * about the release, and the only one `diffTools` alone cannot check: build and
  * tarball come from the same source, so a tool deleted from `src/server.ts`
@@ -86,7 +93,12 @@ async function main() {
     must(spawnSync('npm', ['run', 'build'], { cwd: repoRoot, encoding: 'utf8' }), 'npm run build');
 
     step('listing the tools this build exposes…');
-    const expected = await listTools(process.execPath, [path.join(repoRoot, 'dist', 'index.js')], repoRoot);
+    const expected = await listTools(
+      process.execPath,
+      [path.join(repoRoot, 'dist', 'index.js')],
+      repoRoot,
+      WRITES_ON,
+    );
     step(`  build exposes ${expected.length}: ${expected.join(', ')}`);
     if (expected.length === 0) problems.push('the build exposed no tools at all — nothing to compare against');
 
@@ -115,9 +127,33 @@ async function main() {
 
     const bin = path.join(consumer, 'node_modules', '.bin', 'senti-mcp-server');
     step('spawning the installed binary through its bin name…');
-    const observed = await listTools(bin, [], consumer);
-    step(`  packaged server exposes ${observed.length}: ${observed.join(', ')}`);
+    const observed = await listTools(bin, [], consumer, WRITES_ON);
+    step(`  packaged server exposes ${observed.length} with writes on: ${observed.join(', ')}`);
     problems.push(...diffTools(expected, observed));
+
+    // The README's table documents every tool, including the ones an operator
+    // has to opt into — so the comparison below has to be made against a server
+    // that registered them. This second spawn is what proves the opt-in still
+    // gates them *in the shipped artifact*: whether the right tools are gated is
+    // asserted by `src/server.test.ts`, but whether the flag survives packing is
+    // only observable here.
+    step('spawning it again without the opt-in, to prove the flag still gates…');
+    const readOnly = await listTools(bin, [], consumer);
+    const gated = observed.filter((name) => !readOnly.includes(name));
+    const leaked = readOnly.filter((name) => !observed.includes(name));
+    step(`  ${readOnly.length} without the opt-in; gated by it: ${gated.join(', ') || 'none'}`);
+    if (leaked.length > 0) {
+      problems.push(
+        `the opt-in REMOVED tool(s) instead of adding them: ${leaked.join(', ')} — ` +
+          'SENTI_ENABLE_AUTHORING_WRITE must only ever add to the surface',
+      );
+    }
+    if (gated.length === 0) {
+      problems.push(
+        'SENTI_ENABLE_AUTHORING_WRITE registered nothing in the packaged server — either no ' +
+          'write tool shipped, or the flag is being ignored, and both are wrong from 2.5.0 on',
+      );
+    }
 
     step("checking the packaged README's tool table against the packaged server…");
     const documented = readmeTools(readFileSync(path.join(consumer, 'node_modules', 'senti-mcp-server', 'README.md'), 'utf8')).sort();
@@ -157,7 +193,7 @@ function must(result, what) {
  * network, so this stays runnable in CI with no Senti credential — the
  * hermetic property EPIC-4 lists as a cross-cutting invariant.
  */
-async function listTools(command, args, cwd) {
+async function listTools(command, args, cwd, extraEnv = {}) {
   const { Client } = await import('@modelcontextprotocol/client');
   const { StdioClientTransport } = await import('@modelcontextprotocol/client/stdio');
 
@@ -165,7 +201,11 @@ async function listTools(command, args, cwd) {
     command,
     args,
     cwd,
-    env: { PATH: process.env.PATH ?? '', SENTI_API_KEY: 'sq_live_verifypack_placeholder' },
+    env: {
+      PATH: process.env.PATH ?? '',
+      SENTI_API_KEY: 'sq_live_verifypack_placeholder',
+      ...extraEnv,
+    },
   });
   const client = new Client({ name: 'release-verify-pack', version: '1.0.0' });
 

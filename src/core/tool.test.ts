@@ -2,7 +2,7 @@ import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 import { McpServer } from '@modelcontextprotocol/server';
 import { describe, expect, test } from 'vitest';
 import * as z from 'zod/v4';
-import { registerReadTool } from './tool.js';
+import { registerReadTool, registerWriteTool } from './tool.js';
 
 const EchoOutput = z.object({ echoed: z.string() });
 
@@ -105,5 +105,206 @@ describe('registerReadTool', () => {
     const { tools } = await client.listTools();
 
     expect(tools).toHaveLength(1);
+  });
+});
+
+function serverWithWrite(overrides: { destructive?: boolean; idempotent?: boolean } = {}) {
+  const server = new McpServer({ name: 'test', version: '0.0.0' });
+
+  registerWriteTool(server, {
+    name: 'touch_draft',
+    title: 'Touch',
+    description: 'Write the draftId back.',
+    inputSchema: z.object({ draftId: z.string() }),
+    outputSchema: EchoOutput,
+    destructive: overrides.destructive ?? false,
+    idempotent: overrides.idempotent ?? false,
+    run: async (args) => ({ text: `wrote ${args.draftId}`, structured: { echoed: args.draftId } }),
+  });
+
+  return server;
+}
+
+describe('registerWriteTool', () => {
+  test('never advertises itself read-only', async () => {
+    const client = await connect(serverWithWrite());
+
+    const { tools } = await client.listTools();
+
+    expect(tools[0]?.annotations?.readOnlyHint).toBe(false);
+    expect(tools[0]?.annotations?.openWorldHint).toBe(true);
+  });
+
+  test('takes destructiveHint and idempotentHint from the spec', async () => {
+    const client = await connect(serverWithWrite({ destructive: true, idempotent: true }));
+
+    const { tools } = await client.listTools();
+
+    expect(tools[0]?.annotations?.destructiveHint).toBe(true);
+    expect(tools[0]?.annotations?.idempotentHint).toBe(true);
+  });
+
+  test('returns text and structured content on success', async () => {
+    const client = await connect(serverWithWrite());
+
+    const result = (await client.callTool({
+      name: 'touch_draft',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(result.isError).toBeFalsy();
+    expect(result.content[0]?.text).toBe('wrote d-1');
+    expect(result.structuredContent).toEqual({ echoed: 'd-1' });
+  });
+
+  test('returns a thrown failure as an error result rather than dying', async () => {
+    const server = new McpServer({ name: 'test', version: '0.0.0' });
+    registerWriteTool(server, {
+      name: 'boom_write',
+      title: 'Boom',
+      description: 'Always fails.',
+      inputSchema: z.object({}),
+      outputSchema: EchoOutput,
+      destructive: true,
+      idempotent: false,
+      run: async () => {
+        throw new Error('upstream said no');
+      },
+    });
+    const client = await connect(server);
+
+    const result = (await client.callTool({ name: 'boom_write', arguments: {} })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0]?.text).toContain('upstream said no');
+    expect(result.structuredContent).toBeUndefined();
+  });
+});
+
+describe('the two registrars are separate', () => {
+  test('the read registrar has no way to produce a write annotation', async () => {
+    const client = await connect(serverWithEcho());
+
+    const { tools } = await client.listTools();
+
+    expect(tools[0]?.annotations?.readOnlyHint).toBe(true);
+    expect(tools[0]?.annotations?.destructiveHint).toBeUndefined();
+  });
+});
+
+function confirmingServer(ran: { count: number }) {
+  const server = new McpServer({ name: 'test', version: '0.0.0' });
+
+  registerWriteTool(server, {
+    name: 'drop_draft',
+    title: 'Drop',
+    description: 'Delete a draft.',
+    inputSchema: z.object({ draftId: z.string() }),
+    outputSchema: EchoOutput,
+    destructive: true,
+    idempotent: true,
+    confirm: {
+      message: (args) => `Delete draft ${args.draftId}? This cannot be undone.`,
+      cancelled: () => ({ text: 'Cancelled — nothing was deleted.', structured: { echoed: '' } }),
+    },
+    run: async (args) => {
+      ran.count += 1;
+      return { text: `dropped ${args.draftId}`, structured: { echoed: args.draftId } };
+    },
+  });
+
+  return server;
+}
+
+/** The wire shape an elicitation result may carry — not `unknown`, deliberately. */
+type ElicitAnswer =
+  | { action: 'accept'; content: Record<string, string | number | boolean | string[]> }
+  | { action: 'decline' };
+
+async function connectAnswering(server: McpServer, answer: ElicitAnswer) {
+  const seen: string[] = [];
+  const client = new Client(
+    { name: 'test-client', version: '0.0.0' },
+    { capabilities: { elicitation: {} } },
+  );
+
+  client.setRequestHandler('elicitation/create', async (request) => {
+    seen.push(String((request.params as { message?: unknown }).message ?? ''));
+    return answer;
+  });
+
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+
+  return { client, seen };
+}
+
+describe('registerWriteTool confirmation', () => {
+  test('asks before running, quoting the arguments in the question', async () => {
+    const ran = { count: 0 };
+    const { client, seen } = await connectAnswering(confirmingServer(ran), {
+      action: 'accept',
+      content: { confirm: true },
+    });
+
+    const result = (await client.callTool({
+      name: 'drop_draft',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(seen).toEqual(['Delete draft d-1? This cannot be undone.']);
+    expect(ran.count).toBe(1);
+    expect(result.content[0]?.text).toBe('dropped d-1');
+  });
+
+  test('runs nothing when the confirmation is declined', async () => {
+    const ran = { count: 0 };
+    const { client } = await connectAnswering(confirmingServer(ran), { action: 'decline' });
+
+    const result = (await client.callTool({
+      name: 'drop_draft',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(ran.count).toBe(0);
+    expect(result.isError).toBeFalsy();
+    expect(result.content[0]?.text).toContain('Cancelled');
+    expect(result.structuredContent).toEqual({ echoed: '' });
+  });
+
+  test('runs nothing when the answer is an explicit no', async () => {
+    const ran = { count: 0 };
+    const { client } = await connectAnswering(confirmingServer(ran), {
+      action: 'accept',
+      content: { confirm: false },
+    });
+
+    const result = (await client.callTool({
+      name: 'drop_draft',
+      arguments: { draftId: 'd-1' },
+    })) as ToolResult;
+
+    expect(ran.count).toBe(0);
+    expect(result.content[0]?.text).toContain('Cancelled');
+  });
+
+  test('asks exactly once — a decline does not re-ask until the round cap', async () => {
+    const ran = { count: 0 };
+    const { client, seen } = await connectAnswering(confirmingServer(ran), { action: 'decline' });
+
+    await client.callTool({ name: 'drop_draft', arguments: { draftId: 'd-1' } });
+
+    expect(seen).toHaveLength(1);
+  });
+
+  test('a tool with no confirm spec never elicits', async () => {
+    const { client, seen } = await connectAnswering(serverWithWrite(), {
+      action: 'accept',
+      content: { confirm: true },
+    });
+
+    await client.callTool({ name: 'touch_draft', arguments: { draftId: 'd-1' } });
+
+    expect(seen).toEqual([]);
   });
 });
