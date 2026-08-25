@@ -104,20 +104,21 @@ SENTI_SMOKE_KEY=sq_live_…
 > before regenerating the key — the 401 is far more often a mismatched
 > environment than a bad key.
 >
-> **The default is one of those mismatches.** `SENTI_API_BASE_URL` defaults to
-> `https://api.sentitrade.xyz`, but no dashboard is known to issue a key there.
-> Both `app.sentitrade.xyz` and `stage.sentitrade.xyz` ship production builds
-> carrying `REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"` — checked
-> 2026-08-25 in each host's served JS bundle, and neither bundle references
-> `api.sentitrade.xyz` at all. So a dashboard-issued key needs
-> `SENTI_API_BASE_URL=https://be-dev.sentitrade.xyz` set explicitly; leaving the
-> default is the most likely cause of a `401` on a brand-new key.
+> **Which dashboard you use does not change this.** `app.sentitrade.xyz` and
+> `stage.sentitrade.xyz` both ship production builds carrying
+> `REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"` — checked 2026-08-25 in
+> each host's served JS bundle — so a key from either is issued by the same
+> backend. The dashboard host is a front door, not an environment.
 >
 > **Verified pairing:** a dashboard-issued key against
 > `https://be-dev.sentitrade.xyz` — the pairing this walkthrough's `.env.local`
 > uses, and the one `npm run test:smoke` has exercised twice, passing both
-> times. Which key `https://api.sentitrade.xyz` accepts is not established; that
-> pairing is unconfirmed.
+> times. Whether the default, `https://api.sentitrade.xyz`, accepts the same key
+> is not established from outside the deployment: it answers every unauthenticated
+> probe byte-identically to `be-dev`, including an OpenAPI document whose embedded
+> client URL matches, which is consistent with one origin behind two hostnames but
+> does not prove it. If you are unsure, set `SENTI_API_BASE_URL` explicitly to the
+> host you know your key was issued against.
 
 `SENTI_API_BASE_URL` is validated at startup: it must be an absolute `https:` URL
 (`http:` is accepted for a local API, at the cost of sending the key in cleartext).

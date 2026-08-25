@@ -103,27 +103,15 @@ authoring surface can delete what it creates.
 > environment-bound: a key is issued by whichever backend the dashboard you used
 > talks to, and it returns `401` against any other, however valid it is. So when
 > a correct-looking key is rejected, check `SENTI_API_BASE_URL` before
-> regenerating the key.
->
-> **This bites on the default.** `SENTI_API_BASE_URL` defaults to
-> `https://api.sentitrade.xyz`, but the dashboards do not issue keys there. Both
-> `app.sentitrade.xyz` and `stage.sentitrade.xyz` ship production builds carrying
-> `REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"` (checked 2026-08-25 in each
-> host's served JS bundle; neither bundle references `api.sentitrade.xyz` at all).
-> A key from either dashboard therefore pairs with:
->
-> ```json
-> "env": {
->   "SENTI_API_KEY": "sq_live_...",
->   "SENTI_API_BASE_URL": "https://be-dev.sentitrade.xyz"
-> }
-> ```
+> regenerating the key — a `401` is far more often a mismatched environment than
+> a bad key.
 >
 > **Verified pairing:** a dashboard-issued key against
-> `https://be-dev.sentitrade.xyz` is the pairing `npm run test:smoke` exercises,
-> and it has passed twice. Which key `https://api.sentitrade.xyz` accepts is not
-> established — no dashboard is known to issue one — so treat the default as
-> unconfirmed until it is.
+> `https://be-dev.sentitrade.xyz` — that is the pairing `npm run test:smoke`
+> exercises, and it has passed twice. Whether the default,
+> `https://api.sentitrade.xyz`, accepts the same key is not established here, so
+> if you are unsure, set `SENTI_API_BASE_URL` to the host you know your key was
+> issued against.
 
 See [docs/SETUP.md](docs/SETUP.md) for a full local setup walkthrough.
 

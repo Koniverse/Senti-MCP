@@ -24,19 +24,21 @@ docs already use — and `README.md` and [SETUP.md](SETUP.md) follow. Functional
 two dashboards are interchangeable for this purpose, which is the point of the
 second half of this entry.
 
-While checking that, the served JS bundles of both hosts turned out to carry
-`REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"`, and neither references
-`api.sentitrade.xyz` at all (checked 2026-08-25). A key from either dashboard is
-therefore issued by `be-dev`, while `SENTI_API_BASE_URL` defaults to
-`https://api.sentitrade.xyz` — so **the default pairs with no known dashboard**, and
-a brand-new key left on the default is expected to `401`.
+What makes the swap safe is that the two hosts are the same front door: the served
+production bundles of `app.sentitrade.xyz` and `stage.sentitrade.xyz` both carry
+`REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"` (checked 2026-08-25), so a key
+from either dashboard is issued by the same backend. The environment-pairing
+warnings in `README.md` and [SETUP.md](SETUP.md) now say that, replacing the older
+"keys are currently issued from the staging dashboard" phrasing, which read as
+though the dashboard host picked the environment.
 
-That is a documentation change, not a behaviour one: the default is unchanged, since
-moving it is a call for whoever owns the deployment, not for this server. The
-environment-pairing warnings in `README.md` and [SETUP.md](SETUP.md) now name the
-mismatch and give the `SENTI_API_BASE_URL=https://be-dev.sentitrade.xyz` line that
-resolves it, replacing the older "keys are currently issued from the staging
-dashboard" phrasing, which was true but did not say what to set.
+The warnings otherwise stand as they were: keys are environment-bound, and a `401`
+on a valid-looking key is more often a mismatched `SENTI_API_BASE_URL` than a bad
+key. Whether the default `https://api.sentitrade.xyz` accepts a dashboard-issued key
+is still not established — from outside the deployment it answers every
+unauthenticated probe byte-identically to `be-dev`, which is consistent with one
+origin behind two hostnames but does not prove it. The default is unchanged;
+settling it is a deployment call, not this server's.
 
 No tool, schema or response changed. 673 unit tests pass.
 
