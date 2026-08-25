@@ -23,8 +23,9 @@ docs/
 └── sprints/
     ├── STATUS.md        ← AUTO-GENERATED kanban (never hand-edit — RULE-5)
     ├── sprint-2026-W32.md   ← closed
-    ├── sprint-2026-W33.md   ← the active sprint (4 phases)
-    ├── sprint-2026-W34.md   ← planned, no committed scope (CONTEXT D22)
+    ├── sprint-2026-W33.md   ← closed (19 stories / 52 points)
+    ├── sprint-2026-W34.md   ← closed (10 stories / 27 points; EPIC-7 + EPIC-8)
+    ├── sprint-2026-W35.md   ← the active sprint, opened with no committed scope
     ├── epics/           ← EPIC-N.md
     └── stories/         ← US-X.Y-<slug>.md (canonical AC + Tasks source)
 
@@ -145,11 +146,13 @@ npx koni-docs --version   # confirm which CLI you actually have
 - [CHANGELOG.md](CHANGELOG.md) — release history
 - [CONTEXT.md](CONTEXT.md) — decision log
 - [sprints/STATUS.md](sprints/STATUS.md) — current kanban (generated)
-- [sprints/sprint-2026-W33.md](sprints/sprint-2026-W33.md) — the active sprint
-  (2026-08-10 → 2026-08-16): Phase 1 read tools, Phase 2 release process and Phase 3
-  EPIC-2's read path all delivered; Phase 4 carries [EPIC-5](sprints/epics/EPIC-5.md)
-- [sprints/sprint-2026-W34.md](sprints/sprint-2026-W34.md) — planned, and carrying no
-  scope since [CONTEXT D22](CONTEXT.md) pulled its four stories forward
+- [sprints/sprint-2026-W35.md](sprints/sprint-2026-W35.md) — the active sprint
+  (2026-08-24 → 2026-08-30), opened with no committed scope: nothing carried from W34,
+  and the one scope table takes rows as work arrives ([CONTEXT D21](CONTEXT.md) rule 1)
+- [sprints/sprint-2026-W34.md](sprints/sprint-2026-W34.md) — closed 2026-08-21:
+  10 stories / 27 points, EPIC-7 and EPIC-8 both closed, `2.1.0` → `2.8.0`
+- [sprints/sprint-2026-W33.md](sprints/sprint-2026-W33.md) — closed
+  (2026-08-10 → 2026-08-16): 19 stories / 52 points
 - [superpowers/specs/2026-08-05-senti-mcp-server-design.md](superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design spec
 - [superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [superpowers/plans/2026-08-05-senti-mcp-server-v1.md](superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 implementation plan

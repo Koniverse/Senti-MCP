@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-21 11:43:57 UTC
+> Last generated: 2026-08-25 07:25:50 UTC
 > Total stories: 33
 
 ## ⏰ Deadlines (0)

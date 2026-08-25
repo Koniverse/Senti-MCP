@@ -261,13 +261,15 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
-- [docs/sprints/sprint-2026-W33.md](docs/sprints/sprint-2026-W33.md) — **the active
-  sprint** (2026-08-10 → 2026-08-16, four phases): Phase 1 US-2.4 → US-2.9, Phase 2
-  EPIC-4 and Phase 3 US-2.10 → US-2.13 all delivered; Phase 4 carries EPIC-5's four
-  stories
-- [docs/sprints/sprint-2026-W34.md](docs/sprints/sprint-2026-W34.md) — `planned` for
-  2026-08-17 → 2026-08-23 and carrying no scope; its four stories became W33's Phase 3
-  ([CONTEXT D22](docs/CONTEXT.md))
+- [docs/sprints/sprint-2026-W35.md](docs/sprints/sprint-2026-W35.md) — **the active
+  sprint** (2026-08-24 → 2026-08-30), opened with no committed scope: nothing carried
+  from W34, and the scope table takes rows as work arrives
+  ([CONTEXT D21](docs/CONTEXT.md) rule 1, [D30](docs/CONTEXT.md))
+- [docs/sprints/sprint-2026-W34.md](docs/sprints/sprint-2026-W34.md) — `closed`
+  2026-08-21 (2026-08-17 → 2026-08-23): 10 stories / 27 points, EPIC-7 and EPIC-8 both
+  closed, `2.1.0` → `2.8.0`
+- [docs/sprints/sprint-2026-W33.md](docs/sprints/sprint-2026-W33.md) — `closed`
+  (2026-08-10 → 2026-08-16): 19 stories / 52 points across the four tranches it absorbed
 - [docs/LESSONS.md](docs/LESSONS.md) — retrospective lessons, append-only
 - [docs/sprints/epics/](docs/sprints/epics/) — EPIC-1 (foundation), EPIC-2 (read path),
   EPIC-3 (write path, backlog), EPIC-4 (the package release process, backlog), EPIC-5
