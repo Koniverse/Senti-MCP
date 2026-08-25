@@ -44,7 +44,7 @@ the MT5 account number, not a key.
 - A Senti Quant API key (`sq_live_…`). As of v2.1.0 the tool surface needs six
   read scopes: `accounts:read`, `brokers:read`, `strategies:read`,
   `performance:read`, `trading:read`, `authoring:read` — create one with all
-  six at the [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys).
+  six at the [API Keys dashboard](https://app.sentitrade.xyz/account/api-keys).
   There is no key-introspection endpoint, so a missing scope isn't caught at
   startup: it surfaces as a `403` naming the scope the first time the affected
   tool is called, and every other tool keeps working. All six are exercised by
@@ -100,17 +100,29 @@ left out of [EPIC-8](docs/sprints/epics/EPIC-8.md) because no operation in the
 authoring surface can delete what it creates.
 
 > **The key and the base URL must belong to the same environment.** Keys are
-> environment-bound, and the default base URL is **production**
-> (`https://api.sentitrade.xyz`) while keys are currently issued from the
-> staging dashboard. A key created in one environment returns `401` against
-> another, however valid it is — so if a correct-looking key is rejected, check
-> `SENTI_API_BASE_URL` before regenerating the key.
+> environment-bound: a key is issued by whichever backend the dashboard you used
+> talks to, and it returns `401` against any other, however valid it is. So when
+> a correct-looking key is rejected, check `SENTI_API_BASE_URL` before
+> regenerating the key.
 >
-> **Verified pairing:** a key issued from the staging dashboard
-> (`https://stage.sentitrade.xyz/account/api-keys`) works against
-> `https://be-dev.sentitrade.xyz` — that is the pairing `npm run test:smoke`
-> exercises, and it has passed against that pairing twice. Which base URL a
-> production-issued key needs is not established; treat that pairing as
+> **This bites on the default.** `SENTI_API_BASE_URL` defaults to
+> `https://api.sentitrade.xyz`, but the dashboards do not issue keys there. Both
+> `app.sentitrade.xyz` and `stage.sentitrade.xyz` ship production builds carrying
+> `REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"` (checked 2026-08-25 in each
+> host's served JS bundle; neither bundle references `api.sentitrade.xyz` at all).
+> A key from either dashboard therefore pairs with:
+>
+> ```json
+> "env": {
+>   "SENTI_API_KEY": "sq_live_...",
+>   "SENTI_API_BASE_URL": "https://be-dev.sentitrade.xyz"
+> }
+> ```
+>
+> **Verified pairing:** a dashboard-issued key against
+> `https://be-dev.sentitrade.xyz` is the pairing `npm run test:smoke` exercises,
+> and it has passed twice. Which key `https://api.sentitrade.xyz` accepts is not
+> established — no dashboard is known to issue one — so treat the default as
 > unconfirmed until it is.
 
 See [docs/SETUP.md](docs/SETUP.md) for a full local setup walkthrough.
@@ -136,7 +148,7 @@ No install step — `npx` fetches the published package on first run:
 Restart the client; all fourteen tools should appear — every `GET` operation the Senti
 Quant Public API exposes now has one, the last four added over the `Authoring` tag
 [EPIC-7](docs/sprints/epics/EPIC-7.md) shipped.
-`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.8.0` as
+`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.8.1` as
 of this release.
 It carries `2.4.0`'s fourteen read tools plus **seven** write tools — `create_draft`,
 `update_draft`, `delete_draft`, `add_draft_attachment`, `update_draft_attachment`,
@@ -163,7 +175,7 @@ others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
 expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@2.8.0"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@2.8.1"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server
