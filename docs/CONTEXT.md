@@ -2412,3 +2412,64 @@ the raw observation.
 
 **Date**: 2026-08-21
 **Version**: 2.8.0
+
+---
+
+## Phase 15 — Onboarding host correctness (2026-08-25, shipped 2.8.1)
+
+### D45. The dashboard host is `app.sentitrade.xyz`; the default base URL is unverified, not broken
+
+**Context**: [US-2.3](sprints/stories/US-2.3-live-smoke-test-and-readme.md) set the
+API Keys dashboard to `stage.sentitrade.xyz` in the missing-key error and the README,
+because that is where keys were issued on 2026-08-06. Nothing else in the product says
+`stage`: Koni's Senti landing pages use `app.sentitrade.xyz` in 20 places,
+`guides.config.json` records it as `products.senti.appUrl`, and `docs.sentitrade.xyz`
+— which this app links via `REACT_APP_PUBLIC_API_DOCS_URL` — uses it too. The first
+instruction this server gives contradicted every page that led the user to it.
+
+**Decision**: two parts, and the second is the one worth reading.
+
+1. Name `https://app.sentitrade.xyz/account/api-keys` in the error message, the
+   README and SETUP.md.
+2. Describe the default `SENTI_API_BASE_URL` as **unverified**, not broken. Change no
+   default, and do not instruct users to override it.
+
+**Rationale**: part 1 is behaviour-neutral, which is what makes it safe. Both
+`app.sentitrade.xyz` and `stage.sentitrade.xyz` ship builds carrying
+`REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"` (checked 2026-08-25 in each
+host's served bundle), so a key from either dashboard is issued by the same backend.
+The dashboard host is a front door, not an environment.
+
+Part 2 is a correction. The same bundle check showed the frontends built against
+`be-dev` while `DEFAULT_BASE_URL` is `api.sentitrade.xyz`, and that was first written
+up as a guaranteed `401` on the default — in the README, in SETUP.md, in the 2.8.1
+CHANGELOG entry and in PR #9's description. It does not hold. `api.sentitrade.xyz`
+and `be-dev.sentitrade.xyz` return byte-identical responses to every unauthenticated
+request tried: `/`, `/api/docs`, `/auth/me`, and a 96,131-byte OpenAPI document whose
+embedded client URL matches on both. That is what one origin behind two hostnames
+looks like. Both sit behind Cloudflare, so DNS and response headers distinguish
+nothing.
+
+The claim could not be settled from outside the deployment, and publishing it would
+have told users to set an override they may not need — while putting an internal
+hostname in the npm package's front page. It was withdrawn in a second commit before
+review.
+
+**Alternatives considered**:
+- Point the dashboard at `stage.sentitrade.xyz` — status quo; mirrors the deployed
+  API's own portal, but names a "staging" host as the customer path.
+- Change `DEFAULT_BASE_URL` to `be-dev` — rejected. Which host is canonical is a
+  deployment decision, and this would break every installation on the current default.
+
+**Impact**: `src/config.ts`, `README.md`, `docs/SETUP.md`, 2.8.1. `DEFAULT_BASE_URL`
+unchanged. Historical records in `sprints/` and `superpowers/` left alone.
+
+**Open**: one call with a real key against
+`https://api.sentitrade.xyz/api/v1/accounts` closes this. A `200` and the pairing
+caveat can be deleted from both docs; a `401` and `DEFAULT_BASE_URL` needs its own
+story. Either way, supersede this entry with a revision rather than editing it
+(RULE-7). Tracked in
+[US-2.14](sprints/stories/US-2.14-api-keys-dashboard-host.md) §Remaining work.
+
+**Date**: 2026-08-25
+**Version**: 2.8.1
