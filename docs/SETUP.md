@@ -14,7 +14,7 @@ nothing was ever published.
 | Requirement | Why |
 |---|---|
 | **Node.js ≥ 22.11.0** | The first LTS release of the Node 22 "Jod" line, supported until 2027-04-30. This is a **support-lifetime** floor, not an API one ([CONTEXT D27](CONTEXT.md)): the newest API in use is still `AbortSignal.any()` (20.3.0), on the path of every tool call, and `npm run test:smoke` uses `node --env-file` (20.6.0). So the code runs on 20.6.0–22.10.x and npm only warns `EBADENGINE` there — but that range receives no security patches and CI does not test it. Below 20.3.0 it genuinely breaks: the server starts, `tools/list` succeeds, then every `list_accounts` call fails with `TypeError: AbortSignal.any is not a function`. |
-| **A Senti Quant API key** | `sq_live_…`. As of v2.1.0 the tool surface needs six read scopes — see §3. Created in the [API Keys dashboard](https://stage.sentitrade.xyz/account/api-keys). |
+| **A Senti Quant API key** | `sq_live_…`. As of v2.1.0 the tool surface needs six read scopes — see §3. Created in the [API Keys dashboard](https://app.sentitrade.xyz/account/api-keys). |
 
 ```bash
 node --version    # must be >= 22.11.0
@@ -45,7 +45,7 @@ cp .env.example .env.local
 # without it. As of v2.1.0 the tool surface needs six read scopes:
 # accounts:read, brokers:read, strategies:read, performance:read, trading:read,
 # authoring:read. Create one with all six at
-# https://stage.sentitrade.xyz/account/api-keys
+# https://app.sentitrade.xyz/account/api-keys
 SENTI_API_KEY=sq_live_…
 
 # Senti API root (added in v0.1.0) — optional.
@@ -96,21 +96,29 @@ SENTI_SMOKE_KEY=sq_live_…
 
 > ### The key and the base URL must match environments
 >
-> Keys are environment-bound. The default base URL is **production**
-> (`https://api.sentitrade.xyz`), while keys are currently issued from the
-> **staging** dashboard at `stage.sentitrade.xyz`. A key created in one
-> environment returns `401` against another no matter how valid it is.
+> Keys are environment-bound: a key is issued by whichever backend the dashboard
+> you used talks to, and returns `401` against any other no matter how valid it
+> is.
 >
 > So when a key that looks correct is rejected, check `SENTI_API_BASE_URL`
 > before regenerating the key — the 401 is far more often a mismatched
 > environment than a bad key.
 >
-> **Verified pairing:** a key issued from the staging dashboard
-> (`https://stage.sentitrade.xyz/account/api-keys`) works against
+> **Which dashboard you use does not change this.** `app.sentitrade.xyz` and
+> `stage.sentitrade.xyz` both ship production builds carrying
+> `REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"` — checked 2026-08-25 in
+> each host's served JS bundle — so a key from either is issued by the same
+> backend. The dashboard host is a front door, not an environment.
+>
+> **Verified pairing:** a dashboard-issued key against
 > `https://be-dev.sentitrade.xyz` — the pairing this walkthrough's `.env.local`
 > uses, and the one `npm run test:smoke` has exercised twice, passing both
-> times. Which base URL a production-issued key needs is not established;
-> that pairing is unconfirmed.
+> times. Whether the default, `https://api.sentitrade.xyz`, accepts the same key
+> is not established from outside the deployment: it answers every unauthenticated
+> probe byte-identically to `be-dev`, including an OpenAPI document whose embedded
+> client URL matches, which is consistent with one origin behind two hostnames but
+> does not prove it. If you are unsure, set `SENTI_API_BASE_URL` explicitly to the
+> host you know your key was issued against.
 
 `SENTI_API_BASE_URL` is validated at startup: it must be an absolute `https:` URL
 (`http:` is accepted for a local API, at the cost of sending the key in cleartext).

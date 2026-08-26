@@ -1,21 +1,22 @@
 ---
 id: sprint-2026-W35
 status: planned
-start: 2026-08-24
-end: 2026-08-30
-goal: 'No committed scope at open — nothing carried from W34, and work that arises this week joins the one scope table below as a row'
+start: 2026-08-24T00:00:00.000Z
+end: 2026-08-30T00:00:00.000Z
+goal: 'No committed scope at open — nothing carried from W34, and work that arises this week joins the one scope table below as a row; extended 2026-08-25 with US-2.14, correcting the API Keys dashboard host in the onboarding path'
 ---
-
 ## Sprint scope
 
-| US | Title | Epic | Pri | Points | Status | Story file |
-| -- | ----- | ---- | --- | ------ | ------ | ---------- |
+| US      | Title                                                                                      | Epic   | Pri | Points | Status    | Story file                                            |
+| ------- | ------------------------------------------------------------------------------------------ | ------ | --- | ------ | --------- | ----------------------------------------------------- |
+| US-2.14 | The API Keys dashboard host, and what the default base URL pairs with *(added 2026-08-25)* | EPIC-2 | P2  | 2      | 👀 review | [US-2.14](stories/US-2.14-api-keys-dashboard-host.md) |
 
-**Total: 0 stories / 0 points.** This sprint opens empty, and not by oversight: every
-story in the corpus is `done`, so there was nothing to carry
-(see §Parked / deferred from W34 below). Scope is not frozen
-([CONTEXT D21](../CONTEXT.md) rule 1) — work that arises this week is appended here as a
-row annotated `_(added YYYY-MM-DD)_`, with the sprint `goal:` extended by a clause. **One
+**Total: 1 story / 2 points.** This sprint opened empty, and not by oversight: every
+story in the corpus was `done`, so there was nothing to carry
+(see §Parked / deferred from W34 below). US-2.14 was appended on 2026-08-25 as
+mid-window scope, which is the documented shape rather than an exception. Scope is
+not frozen ([CONTEXT D21](../CONTEXT.md) rule 1) — work that arises this week is
+appended here as a row annotated `_(added YYYY-MM-DD)_`, with the sprint `goal:` extended by a clause. **One
 table, one total, no second scope section** ([CONTEXT D30](../CONTEXT.md)).
 
 > AC and Tasks live inside each story file. This table is a planning surface only.
@@ -23,10 +24,14 @@ table, one total, no second scope section** ([CONTEXT D30](../CONTEXT.md)).
 ## Sprint goal recap
 
 [sprint-2026-W34](sprint-2026-W34.md) closed on 2026-08-21 with all 10 rows `done` and
-stated plainly that nothing carries. That is still true at this file's open: the 33 stories
-in `docs/sprints/stories/` are all `done`, and [STATUS.md](STATUS.md) shows `0` at Backlog,
-Ready, In Progress, Review and Blocked. There is therefore no carry-over table to write and
-no `ready` story waiting for pickup.
+stated plainly that nothing carries. That was true at this file's open on 2026-08-24: all
+33 stories in `docs/sprints/stories/` were `done`, and [STATUS.md](STATUS.md) showed `0` at
+Backlog, Ready, In Progress, Review and Blocked. There was therefore no carry-over table to
+write and no `ready` story waiting for pickup.
+
+**Since the open**, US-2.14 was added on 2026-08-25 and sits at `review` pending
+[PR #9](https://github.com/Koniverse/Senti-MCP/pull/9) — 34 stories, one of them not
+`done`. That is mid-window scope, not carry-over.
 
 What is open is not stories. It is six followups from W34's retrospective and two epics with
 no stories assigned — listed under §Open work, unassigned below. None of it is scope until a
@@ -39,8 +44,8 @@ is a starting position in this repo, not a forecast of an empty week.
 
 ## Parked / deferred from W34
 
-**Nothing carried.** No story in the corpus sits at `backlog`, `ready`, `in-progress`,
-`review` or `blocked`.
+**Nothing carried.** No story reached this sprint from W34. The only story in the corpus
+that is not `done` is US-2.14, which was written *in* this window, not carried into it.
 
 - ✅ **Closed in W34** — all 10 rows, 27 points: US-6.1, US-6.2 (EPIC-6);
   US-7.1 → US-7.4 (EPIC-7, closed); US-8.1 → US-8.4 (EPIC-8, closed). Eight releases,

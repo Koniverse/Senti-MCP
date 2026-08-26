@@ -15,6 +15,33 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 Nothing pending.
 
+## [2.8.1] — 2026-08-25 — the API Keys dashboard URL, and what the default base URL actually pairs with
+
+The startup error for a missing `SENTI_API_KEY` sent people to
+`https://stage.sentitrade.xyz/account/api-keys`. It now sends them to
+`https://app.sentitrade.xyz/account/api-keys` — the host the Senti landing pages and
+docs already use — and `README.md` and [SETUP.md](SETUP.md) follow. Functionally the
+two dashboards are interchangeable for this purpose, which is the point of the
+second half of this entry.
+
+What makes the swap safe is that the two hosts are the same front door: the served
+production bundles of `app.sentitrade.xyz` and `stage.sentitrade.xyz` both carry
+`REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"` (checked 2026-08-25), so a key
+from either dashboard is issued by the same backend. The environment-pairing
+warnings in `README.md` and [SETUP.md](SETUP.md) now say that, replacing the older
+"keys are currently issued from the staging dashboard" phrasing, which read as
+though the dashboard host picked the environment.
+
+The warnings otherwise stand as they were: keys are environment-bound, and a `401`
+on a valid-looking key is more often a mismatched `SENTI_API_BASE_URL` than a bad
+key. Whether the default `https://api.sentitrade.xyz` accepts a dashboard-issued key
+is still not established — from outside the deployment it answers every
+unauthenticated probe byte-identically to `be-dev`, which is consistent with one
+origin behind two hostnames but does not prove it. The default is unchanged;
+settling it is a deployment call, not this server's.
+
+No tool, schema or response changed. 673 unit tests pass.
+
 ## [2.8.0] — 2026-08-21 — `compile_draft`, and EPIC-8's close
 
 The tool that closes the loop. `compile_draft` runs the static-safety scan and the MQL5

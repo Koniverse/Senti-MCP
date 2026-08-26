@@ -1,5 +1,5 @@
 export const SERVER_NAME = 'senti-mcp-server';
-export const SERVER_VERSION = '2.8.0';
+export const SERVER_VERSION = '2.8.1';
 const DEFAULT_BASE_URL = 'https://api.sentitrade.xyz';
 const ALLOWED_PROTOCOLS: readonly string[] = ['https:', 'http:'];
 /** Nothing else enables a write. "0", "false" and "no" must not be surprises. */
@@ -22,7 +22,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   if (!apiKey) {
     throw new Error(
       'SENTI_API_KEY is required. Create a key in the Senti API Keys dashboard ' +
-        '(https://stage.sentitrade.xyz/account/api-keys) with the scopes you need, then set ' +
+        '(https://app.sentitrade.xyz/account/api-keys) with the scopes you need, then set ' +
         "SENTI_API_KEY=sq_live_… in the MCP server's env block.",
     );
   }

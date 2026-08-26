@@ -1,8 +1,8 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-08-25 07:25:50 UTC
-> Total stories: 33
+> Last generated: 2026-08-25 08:59:57 UTC
+> Total stories: 34
 
 ## ⏰ Deadlines (0)
 
@@ -20,9 +20,11 @@ _No stories_
 
 _No stories_
 
-## 👀 Review (0)
+## 👀 Review (1)
 
-_No stories_
+| ID | Title | Epic | Pri | Points | Sprint | Assignee |
+|---|---|---|---|---|---|---|
+| US-2.14 | The API Keys dashboard host, and what the default base URL pairs with | EPIC-2 | P2 | 2 | sprint-2026-W35 | jindo9986 |
 
 ## ✅ Done (33)
 
@@ -77,7 +79,7 @@ _No stories_
 - 📋 **Backlog**: 0
 - 🟢 **Ready**: 0
 - 🟡 **In Progress**: 0
-- 👀 **Review**: 0
+- 👀 **Review**: 1
 - ✅ **Done**: 33
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
