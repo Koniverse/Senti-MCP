@@ -25,7 +25,8 @@ docs/
     ├── sprint-2026-W32.md   ← closed
     ├── sprint-2026-W33.md   ← closed (19 stories / 52 points)
     ├── sprint-2026-W34.md   ← closed (10 stories / 27 points; EPIC-7 + EPIC-8)
-    ├── sprint-2026-W35.md   ← the active sprint, opened with no committed scope
+    ├── sprint-2026-W35.md   ← still `planned`, not closed (1 story / 2 points)
+    ├── sprint-2026-W36.md   ← the active sprint, opened with no committed scope
     ├── epics/           ← EPIC-N.md
     └── stories/         ← US-X.Y-<slug>.md (canonical AC + Tasks source)
 
@@ -146,9 +147,12 @@ npx koni-docs --version   # confirm which CLI you actually have
 - [CHANGELOG.md](CHANGELOG.md) — release history
 - [CONTEXT.md](CONTEXT.md) — decision log
 - [sprints/STATUS.md](sprints/STATUS.md) — current kanban (generated)
-- [sprints/sprint-2026-W35.md](sprints/sprint-2026-W35.md) — the active sprint
-  (2026-08-24 → 2026-08-30), opened with no committed scope: nothing carried from W34,
-  and the one scope table takes rows as work arrives ([CONTEXT D21](CONTEXT.md) rule 1)
+- [sprints/sprint-2026-W36.md](sprints/sprint-2026-W36.md) — the active sprint
+  (2026-08-31 → 2026-09-06), opened with no committed scope; the one scope table takes
+  rows as work arrives ([CONTEXT D21](CONTEXT.md) rule 1)
+- [sprints/sprint-2026-W35.md](sprints/sprint-2026-W35.md) — still `planned`, not closed
+  (2026-08-24 → 2026-08-30): 1 story / 2 points, US-2.14 at `review`. Its window elapsed
+  on 2026-08-30; closing it is the maintainer's call ([CONTEXT D21](CONTEXT.md) rule 2)
 - [sprints/sprint-2026-W34.md](sprints/sprint-2026-W34.md) — closed 2026-08-21:
   10 stories / 27 points, EPIC-7 and EPIC-8 both closed, `2.1.0` → `2.8.0`
 - [sprints/sprint-2026-W33.md](sprints/sprint-2026-W33.md) — closed

@@ -261,10 +261,14 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
-- [docs/sprints/sprint-2026-W35.md](docs/sprints/sprint-2026-W35.md) — **the active
-  sprint** (2026-08-24 → 2026-08-30), opened with no committed scope: nothing carried
-  from W34, and the scope table takes rows as work arrives
-  ([CONTEXT D21](docs/CONTEXT.md) rule 1, [D30](docs/CONTEXT.md))
+- [docs/sprints/sprint-2026-W36.md](docs/sprints/sprint-2026-W36.md) — **the active
+  sprint** (2026-08-31 → 2026-09-06), opened with no committed scope; the scope table
+  takes rows as work arrives ([CONTEXT D21](docs/CONTEXT.md) rule 1,
+  [D30](docs/CONTEXT.md))
+- [docs/sprints/sprint-2026-W35.md](docs/sprints/sprint-2026-W35.md) — **still `planned`,
+  not closed** (2026-08-24 → 2026-08-30): 1 story / 2 points, US-2.14 at `review`. Its
+  window elapsed on 2026-08-30; closing it is the maintainer's call
+  ([CONTEXT D21](docs/CONTEXT.md) rule 2)
 - [docs/sprints/sprint-2026-W34.md](docs/sprints/sprint-2026-W34.md) — `closed`
   2026-08-21 (2026-08-17 → 2026-08-23): 10 stories / 27 points, EPIC-7 and EPIC-8 both
   closed, `2.1.0` → `2.8.0`
