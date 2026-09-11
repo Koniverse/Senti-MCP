@@ -3,7 +3,7 @@ id: EPIC-6
 title: "Sprint files as planning surfaces, not narrative"
 status: in-progress
 created: 2026-08-13
-updated: 2026-08-17
+updated: 2026-09-11
 ---
 
 ## Goal
@@ -138,6 +138,8 @@ answers are recorded as written; the two that remain are why this epic is still 
 |---|---|---|---|---|---|
 | [US-6.1](../stories/US-6.1-one-scope-table-per-sprint-file.md) | One scope table per sprint file | P2 | 2 | ✅ done | sprint-2026-W34 |
 | [US-6.2](../stories/US-6.2-remove-the-relocated-plan-block.md) | Remove W33's relocated plan block | P2 | 1 | ✅ done | sprint-2026-W34 |
+| [US-6.3](../stories/US-6.3-resolve-native-plan-blocks-in-w32-w33.md) | Resolve native plan and dependency sections in W32 and W33 | P2 | 1 | 🟢 ready | sprint-2026-W37 |
+| [US-6.4](../stories/US-6.4-sprint-file-convention-check.md) | Automated sprint file convention check | P2 | 2 | 🟢 ready | sprint-2026-W37 |
 
 Scope agreed with the maintainer on 2026-08-13: the convention itself, plus the retrofit of
 **both** [W32](../sprint-2026-W32.md) and [W33](../sprint-2026-W33.md). Leaving W32 behind
@@ -171,18 +173,16 @@ block and no further.
 
 ### What remains, and why the epic stays open
 
-**Question 5, and the rest of question 3.**
+**Question 5, and the rest of question 3 — now scheduled in [sprint-2026-W37](../sprint-2026-W37.md).**
 
-Question 3's remainder is W33's and W32's own §Phased plan and §Dependencies sections —
-short, and written for the sprint they sit in rather than relocated into it. D31 declined to
-fold them into the same ruling, so they need their own.
+- **Question 3's remainder** is owned by [US-6.3](../stories/US-6.3-resolve-native-plan-blocks-in-w32-w33.md):
+  W33's and W32's own §Phased plan and §Dependencies sections are audited and removed once surviving
+  copies in implementation plans and stories are proven, with a CONTEXT entry extending D31.
+- **Question 5** is owned by [US-6.4](../stories/US-6.4-sprint-file-convention-check.md):
+  an automated checker script (`scripts/check-sprint-files.mjs`) ensuring that future sprint files
+  cannot violate the single-scope-table rule or introduce forbidden narrative sections.
 
-Question 5 has not moved at all. [D30](../../CONTEXT.md) and [D31](../../CONTEXT.md) are
-prose. Nothing in this repository fails if the next sprint file grows a second scope table or
-a plan of its own, which is the same posture that let a relocated 127-line register sit in
-W33 for a week without anyone deciding it should.
-
-Unassigned to a sprint. Scheduling is the maintainer's ([CONTEXT D21](../../CONTEXT.md)).
+Once US-6.3 and US-6.4 complete, all five questions will be answered and this epic can close `done`.
 
 ## Cross-references
 

@@ -3,22 +3,19 @@ id: sprint-2026-W37
 status: planned
 start: 2026-09-07
 end: 2026-09-13
-goal: 'No committed scope at open — W35 and W36 both closed on this file''s first day and the corpus holds no open story, so work that arises this week joins the one scope table below as a row'
+goal: 'No committed scope at open — W35 and W36 both closed on this file''s first day and the corpus holds no open story; mid-window scope added 2026-09-11 commits to closing EPIC-6 with US-6.3 and US-6.4'
 ---
 
 ## Sprint scope
 
-| US | Title | Epic | Pri | Points | Status | Story file |
-| -- | ----- | ---- | --- | ------ | ------ | ---------- |
+| US     | Title                                                                          | Epic   | Pri | Points | Status   | Story file                                                     |
+| ------ | ------------------------------------------------------------------------------ | ------ | --- | ------ | -------- | -------------------------------------------------------------- |
+| US-6.3 | Resolve native plan and dependency sections in W32 and W33 *(added 2026-09-11)* | EPIC-6 | P2  | 1      | 🟢 ready | [link](stories/US-6.3-resolve-native-plan-blocks-in-w32-w33.md) |
+| US-6.4 | Automated sprint file convention check *(added 2026-09-11)*                    | EPIC-6 | P2  | 2      | 🟢 ready | [link](stories/US-6.4-sprint-file-convention-check.md)         |
 
-**Total: 0 stories / 0 points.** This sprint opens empty, and for the first time in four
-weeks that is because the corpus is genuinely clean: all 34 stories in [stories/](stories/)
-read `status: done`, and [STATUS.md](STATUS.md) shows `0` at Backlog, Ready, In Progress,
-Review and Blocked. There is no `ready` story waiting for pickup, so nothing was available
-to commit to this window without writing a new story first. Scope is not frozen
-([CONTEXT D21](../CONTEXT.md) rule 1) — work that arises this week is appended here as a row
-annotated `_(added YYYY-MM-DD)_`, with the sprint `goal:` extended by a clause. **One table,
-one total, no second scope section** ([CONTEXT D30](../CONTEXT.md)).
+**Total: 2 stories / 3 points.** Opened empty on 2026-09-07; two stories joined mid-window on
+2026-09-11 under [CONTEXT D21](../CONTEXT.md) rule 1 to resolve the remaining open questions of
+[EPIC-6](epics/EPIC-6.md). **One table, one total, no second scope section** ([CONTEXT D30](../CONTEXT.md)).
 
 > AC and Tasks live inside each story file. This table is a planning surface only.
 
@@ -94,10 +91,8 @@ unchanged from W36's open, which is itself the point of the last bullet in
   (re-checked at open). PR #8 carried EPIC-8's 14 points into `main` and PR #9 carried
   `2.8.1`, neither through a typecheck, test or build gate. W33 called this "the
   highest-value unbuilt thing in this repo".
-- **[EPIC-6](epics/EPIC-6.md) stays `in-progress` on questions 3 and 5.** Question 5 — *is
-  the convention enforced by anything, or is it prose?* — is still unanswered: nothing in the
-  repository fails if the next sprint file grows a second scope table. It is the only epic
-  not `done` apart from the placeholder [EPIC-3](epics/EPIC-3.md).
+- **[EPIC-6](epics/EPIC-6.md) remaining questions 3 and 5 are now assigned to W37 as [US-6.3](stories/US-6.3-resolve-native-plan-blocks-in-w32-w33.md) and [US-6.4](stories/US-6.4-sprint-file-convention-check.md).**
+  Once both stories complete, EPIC-6 will close as `done`.
 - **Ten [CONTEXT](../CONTEXT.md) entries still read `(planned)` on a version that has
   shipped** — D32, D33, and D36 → D43. Count re-checked at open: still ten. Two further
   entries read `2.4.0 (unreleased)` for a version that also shipped. Whoever clears them
