@@ -1,8 +1,8 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-09-11 08:49:22 UTC
-> Total stories: 36
+> Last generated: 2026-09-11 09:07:57 UTC
+> Total stories: 35
 
 ## ⏰ Deadlines (0)
 
@@ -12,12 +12,11 @@ _No stories carry an explicit deadline._
 
 _No stories_
 
-## 🟢 Ready (2)
+## 🟢 Ready (1)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
-| US-6.3 | Resolve native plan and dependency sections in W32 and W33 | EPIC-6 | P2 | 1 | sprint-2026-W37 | bluezdot |
-| US-6.4 | Automated sprint file convention check | EPIC-6 | P2 | 2 | sprint-2026-W37 | bluezdot |
+| US-6.3 | Sprint file convention cleanup and automated enforcement | EPIC-6 | P2 | 3 | sprint-2026-W37 | bluezdot |
 
 ## 🟡 In Progress (0)
 
@@ -79,7 +78,7 @@ _No stories_
 ## Summary
 
 - 📋 **Backlog**: 0
-- 🟢 **Ready**: 2
+- 🟢 **Ready**: 1
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0
 - ✅ **Done**: 34
