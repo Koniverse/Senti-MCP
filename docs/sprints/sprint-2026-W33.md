@@ -77,42 +77,6 @@ reason it fit there: the design spec and plan carry every implementation decisio
 schemas, error branches, payload policy — so these six stories are closer to
 transcription-with-verification than to open design.
 
-## Phased plan
-
-1. **Phase 1 — Substrate** (\~2.5 days): US-2.4. `core/` + `tools/<tag>/` layout;
-   `registerReadTool` and `parseOrThrow`; `client.get`'s `query` option, `accountPath`,
-   and the dedicated `404`/`409` branches; `list_accounts` migrated onto the helper with
-   no behaviour change; table-driven invariant tests; the operation-count correction,
-   three new `CONTEXT.md` decisions, and the five-scope documentation update. Ships
-   `0.2.0`.
-2. **Phase 2 — First tools on the new substrate** (\~1 day): US-2.5 `list_brokers`
-   (`0.3.0`), US-2.6 `list_strategies` (`0.4.0`) — neither takes a path parameter, so
-   both prove `registerReadTool` before any story has to prove `accountPath` too.
-3. **Phase 3 — First path parameter** (\~1 day): US-2.7 `list_account_strategies`
-   (`0.5.0`) — the first tool that routes through `accountPath` and the `404` login/id
-   hint.
-4. **Phase 4 — Terminal-backed pair** (\~1 day): US-2.8 `list_positions` (`0.6.0`),
-   US-2.9 `list_pending_orders` (`0.7.0`) — the first tools carrying the `409`
-   terminal-offline branch, the "empty is a real zero" distinction, and the 200-row
-   truncation cap. US-2.9's close is this sprint's close.
-
-Phases are ordered by dependency, not calendar. Phase 1 cannot start before it, since
-every later story consumes what it substrates.
-
-## Dependencies and sequencing constraints
-
-- **US-2.4 blocks all five tool stories.** Each of US-2.5 through US-2.9 registers
-  through `registerReadTool` and (from US-2.7 onward) builds its path with
-  `accountPath` — neither exists before US-2.4 lands.
-- **US-2.5 and US-2.6 have no path parameter.** They are the cheapest possible proof
-  that a tool can be registered on the new substrate at all.
-- **US-2.7 is the first story with a path parameter.** It is where `accountPath`'s
-  traversal-rejection and the `404` login/id hint (both built in US-2.4) are exercised
-  against a live threat model for the first time.
-- **US-2.8 and US-2.9 are the terminal-backed pair.** Both read through to the MT5
-  terminal and both need the `409`/`conflictMeans` branch US-2.4 built for exactly this
-  case; US-2.9 reuses the pattern US-2.8 establishes rather than re-deriving it.
-
 ## Retrospective
 
 > **Scope of this retrospective: Phase 1 only.** Written 2026-08-07 and left as written.

@@ -1,7 +1,7 @@
 ---
 id: EPIC-6
 title: "Sprint files as planning surfaces, not narrative"
-status: in-progress
+status: done
 created: 2026-08-13
 updated: 2026-09-11
 ---
@@ -138,7 +138,7 @@ answers are recorded as written; the two that remain are why this epic is still 
 |---|---|---|---|---|---|
 | [US-6.1](../stories/US-6.1-one-scope-table-per-sprint-file.md) | One scope table per sprint file | P2 | 2 | ✅ done | sprint-2026-W34 |
 | [US-6.2](../stories/US-6.2-remove-the-relocated-plan-block.md) | Remove W33's relocated plan block | P2 | 1 | ✅ done | sprint-2026-W34 |
-| [US-6.3](../stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md) | Sprint file convention cleanup and automated enforcement | P2 | 3 | 🟢 ready | sprint-2026-W37 |
+| [US-6.3](../stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md) | Sprint file convention cleanup and automated enforcement | P2 | 3 | ✅ done | sprint-2026-W37 |
 
 Scope agreed with the maintainer on 2026-08-13: the convention itself, plus the retrofit of
 **both** [W32](../sprint-2026-W32.md) and [W33](../sprint-2026-W33.md). Leaving W32 behind
@@ -170,17 +170,28 @@ the sprint itself, plus four retrospectives.
 removing prose**, given the surviving copy is named. It is extended to this one relocated
 block and no further.
 
-### What remains, and why the epic stays open
+### What US-6.3 closed, and EPIC-6 closeout (2026-09-11)
 
-**Question 5, and the rest of question 3 — now scheduled in [sprint-2026-W37](../sprint-2026-W37.md).**
+[US-6.3](../stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md) settled both
+remaining questions, closing this epic:
 
-Both remaining items are owned by [US-6.3](../stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md):
-- **Question 3's remainder**: W33's and W32's own §Phased plan and §Dependencies sections are audited and
-  removed once surviving copies in implementation plans and stories are proven, with a CONTEXT entry extending D31.
-- **Question 5**: An automated checker script (`scripts/check-sprint-files.mjs`) ensuring that future sprint files
-  cannot violate the single-scope-table rule or introduce forbidden narrative sections.
+1. **Question 3's remainder**: W32 and W33's native `## Phased plan` and `## Dependencies and sequencing constraints`
+   sections were audited and safely removed. All technical sequencing survives in the original implementation
+   plans ([v1 plan](../../superpowers/plans/2026-08-05-senti-mcp-server-v1.md), [W33 plan](../../superpowers/plans/2026-08-06-senti-read-tools-w33.md)),
+   [EPIC-1](EPIC-1.md), [EPIC-2](EPIC-2.md), and story files US-1.1 through US-2.9. Unique day estimates were dropped
+   on the record ([CONTEXT D47](../../CONTEXT.md)).
+2. **Question 5**: Structure conventions are programmatically enforced via `scripts/check-sprint-files.mjs`
+   and registered as `npm run agile:check-sprints` in `package.json`. It guarantees that every `docs/sprints/sprint-*.md`
+   file has exactly one scope table, valid headers, and no prohibited narrative sections.
 
-Once US-6.3 completes, all five questions will be answered and this epic will close `done`.
+All five questions of this epic are now answered:
+- Q1 (table content): Settled by US-6.1 / D30.
+- Q2 (closed-record rule): Settled by US-6.1 / D30 & US-6.2 / D31.
+- Q3 (displaced content): Settled by US-6.2 / D31 & US-6.3 / D47.
+- Q4 (retrospectives stay): Settled by US-6.1 / D30.
+- Q5 (automated enforcement): Settled by US-6.3 / D47.
+
+**EPIC-6 closed `done` on 2026-09-11.**
 
 ## Cross-references
 

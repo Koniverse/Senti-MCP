@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-09-11 09:07:57 UTC
+> Last generated: 2026-09-11 10:50:08 UTC
 > Total stories: 35
 
 ## ⏰ Deadlines (0)
@@ -12,11 +12,9 @@ _No stories carry an explicit deadline._
 
 _No stories_
 
-## 🟢 Ready (1)
+## 🟢 Ready (0)
 
-| ID | Title | Epic | Pri | Points | Sprint | Assignee |
-|---|---|---|---|---|---|---|
-| US-6.3 | Sprint file convention cleanup and automated enforcement | EPIC-6 | P2 | 3 | sprint-2026-W37 | bluezdot |
+_No stories_
 
 ## 🟡 In Progress (0)
 
@@ -26,7 +24,7 @@ _No stories_
 
 _No stories_
 
-## ✅ Done (34)
+## ✅ Done (35)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
@@ -56,6 +54,7 @@ _No stories_
 | US-5.4 | Decide TypeScript 7, and say why either way | EPIC-5 | P3 | 2 | sprint-2026-W33 | bluezdot |
 | US-6.1 | One scope table per sprint file | EPIC-6 | P2 | 2 | sprint-2026-W34 | bluezdot |
 | US-6.2 | Remove W33's relocated plan block | EPIC-6 | P2 | 1 | sprint-2026-W34 | bluezdot |
+| US-6.3 | Sprint file convention cleanup and automated enforcement | EPIC-6 | P2 | 3 | sprint-2026-W37 | bluezdot |
 | US-7.1 | Authoring substrate and get_authoring_conventions tool | EPIC-7 | P1 | 3 | sprint-2026-W34 | bluezdot |
 | US-7.2 | get_draft tool | EPIC-7 | P1 | 2 | sprint-2026-W34 | bluezdot |
 | US-7.3 | list_drafts tool | EPIC-7 | P1 | 3 | sprint-2026-W34 | bluezdot |
@@ -78,10 +77,10 @@ _No stories_
 ## Summary
 
 - 📋 **Backlog**: 0
-- 🟢 **Ready**: 1
+- 🟢 **Ready**: 0
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0
-- ✅ **Done**: 34
+- ✅ **Done**: 35
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 

@@ -45,35 +45,6 @@ verbatim — schemas, tests, and error-mapping tables included — so US-2.x is 
 transcription with verification than to design. If it does not fit, US-2.3 carries to
 W33; it is the only story here nothing else depends on.
 
-## Phased plan
-
-1. **Phase 1 — Documentation framework** (\~1 day): US-1.1. Skill vendored, CLI wired,
-   corpus created, `AGENTS.md` / `CLAUDE.md` in place, `STATUS.md` generating and
-   `validate` green.
-2. **Phase 2 — Substrate** (\~1.5 days): US-2.1. `config.ts`, `errors.ts`, `client.ts`
-   and their 27 tests. Nothing MCP-aware yet.
-3. **Phase 3 — The tool** (\~1.5 days): US-2.2. `accounts.ts`, `server.ts`, `index.ts`
-   and their 25 tests. First runnable server.
-4. **Phase 4 — Proof and release** (\~1 day): US-2.3. Live smoke test against the
-   development API, README, LICENSE, then the `[0.1.0]` CHANGELOG entry with `VERSION`
-   in the same commit and all stories flipped to done.
-
-Phases are ordered by dependency, not calendar. Phase 2 cannot start before Phase 1
-without breaking the reason Phase 1 exists.
-
-## Dependencies and sequencing constraints
-
-- **US-2.1 → US-2.2 → US-2.3** is a hard chain. US-2.2 consumes `createClient` and
-  `describeError`; US-2.3 exercises the whole stack against the live API.
-- **US-1.1 blocks nothing technically** but gates the workflow: from its landing
-  onward, every commit in this sprint carries its doc update.
-- **US-2.3 needs a real API key** with the `accounts:read` scope in a gitignored
-  `.env.local`. Without it the smoke test skips rather than fails, so the story can
-  start before the key exists but cannot close.
-- **`package.json` is created by US-1.1, not US-2.1.** The v1 plan's Task 1 originally
-  said "create" it; US-1.1 amends that step to extend it. Reverting to "create" would
-  silently drop the koni-docs devDependency.
-
 ## Retrospective
 
 All four stories closed inside the single week, at the full 15 points, with v0.1.0

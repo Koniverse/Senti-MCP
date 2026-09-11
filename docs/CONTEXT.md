@@ -2546,3 +2546,51 @@ as authored — the §Sprint close sections are the amendment, never a rewrite (
 
 **Date**: 2026-09-07
 **Version**: unreleased (documentation only)
+
+### D47. Remove native plan and dependency sections in W32 and W33, and automate sprint file convention checks
+
+**Context**: [EPIC-6](sprints/epics/EPIC-6.md) opened on 2026-08-13 to establish sprint files as
+planning surfaces rather than narratives. [US-6.1](sprints/stories/US-6.1-one-scope-table-per-sprint-file.md)
+answered questions 1, 2, and 4 for scope tables ([D30](#d30-a-sprint-file-carries-one-scope-table-mid-sprint-scope-is-a-row-not-a-section)).
+[US-6.2](sprints/stories/US-6.2-remove-the-relocated-plan-block.md) answered question 3 for W33's
+relocated 127-line Phase 3 plan block ([D31](#d31-a-sprint-file-carries-no-plan-of-its-own-w33s-relocated-phase-3-plan-is-removed)),
+proving its content survived elsewhere. However, two questions remained open:
+1. Question 3's remainder: W32's and W33's own `## Phased plan` and `## Dependencies and sequencing constraints`
+   sections were written natively for those sprints rather than moved in, and D31 declined to fold them
+   into its ruling.
+2. Question 5: Structure conventions remained prose. Nothing programmatically prevented future sprint files
+   from regressing into multiple scope tables or reintroducing narrative planning sections.
+
+**Decision**:
+1. **Remove native `## Phased plan` and `## Dependencies and sequencing constraints` from both
+   [sprint-2026-W32](sprints/sprint-2026-W32.md) and [sprint-2026-W33](sprints/sprint-2026-W33.md)**.
+   Extending D31's ruling, all technical details and sequencing rationale survive in the original design
+   and implementation plans ([v1 plan](superpowers/plans/2026-08-05-senti-mcp-server-v1.md),
+   [W33 plan](superpowers/plans/2026-08-06-senti-read-tools-w33.md)), [EPIC-1](sprints/epics/EPIC-1.md),
+   [EPIC-2](sprints/epics/EPIC-2.md), and story files US-1.1 through US-2.9. The plan-time day estimates
+   (`~1 day`, `~2.5 days`, etc.) were ephemeral estimates and are dropped on the record.
+2. **Automate structure enforcement via `scripts/check-sprint-files.mjs`**, registered as
+   `npm run agile:check-sprints` in `package.json`. The script validates that every file matching
+   `docs/sprints/sprint-*.md`:
+   - Contains exactly one `## Sprint scope` section with a valid markdown table.
+   - Contains zero prohibited narrative sections (`## Phased plan`, `## Dependencies and sequencing constraints`,
+     `## Risks & dependencies`, or `## Phase \d+ — plan`).
+   - Annotates mid-sprint additions with `_(added YYYY-MM-DD)_` or `*(added YYYY-MM-DD)*`.
+3. **Close [EPIC-6](sprints/epics/EPIC-6.md) as `done`**, with all five opening questions resolved.
+
+**Rationale**: Sprint files from W34 onward have demonstrated that planning narrative belongs in specs,
+plans, and story breakdowns, while the sprint file acts as a clean, rapid-read container of delivered scope
+and retrospective findings. Leaving W32 and W33 with inlined plan sections violated the cross-cutting
+invariant that every sprint file ends in the same shape. Backing the convention with an automated script
+answers Question 5 definitively: requirements in prose drift silently unless defended by tooling.
+
+**Impact**:
+- `sprint-2026-W32.md` reduced by 29 lines (no retrospective or scope altered).
+- `sprint-2026-W33.md` reduced by 36 lines (down to 408 lines; retrospectives and scope preserved).
+- `scripts/check-sprint-files.mjs` added; `package.json` gained `agile:check-sprints` script.
+- `docs/sprints/epics/EPIC-6.md` closed `done`.
+- `docs/sprints/stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md` flipped to `done`.
+
+**Date**: 2026-09-11
+**Version**: unreleased (tooling and documentation only)
+

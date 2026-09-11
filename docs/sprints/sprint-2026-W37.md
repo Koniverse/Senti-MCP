@@ -10,7 +10,7 @@ goal: 'No committed scope at open — W35 and W36 both closed on this file''s fi
 
 | US     | Title                                                                                   | Epic   | Pri | Points | Status   | Story file                                                              |
 | ------ | --------------------------------------------------------------------------------------- | ------ | --- | ------ | -------- | ----------------------------------------------------------------------- |
-| US-6.3 | Sprint file convention cleanup and automated enforcement *(added 2026-09-11)*           | EPIC-6 | P2  | 3      | 🟢 ready | [link](stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md) |
+| US-6.3 | Sprint file convention cleanup and automated enforcement *(added 2026-09-11)*           | EPIC-6 | P2  | 3      | ✅ done | [link](stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md) |
 
 **Total: 1 story / 3 points.** Opened empty on 2026-09-07; one story joined mid-window on
 2026-09-11 under [CONTEXT D21](../CONTEXT.md) rule 1 to resolve the remaining open questions of
@@ -90,8 +90,8 @@ unchanged from W36's open, which is itself the point of the last bullet in
   (re-checked at open). PR #8 carried EPIC-8's 14 points into `main` and PR #9 carried
   `2.8.1`, neither through a typecheck, test or build gate. W33 called this "the
   highest-value unbuilt thing in this repo".
-- **[EPIC-6](epics/EPIC-6.md) remaining questions 3 and 5 are now assigned to W37 as [US-6.3](stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md).**
-  Once it completes, EPIC-6 will close as `done`.
+- **[EPIC-6](epics/EPIC-6.md) closed `done` on 2026-09-11 via [US-6.3](stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md).**
+  W32 & W33 legacy narrative sections removed and sprint file conventions automated via `npm run agile:check-sprints` ([CONTEXT D47](../CONTEXT.md)).
 - **Ten [CONTEXT](../CONTEXT.md) entries still read `(planned)` on a version that has
   shipped** — D32, D33, and D36 → D43. Count re-checked at open: still ten. Two further
   entries read `2.4.0 (unreleased)` for a version that also shipped. Whoever clears them
