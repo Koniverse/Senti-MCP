@@ -428,3 +428,52 @@ outlives a delete.
 are about tests that report on something other than what the author meant. This is the same
 failure one layer out — a *design* reasoning about a behaviour it had assumed rather than
 observed. In all three the fix is identical: run the thing and read what actually happened.
+
+---
+
+## 10. A story's `status:` is the one field in the corpus with no reader — it stayed wrong for twelve days and nothing failed
+
+**Trap**: [US-2.14](sprints/stories/US-2.14-api-keys-dashboard-host.md) shipped `2.8.1` on
+2026-08-25 and PR #9 merged on 2026-08-26. Its story file sat at `status: review` with an
+empty `version_shipped:` until 2026-09-07 — twelve days — while every other layer said
+`done`: the CHANGELOG entry was in, all Tasks were `[x]`, the tag was pushed, the code was
+on `main`. The §3c checklist had no outstanding item; the flip was simply never made. The
+cost was not the field. It was that [sprint-2026-W35](sprints/sprint-2026-W35.md) could not
+close while one row was open, [sprint-2026-W36](sprints/sprint-2026-W36.md) had to be opened
+over a still-live W35, and W36 then spent a §Parked section auditing a hand-off that did not
+exist ([CONTEXT D46](CONTEXT.md)).
+
+**Why**: nothing reads `status:`. `npm run agile:validate` exits `0` with a shipped story at
+`review` — verified by putting the field back and re-running it:
+
+```bash
+# with status: review and version_shipped: empty, on a story whose 2.8.1 shipped 12 days ago
+npx koni-docs validate --docs-path docs/   # ✓ all references resolve — exit 0
+```
+
+`validate` checks the ID graph and that references resolve. It does not ask whether a story
+claiming `review` has a CHANGELOG entry, a `version_shipped`, or a merged PR behind it —
+and it cannot, because "shipped" is not a fact any of these files hold. `koni-docs status`
+faithfully renders the wrong value into a kanban column, which makes the board *look*
+maintained. Meanwhile the four other layers are either generated (STATUS.md), enforced by a
+test (`VERSION` / `package.json` / `SERVER_VERSION`), or gated (`npm run release:check`).
+The story's own status field is the only one held by hand with nothing downstream that
+breaks when it is wrong.
+
+**How to avoid**:
+- **Flip the story in the commit that ships the code, not after the merge.** RULE-10 already
+  says mark tasks `[x]` as you go; the frontmatter is the same discipline one field up. The
+  merge is the wrong moment because by then the PR is closed and nothing brings you back.
+- **When a sprint will not close, suspect the story file before the sprint file.** The
+  symptom shows up a layer away from the cause — an open sprint, a §Parked section, a second
+  sprint opened on top. All three here traced to two frontmatter lines.
+- **Do not read a green `validate` as "the corpus is consistent."** It proves references
+  resolve. The 5-layer check in `sprint-system.md` is the thing that would have caught this,
+  and it is a human checklist, not a command.
+
+**Pattern**: this is [entry 4](#4-a-version-string-that-nothing-reads-drifts-silently--package-lockjson-was-eight-releases-behind)
+one artifact over, and the third occurrence of the shape — W34's retrospective already
+recorded status columns in a sprint and an epic file going stale inside a day, and called it
+"the identical failure one artifact over" at the time. **A field whose wrongness cannot
+break anything is the field that stays wrong the longest.** Both fixes to date were the
+same: give it a reader, or move it into the step that already has one.

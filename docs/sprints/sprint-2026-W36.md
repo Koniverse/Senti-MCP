@@ -1,6 +1,6 @@
 ---
 id: sprint-2026-W36
-status: planned
+status: closed
 start: 2026-08-31
 end: 2026-09-06
 goal: 'No committed scope at open — W35 is still open behind this one and nothing has been committed since 2026-08-26, so work that arises this week joins the one scope table below as a row'
@@ -111,27 +111,89 @@ item below was re-verified against the working tree at this file's open.
 
 ## Retrospective
 
-<!-- Filled on sprint close by the maintainer (CONTEXT D21 rule 2). -->
+**One retrospective, written at the close on 2026-09-07, measuring an empty scope table.**
+It is the first sprint in this repo to close with nothing in it, and the honest version of
+that is short.
 
 ### What went well
 
-- TBD
+- **The file refused to paper over W35, and that is why this close needed no archaeology.**
+  It stated plainly that W35's window had elapsed while its `status:` still read `planned`,
+  declined to close it, and wrote the overlap down instead of smoothing it away. It then
+  enumerated the two open lifecycle decisions — close W35 or leave it open; flip US-2.14 or
+  keep it at `review` — with the §3c evidence for the second already gathered. Both were
+  answerable on 2026-09-07 by reading this section, which is the whole value of having
+  written it.
+- **US-2.14 was kept out of this file's scope table on purpose.** Its `sprint:` frontmatter
+  read `sprint-2026-W35` and moving it would have rewritten an open sprint's scope. That
+  restraint is what let W35 close carrying its own row a week later, rather than the two
+  files arguing over one story.
+- **The §Parked audit was verified against story frontmatter and [STATUS.md](STATUS.md),
+  not against W35's own text**, and it was right on every count — 34 stories, 33 `done`,
+  one at `review`, `version_shipped:` empty. That it took a hand audit to surface is
+  [LESSONS 10](../LESSONS.md) — no command in this repo reports it.
 
 ### What didn't
 
-- TBD
+- **Zero stories, zero points, zero releases.** The one commit inside the window,
+  `52da7f9` on 2026-09-04, is this file's own creation. Nothing else happened between
+  2026-08-31 and 2026-09-06; `VERSION` entered and left the window at `2.8.1`. The repo's
+  three previous empty opens each absorbed work (W34 took 10 stories, W35 took 1); this one
+  did not, and calling it anything but an empty sprint would be fiction.
+- **It was opened on day 5 of its own 7-day window** — the same lateness it diagnosed in
+  W35 one paragraph earlier. The file described the pattern accurately and then repeated it.
+- **Two sprints were live simultaneously for the entire window.**
+  [CONTEXT D21](../CONTEXT.md) rule 1 permits it and nothing broke, but the cost was a
+  §Parked section that had to explain a hand-off which was not one, and a reader who had to
+  hold two open windows in mind to know where a story lived.
+- **Every carried item came out unchanged.** All eight §Open work entries went in on 09-04
+  and none moved: `register` still unowned, no write tool ever run against production,
+  still nothing on a pull request, D45's one `curl` still unmade,
+  [EPIC-6](epics/EPIC-6.md) still `in-progress` on questions 3 and 5, ten CONTEXT entries
+  still `(planned)`, the MT5 gaps into their seventh sprint,
+  [EPIC-3](epics/EPIC-3.md) still `backlog`.
 
 ### Followups
 
-- TBD
+- **§Open work, unassigned carries to [W37](sprint-2026-W37.md) verbatim** — eight items,
+  none owned by a story, none touched this window.
+- **Three consecutive opens with no committed scope, and this one shipped nothing.** Two of
+  the three worked because scope arrived mid-window; this one had none arrive. Whether that
+  is a planning cadence to fix or an accurate reading of a repo whose four shipped epics are
+  all closed is worth deciding once — the standing backlog is eight unowned items, two of
+  which are epics carrying no stories at all ([EPIC-6](epics/EPIC-6.md) `in-progress`,
+  [EPIC-3](epics/EPIC-3.md) `backlog`). Promoting even one of them into a story would give
+  W37 something to commit to at open.
+
+## Sprint close — 2026-09-07
+
+Closed by the maintainer on 2026-09-07, **one day after the window elapsed on 2026-09-06**,
+together with [W35](sprint-2026-W35.md) and alongside the open of
+[W37](sprint-2026-W37.md) ([CONTEXT D46](../CONTEXT.md)).
+
+**0 stories / 0 points. No release, no decision, no lesson, one commit — this file.** The
+first sprint in the repo to close empty, and it is closed rather than merged into a
+neighbour or quietly deleted: the window existed and produced nothing, and the record says
+so.
+
+**Both open lifecycle decisions above are now answered**, in the direction §Parked
+anticipated. W35 is `closed` with its retrospective written and US-2.14 as its one `done`
+row at `2.8.1`. This file gains no rows in the process — it recorded US-2.14 as carried
+"only in the informal sense" and that is exactly how it stays.
+
+**Nothing carries as scope**, because nothing was ever committed. What carries is §Open
+work, unassigned — eight items, unchanged from the day this file opened — into
+[W37](sprint-2026-W37.md).
 
 ## Cross-references
 
-- [sprint-2026-W35](sprint-2026-W35.md) — prior sprint, **still `planned` and not closed**; its §Open work is this file's §Open work
+- [sprint-2026-W35](sprint-2026-W35.md) — prior sprint; `planned` and open throughout this window, closed 2026-09-07 on the same day as this file. Its §Open work is this file's §Open work
 - [STATUS.md](STATUS.md) — generated kanban (RULE-5, never hand-edited)
 - [CONTEXT D21](../CONTEXT.md) — scope stays open all week; only the maintainer opens or closes a sprint
 - [CONTEXT D30](../CONTEXT.md) — one scope table per sprint file; mid-sprint scope is a row, not a section
 - [CONTEXT D45](../CONTEXT.md) — the dashboard host, and the base-URL pairing left unverified
-- [US-2.14](stories/US-2.14-api-keys-dashboard-host.md) — `review`, assigned to W35, shipped as `2.8.1`
+- [US-2.14](stories/US-2.14-api-keys-dashboard-host.md) — shipped as `2.8.1`; at `review` throughout this window, flipped `done` under W35 on 2026-09-07
 - [EPIC-6](epics/EPIC-6.md) — `in-progress`, questions 3 and 5 · [EPIC-3](epics/EPIC-3.md) — `backlog`, the trading write path
-- [CHANGELOG](../CHANGELOG.md) — `2.8.1` is the version this sprint opens on
+- [CHANGELOG](../CHANGELOG.md) — `2.8.1` is the version this sprint opens **and** closes on
+- [sprint-2026-W37](sprint-2026-W37.md) — successor sprint, opened 2026-09-07
+- [CONTEXT D46](../CONTEXT.md) — closing W35 and W36 together, and where US-2.14's credit lands

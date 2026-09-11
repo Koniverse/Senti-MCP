@@ -3,7 +3,7 @@ id: EPIC-2
 title: "Read-only Senti Quant access over MCP"
 status: done
 created: 2026-08-05
-updated: 2026-08-25
+updated: 2026-09-07
 ---
 
 ## Goal
@@ -122,7 +122,7 @@ most likely to break by copying an earlier one:
 | [US-2.11](../stories/US-2.11-list-deals-tool.md) | `list_deals` tool | P1 | 3 | ✅ done (v1.2.0) | — |
 | [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md) | `get_performance_breakdowns` tool | P1 | 3 | ✅ done (v1.3.0) | — |
 | [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | `get_equity_timeseries` tool, and EPIC-2's close | P1 | 3 | ✅ done (v1.4.0) | — |
-| [US-2.14](../stories/US-2.14-api-keys-dashboard-host.md) | The API Keys dashboard host, and what the default base URL pairs with | P2 | 2 | 🔍 review (v2.8.1) | — |
+| [US-2.14](../stories/US-2.14-api-keys-dashboard-host.md) | The API Keys dashboard host, and what the default base URL pairs with | P2 | 2 | ✅ done (v2.8.1) | — |
 
 The version in each Status cell is where that story *first* shipped
 ([CONTEXT D14](../../CONTEXT.md)). The last four rows have an empty Plan tasks column

@@ -2,14 +2,14 @@
 id: US-2.14
 title: "The API Keys dashboard host, and what the default base URL pairs with"
 epic: EPIC-2
-status: review
+status: done
 priority: P2
 points: 2
 sprint: sprint-2026-W35
 assignee: jindo9986
 created: 2026-08-25
-updated: 2026-08-25
-version_shipped:
+updated: 2026-09-07
+version_shipped: 2.8.1
 depends_on: [US-2.3]
 ---
 

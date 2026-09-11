@@ -2473,3 +2473,76 @@ story. Either way, supersede this entry with a revision rather than editing it
 
 **Date**: 2026-08-25
 **Version**: 2.8.1
+
+---
+
+## Phase 16 — Sprint lifecycle reconciliation (2026-09-07)
+
+### D46. Close W35 and W36 together; US-2.14's credit stays with W35, and an empty sprint closes empty
+
+**Context**: [sprint-2026-W36](sprints/sprint-2026-W36.md) was opened on 2026-09-04 over a
+still-live [sprint-2026-W35](sprints/sprint-2026-W35.md), and said so rather than papering
+over it. It listed two open lifecycle decisions and left both to the maintainer
+([D21](#d21-a-sprints-scope-stays-open-only-the-maintainer-opens-or-closes-one) rule 2):
+close W35 or leave it open, and flip [US-2.14](sprints/stories/US-2.14-api-keys-dashboard-host.md)
+to `done` or keep it at `review`. Both had been outstanding since 2026-08-26, when PR #9
+merged. The story's code shipped as `2.8.1` on 2026-08-25 with its CHANGELOG entry and all
+Tasks `[x]`; only its own `status:` and `version_shipped:` were never updated. W36's own
+window then elapsed on 2026-09-06 having produced one commit — the file that created it.
+
+**Decision**: four parts, taken as one act on 2026-09-07.
+
+1. **Close W35**, retrospective written, `status: closed`, its one row `✅ done` — the
+   sprint-table convention, with the version carried by the
+   [EPIC-2](sprints/epics/EPIC-2.md) row rather than repeated here.
+2. **Flip US-2.14 to `done`** with `version_shipped: 2.8.1`, and **credit it to W35** — its
+   `sprint:` frontmatter has read `sprint-2026-W35` since it was written and does not move.
+3. **Close W36 as an empty sprint** — `0 stories / 0 points`, `status: closed`, with a
+   retrospective that says so. It is not merged into a neighbour, back-filled with W35's
+   row, or deleted.
+4. **Open [sprint-2026-W37](sprints/sprint-2026-W37.md)** for 2026-09-07 → 2026-09-13, with
+   no committed scope.
+
+**Rationale**: part 2 is the load-bearing one. A `done` story's sprint assignment is locked
+history — moving US-2.14 into W36 would credit a window that did not do the work, and would
+have meant rewriting an open sprint's scope table at the moment W36 was written, which is
+exactly what W36 declined to do. W36 kept the story out of its own table and called the
+carry "informal" for this reason; honouring that is what lets both files stay true.
+
+Part 3 follows from the same instinct. The alternative to closing an empty sprint is to
+pretend the window did not exist, and this repo's sprint files are containers for what
+actually happened in a window ([D21](#d21-a-sprints-scope-stays-open-only-the-maintainer-opens-or-closes-one)),
+not for what was planned. A week that produced nothing is a fact about the project worth
+one `status: closed` and a short retrospective — it is the first data point on the cost of
+opening a sprint with no committed scope, which had worked twice before and now has not.
+
+Parts 1 and 4 need no argument beyond D21 rule 2: the maintainer asked, which is the only
+thing that opens or closes a sprint here. Doing all four in one commit is deliberate — the
+two closes and the open are one reconciliation, and splitting them would leave the corpus
+inconsistent between commits.
+
+**Alternatives considered**:
+- **Move US-2.14 into W36 so its close is not empty** — rejected. It credits the wrong
+  window, contradicts the story's own frontmatter, and W36 explicitly declined the move.
+- **Leave W35 open and close only W36** — rejected: it preserves the two-live-windows state
+  that W36 was written to flag, and W35's work has been finished since 2026-08-26.
+- **Delete W36, or extend W35 to cover both windows** — rejected. Both erase a real
+  fourteen-day gap in delivery, and the second invents a sprint length no other file uses.
+- **Open W37 with scope promoted from §Open work** — rejected here, not on the merits:
+  promoting an unowned item into a story is the maintainer's call and was not asked for. The
+  case for doing it is recorded in
+  [W36 §Followups](sprints/sprint-2026-W36.md) and [W37 §Sprint goal recap](sprints/sprint-2026-W37.md)
+  instead.
+
+**Impact**: `sprints/sprint-2026-W35.md` and `sprints/sprint-2026-W36.md` both `closed` with
+retrospectives; `sprints/sprint-2026-W37.md` created; US-2.14 `done` at `2.8.1`;
+[EPIC-2](sprints/epics/EPIC-2.md)'s US-2.14 row flipped to `✅ done (v2.8.1)`;
+`sprints/STATUS.md` regenerated to 34 stories, 34 `done`; the twelve-day gap that caused
+all of this recorded as [LESSONS 10](LESSONS.md). Active-sprint pointers moved to W37 in
+`CLAUDE.md` (`active_sprint`), `AGENTS.md` and `README.md`, with W35 and W36 demoted to
+closed entries. No code changed and `VERSION` stays at `2.8.1`. Every §Sprint goal recap and §Parked section written before today is left
+as authored — the §Sprint close sections are the amendment, never a rewrite (RULE-7,
+[D21](#d21-a-sprints-scope-stays-open-only-the-maintainer-opens-or-closes-one)).
+
+**Date**: 2026-09-07
+**Version**: unreleased (documentation only)
