@@ -261,10 +261,13 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
-- [docs/sprints/sprint-2026-W37.md](docs/sprints/sprint-2026-W37.md) — **the active
-  sprint** (2026-09-07 → 2026-09-13), opened with no committed scope; the scope table
+- [docs/sprints/sprint-2026-W38.md](docs/sprints/sprint-2026-W38.md) — **the active
+  sprint** (2026-09-14 → 2026-09-20), opened with no committed scope; the scope table
   takes rows as work arrives ([CONTEXT D21](docs/CONTEXT.md) rule 1,
   [D30](docs/CONTEXT.md))
+- [docs/sprints/sprint-2026-W37.md](docs/sprints/sprint-2026-W37.md) — `closed`
+  2026-09-14 (2026-09-07 → 2026-09-13): 1 story / 3 points, US-6.3 closed EPIC-6; no
+  release
 - [docs/sprints/sprint-2026-W36.md](docs/sprints/sprint-2026-W36.md) — `closed`
   2026-09-07 (2026-08-31 → 2026-09-06): **0 stories / 0 points**, the repo's first empty
   sprint ([CONTEXT D46](docs/CONTEXT.md))

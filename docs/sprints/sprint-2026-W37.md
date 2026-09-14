@@ -1,6 +1,6 @@
 ---
 id: sprint-2026-W37
-status: planned
+status: closed
 start: 2026-09-07
 end: 2026-09-13
 goal: 'No committed scope at open — W35 and W36 both closed on this file''s first day and the corpus holds no open story; mid-window scope added 2026-09-11 commits to closing EPIC-6 with US-6.3'
@@ -105,19 +105,91 @@ unchanged from W36's open, which is itself the point of the last bullet in
 
 ## Retrospective
 
-<!-- Filled on sprint close by the maintainer (CONTEXT D21 rule 2). -->
+**One retrospective, written at the close on 2026-09-14, measuring one row.** Every commit
+that reached `main` in this window landed on a single day, 2026-09-11, and the retrospective
+is mostly about that day.
 
 ### What went well
 
-- TBD
+- **[EPIC-6](epics/EPIC-6.md) closed, 29 days after it opened, and its last question was
+  answered by a command rather than a paragraph.** [US-6.3](stories/US-6.3-sprint-file-convention-cleanup-and-enforcement.md)
+  removed W32's and W33's native plan sections and added `npm run agile:check-sprints`
+  ([CONTEXT D47](../CONTEXT.md)). The one-table convention held by hand from
+  [D30](../CONTEXT.md) onward; since this window it fails loudly instead. At close it
+  passes on all seven sprint files, [W38](sprint-2026-W38.md) included — so the next file
+  is checked from its first commit.
+- **The pull-request CI gate moved for the first time in five sprints.** The item W33 called
+  "the highest-value unbuilt thing in this repo" got a design spec and a task-by-task
+  implementation plan on 2026-09-11
+  ([spec](../superpowers/specs/2026-09-11-pr-ci-gate-design.md),
+  [plan](../superpowers/plans/2026-09-11-pr-ci-gate-w37.md)). Gate vs. signal, the ruleset,
+  and admin bypass are all decided on paper, so whoever picks it up starts at Task 1, not at
+  a blank page.
+- **An empty open absorbed work again.** Of the four consecutive empty opens so far, three
+  took scope mid-window (W34: 10 stories, W35: 1, W37: 1). W36 is still the only one that
+  did not.
+- **The §Parked audit's "a real none" held.** Nothing surfaced during the window that the
+  open had missed.
 
 ### What didn't
 
-- TBD
+- **Six of the seven days produced nothing on `main`.** All six commits in the window are
+  dated 2026-09-11, and that includes this file's own creation. The open was authored on
+  2026-09-07 as `17a75b9` on `docs/close-w35-w36-open-w37` but reached `main` as `255eb56`
+  only on 09-11. Until then, `main` still named W36 as the active sprint and still showed
+  W35 open — four days of the reconciliation [CONTEXT D46](../CONTEXT.md) describes
+  existing only on a branch.
+- **The CI gate stopped at the plan.** Its Task 1 — file EPIC-9 and US-9.1, append a CONTEXT
+  entry, add the row here — never ran. The local `ci/pr-gate` branch carries no commits of
+  its own, and this table never gained the `US-9.1` row the plan names. Dependabot's
+  [PR #13](https://github.com/Koniverse/Senti-MCP/pull/13), opened the same day, shows
+  0 checks — the gap the plan exists to close.
+- **Two pieces of same-day work claimed the same decision number, and nothing noticed.**
+  The plan (committed 14:27) files its decision as CONTEXT D47. US-6.3 (committed 18:05)
+  landed a different D47 on `main`. `npm run agile:validate` passes, because each file
+  resolves on its own terms. As a result the plan was stale before its first task ran.
+- **US-6.3 was split into two stories and merged back 14 minutes later.** `54aadff` filed
+  US-6.3 and US-6.4 separately at 16:00; `f891936` folded both into one US-6.3 at 16:14 and
+  deleted the two files. No reference to US-6.4 survives (checked at close), so the only
+  cost is a scope decision reversed within one sitting.
+- **This file's `status:` read `planned` for the whole window**, including the three days
+  after its only row flipped `done`. It is [LESSONS 10](../LESSONS.md)'s shape one artifact
+  over: nothing reads a sprint's `status:` either, and `agile:check-sprints` checks
+  structure, not frontmatter.
+- **No release, and still no code.** `VERSION` entered and left the window at `2.8.1`, and
+  `src/` has not changed since 2026-08-26 — a third sprint. Seven of the eight §Open work
+  items came out unchanged.
 
 ### Followups
 
-- TBD
+- **§Open work, unassigned carries to [W38](sprint-2026-W38.md)** — seven items. EPIC-6
+  drops out, and the CI-gate item is rewritten to say the gate is designed but not built.
+- **If the CI gate is promoted into W38, the plan needs two edits before Task 1**: its
+  CONTEXT number (D47 is taken, so the next free one) and its target sprint (W37 is closed,
+  so W38). It is one P1 story of 3 points.
+- **Dependabot PR #13 is waiting on the same decision.** Merge it now, unchecked like every
+  PR before it, or hold it as the first PR the gate runs on.
+- **`agile:check-sprints` could be the reader LESSONS 10 asks for.** Flagging a sprint whose
+  `end` has passed while `status:` is not `closed` would have caught W35 in August and this
+  file this week. This is an idea, not scope.
+
+## Sprint close — 2026-09-14
+
+Closed by the maintainer on 2026-09-14, **one day after the window elapsed on 2026-09-13**,
+alongside the open of [W38](sprint-2026-W38.md), so no two sprints are live at once. W35
+and W36 were closed together on 2026-09-07, eight days and one day after their windows
+elapsed ([CONTEXT D46](../CONTEXT.md)).
+
+**1 story / 3 points. No release, one decision ([D47](../CONTEXT.md)), no lesson.** Six
+commits reached `main` in the window, all on 2026-09-11: this file's open (`255eb56`), the
+CI gate spec and plan (`354b3fa`, `071f8d7`), and US-6.3 in three (`54aadff`, `f891936`,
+`891d06a`). `status:` goes straight from `planned` to `closed`; it never read
+`in-progress`.
+
+**Nothing carries as scope**, because the one row is `done`. What carries is §Open work,
+unassigned — seven items — into [W38](sprint-2026-W38.md). Every section above
+§Retrospective is left as authored. This section is the amendment, not a rewrite
+([CONTEXT D21](../CONTEXT.md), RULE-7).
 
 ## Cross-references
 
@@ -128,5 +200,8 @@ unchanged from W36's open, which is itself the point of the last bullet in
 - [CONTEXT D30](../CONTEXT.md) — one scope table per sprint file; mid-sprint scope is a row, not a section
 - [CONTEXT D45](../CONTEXT.md) — the dashboard host, and the base-URL pairing left unverified
 - [CONTEXT D46](../CONTEXT.md) — closing W35 and W36 together, and opening this file
-- [EPIC-6](epics/EPIC-6.md) — `in-progress`, questions 3 and 5 · [EPIC-3](epics/EPIC-3.md) — `backlog`, the trading write path
-- [CHANGELOG](../CHANGELOG.md) — `2.8.1` is the version this sprint opens on
+- [EPIC-6](epics/EPIC-6.md) — `in-progress` at this file's open; `done` 2026-09-11 via US-6.3 · [EPIC-3](epics/EPIC-3.md) — `backlog`, the trading write path
+- [CONTEXT D47](../CONTEXT.md) — W32/W33 native plan sections removed; `npm run agile:check-sprints` added
+- [PR CI gate spec](../superpowers/specs/2026-09-11-pr-ci-gate-design.md) · [plan](../superpowers/plans/2026-09-11-pr-ci-gate-w37.md) — written in this window; not filed as a story, not built
+- [CHANGELOG](../CHANGELOG.md) — `2.8.1` is the version this sprint opens **and** closes on
+- [sprint-2026-W38](sprint-2026-W38.md) — successor sprint, opened 2026-09-14
