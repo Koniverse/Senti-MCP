@@ -126,7 +126,13 @@ export function registerListDrafts(server: McpServer, client: SentiClient): void
     inputSchema: z.object({}),
     outputSchema: DraftsOutputSchema,
     run: async (_args, signal) => {
-      const payload = await client.get('/api/v1/drafts', { signal, scope: AUTHORING_READ });
+      // Asked for by name rather than left to the API's default. `full` is never sent from
+      // anywhere in this server — get_draft reads one draft whole (CONTEXT D32, D49).
+      const payload = await client.get('/api/v1/drafts', {
+        signal,
+        scope: AUTHORING_READ,
+        query: { view: 'summary' },
+      });
       const drafts = parseDrafts(payload);
 
       return { text: formatDrafts(drafts), structured: { drafts, notes: [] } };

@@ -113,7 +113,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** the tool is called, **When** it requests the collection, **Then** the
+- [x] **AC-1** — **Given** the tool is called, **When** it requests the collection, **Then** the
   request is `GET /api/v1/drafts?view=summary` under `authoring:read`, **And** no code path in
   `src/` requests `view=full`.
 - [x] **AC-2** — **Given** a response of `DraftSummary` items, **When** the tool returns,
@@ -137,12 +137,12 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - [ ] **AC-8** — `grep -rn PENDING src` prints nothing.
 - [ ] **AC-9** — **Given** `npm run test:smoke`, **When** the live leg runs, **Then** the
   collection parses through `parseDrafts` and renders, **And** stderr records its raw byte size.
-- [ ] **AC-10** — **Given** the tool's `inputSchema`, **When** it is inspected, **Then** it is
+- [x] **AC-10** — **Given** the tool's `inputSchema`, **When** it is inspected, **Then** it is
   empty.
 - [x] **AC-11** — **Given** US-46.49 is deployed on the smoke host, **When** it is probed,
   **Then** §Implementation notes records the summary and `view=full` byte sizes of the smoke
   account, **And** the status and envelope code returned for `view=bogus`.
-- [ ] **AC-12** — **Given** `src/server.test.ts`, **When** it runs, **Then** `list_drafts` still
+- [x] **AC-12** — **Given** `src/server.test.ts`, **When** it runs, **Then** `list_drafts` still
   passes the read-only-annotation, output-schema and key-absence assertions, with the stub
   answering `/api/v1/drafts?view=summary`.
 - [x] **AC-13** — **Given** a draft whose `compileLogBytes` is not `null`, **When** the text
@@ -165,9 +165,9 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
   - [x] `formatDrafts`: drop the `Notes` branch; rewrite the empty-collection text (`:130-131`);
         add the compile-log line to `block`
   - [x] Tool description (`:154-162`) and `README.md`'s `list_drafts` row
-- [ ] **TASK-9.1.4** — Ask for summaries (AC: 1, 10, 12)
-  - [ ] `client.get('/api/v1/drafts', { signal, scope, query: { view: 'summary' } })`
-  - [ ] The `src/server.test.ts` fetch stub answers the new URL with a summary
+- [x] **TASK-9.1.4** — Ask for summaries (AC: 1, 10, 12)
+  - [x] `client.get('/api/v1/drafts', { signal, scope, query: { view: 'summary' } })`
+  - [x] The `src/server.test.ts` fetch stub answers the new URL with a summary
 - [ ] **TASK-9.1.5** — Drop `PENDING` (AC: 8)
   - [ ] `get-draft.ts:28`, `write-result.ts:24`, and any test fixture that uses it
 - [x] **TASK-9.1.6** — Tests (AC: 2, 4, 5, 7, 13)

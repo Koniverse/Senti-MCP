@@ -40,7 +40,7 @@ const BARE: DraftSummary = {
   attachments: [],
 };
 
-/** The shape the collection had before Senti US-46.49, and still has under `view=full`. */
+/** The shape the collection had before Senti US-46.49, and still has when the full view is asked for. */
 const FULL: Draft = {
   id: 'd-1',
   name: 'RSI Reversal',

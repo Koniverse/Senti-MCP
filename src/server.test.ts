@@ -337,7 +337,9 @@ describe('list_drafts', () => {
 
     const result = (await client.callTool({ name: 'list_drafts' })) as ToolResult;
 
-    expect(calls[0]).toBe('https://api.example.test/api/v1/drafts');
+    // Explicit, not the API's default: a default is the one part of a contract that can
+    // move without the request changing.
+    expect(calls).toEqual(['https://api.example.test/api/v1/drafts?view=summary']);
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('RSI Reversal');
     expect(DraftsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
