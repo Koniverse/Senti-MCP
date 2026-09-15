@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-09-15 03:17:59 UTC
+> Last generated: 2026-09-15 07:28:34 UTC
 > Total stories: 42
 
 ## ⏰ Deadlines (0)
@@ -18,15 +18,15 @@ _No stories carry an explicit deadline._
 | US-9.5 | The forbidden-construct pattern contract | EPIC-9 | P2 | 2 | — | bluezdot |
 | US-9.6 | operationId doc corrections and a spec-drift check | EPIC-9 | P3 | 2 | — | bluezdot |
 
-## 🟢 Ready (1)
+## 🟢 Ready (0)
+
+_No stories_
+
+## 🟡 In Progress (1)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
 | US-9.1 | list_drafts adopts the drafts summary mode | EPIC-9 | P0 | 2 | sprint-2026-W38 | bluezdot |
-
-## 🟡 In Progress (0)
-
-_No stories_
 
 ## 👀 Review (0)
 
@@ -86,13 +86,13 @@ _No stories_
 ## Summary
 
 - 📋 **Backlog**: 5
-- 🟢 **Ready**: 1
-- 🟡 **In Progress**: 0
+- 🟢 **Ready**: 0
+- 🟡 **In Progress**: 1
 - 👀 **Review**: 0
 - ✅ **Done**: 36
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 
-✓ WIP: 0/3 stories in-progress.
+✓ WIP: 1/3 stories in-progress.
 
 ✓ No overdue stories.

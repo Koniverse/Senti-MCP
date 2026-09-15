@@ -2,7 +2,7 @@
 id: US-9.1
 title: "list_drafts adopts the drafts summary mode"
 epic: EPIC-9
-status: ready
+status: in-progress
 priority: P0
 points: 2
 sprint: sprint-2026-W38
