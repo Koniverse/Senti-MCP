@@ -2,13 +2,14 @@
 id: US-9.1
 title: "list_drafts adopts the drafts summary mode"
 epic: EPIC-9
-status: in-progress
+status: done
 priority: P0
 points: 2
 sprint: sprint-2026-W38
 assignee: bluezdot
 created: 2026-09-14
 updated: 2026-09-15
+version_shipped: 2.9.0
 ---
 
 ## Story refresh — 2026-09-15
@@ -113,76 +114,76 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 
 ## Acceptance criteria
 
-- [ ] **AC-1** — **Given** the tool is called, **When** it requests the collection, **Then** the
+- [x] **AC-1** — **Given** the tool is called, **When** it requests the collection, **Then** the
   request is `GET /api/v1/drafts?view=summary` under `authoring:read`, **And** no code path in
   `src/` requests `view=full`.
-- [ ] **AC-2** — **Given** a response of `DraftSummary` items, **When** the tool returns,
+- [x] **AC-2** — **Given** a response of `DraftSummary` items, **When** the tool returns,
   **Then** each entry in `structuredContent.drafts` carries `id`, `name`, `sourceBytes`,
   `sourceSha256`, `createdAt`, `updatedAt`, `lastCompileStatus`, `compileLogBytes`,
   `logTruncated`, `diagnosticsCount`, `compiledUpToDate` and `eaDefinitionId`, **And** each
   attachment carries `id`, `filename`, `sourceBytes`, `createdAt` and `updatedAt`.
 - **AC-3** — *Withdrawn 2026-09-15* — the full-shape fallback. See §Story refresh. The number
   stays so later references hold.
-- [ ] **AC-4** — **Given** a payload that is not an array of summaries — an array of full drafts
+- [x] **AC-4** — **Given** a payload that is not an array of summaries — an array of full drafts
   included — **When** it is parsed, **Then** the tool returns `isError: true` with the "API may
   have changed" message naming `draft list`.
-- [ ] **AC-5** — **Given** any response, **When** the tool returns, **Then** `notes` is `[]`,
+- [x] **AC-5** — **Given** any response, **When** the tool returns, **Then** `notes` is `[]`,
   **And** `DraftsOutputSchema` still declares `notes`.
-- [ ] **AC-6** — **Given** the tool description and the README row, **When** they are read,
+- [x] **AC-6** — **Given** the tool description and the README row, **When** they are read,
   **Then** neither describes a cut or says "There is no option to request the unshaped
   response"; both say the list carries sizes and hashes rather than bodies, and name
   `get_draft` for one draft's source.
-- [ ] **AC-7** — **Given** an empty collection, **When** the text renders, **Then** it explains
+- [x] **AC-7** — **Given** an empty collection, **When** the text renders, **Then** it explains
   the empty result without claiming "this server has no write tools" (false since `2.5.0`).
-- [ ] **AC-8** — `grep -rn PENDING src` prints nothing.
-- [ ] **AC-9** — **Given** `npm run test:smoke`, **When** the live leg runs, **Then** the
+- [x] **AC-8** — `grep -rn PENDING src` prints nothing.
+- [x] **AC-9** — **Given** `npm run test:smoke`, **When** the live leg runs, **Then** the
   collection parses through `parseDrafts` and renders, **And** stderr records its raw byte size.
-- [ ] **AC-10** — **Given** the tool's `inputSchema`, **When** it is inspected, **Then** it is
+- [x] **AC-10** — **Given** the tool's `inputSchema`, **When** it is inspected, **Then** it is
   empty.
 - [x] **AC-11** — **Given** US-46.49 is deployed on the smoke host, **When** it is probed,
   **Then** §Implementation notes records the summary and `view=full` byte sizes of the smoke
   account, **And** the status and envelope code returned for `view=bogus`.
-- [ ] **AC-12** — **Given** `src/server.test.ts`, **When** it runs, **Then** `list_drafts` still
+- [x] **AC-12** — **Given** `src/server.test.ts`, **When** it runs, **Then** `list_drafts` still
   passes the read-only-annotation, output-schema and key-absence assertions, with the stub
   answering `/api/v1/drafts?view=summary`.
-- [ ] **AC-13** — **Given** a draft whose `compileLogBytes` is not `null`, **When** the text
+- [x] **AC-13** — **Given** a draft whose `compileLogBytes` is not `null`, **When** the text
   renders, **Then** it states the log's size — including when `diagnosticsCount` is 0 — and names
   `get_draft` as where to read it; **Given** `null`, **Then** no log line is rendered.
 
 ## Tasks
 
-- [ ] **TASK-9.1.1** — Transcribe the published summary (AC: 2)
+- [x] **TASK-9.1.1** — Transcribe the published summary (AC: 2)
   - [x] Run [EPIC-9](../epics/EPIC-9.md) §Deploy check — 2026-09-15,
         `DraftSummary: true compile-log: true`
-  - [ ] Transcribe `DraftSummary` and `DraftAttachmentSummary` field by field; re-read the
+  - [x] Transcribe `DraftSummary` and `DraftAttachmentSummary` field by field; re-read the
         document on the day, in case either has moved since 2026-09-15
-- [ ] **TASK-9.1.2** — Schemas and parsing in `src/tools/authoring/list-drafts.ts` (AC: 2, 4)
-  - [ ] Replace the derived `DraftSummarySchema` (`:8-18`) with the transcription; `int32` fields
+- [x] **TASK-9.1.2** — Schemas and parsing in `src/tools/authoring/list-drafts.ts` (AC: 2, 4)
+  - [x] Replace the derived `DraftSummarySchema` (`:8-18`) with the transcription; `int32` fields
         as `z.number().int()`
-  - [ ] `parseDrafts`: `z.array(DraftSummarySchema)` through `parseOrThrow`
-- [ ] **TASK-9.1.3** — Delete the cut, and render the log size (AC: 5, 6, 7, 13)
-  - [ ] `summarise` and `shapeDrafts` (`:31-101`) go; `notes` is the literal `[]`
-  - [ ] `formatDrafts`: drop the `Notes` branch; rewrite the empty-collection text (`:130-131`);
+  - [x] `parseDrafts`: `z.array(DraftSummarySchema)` through `parseOrThrow`
+- [x] **TASK-9.1.3** — Delete the cut, and render the log size (AC: 5, 6, 7, 13)
+  - [x] `summarise` and `shapeDrafts` (`:31-101`) go; `notes` is the literal `[]`
+  - [x] `formatDrafts`: drop the `Notes` branch; rewrite the empty-collection text (`:130-131`);
         add the compile-log line to `block`
-  - [ ] Tool description (`:154-162`) and `README.md`'s `list_drafts` row
-- [ ] **TASK-9.1.4** — Ask for summaries (AC: 1, 10, 12)
-  - [ ] `client.get('/api/v1/drafts', { signal, scope, query: { view: 'summary' } })`
-  - [ ] The `src/server.test.ts` fetch stub answers the new URL with a summary
-- [ ] **TASK-9.1.5** — Drop `PENDING` (AC: 8)
-  - [ ] `get-draft.ts:28`, `write-result.ts:24`, and any test fixture that uses it
-- [ ] **TASK-9.1.6** — Tests (AC: 2, 4, 5, 7, 13)
-  - [ ] `list-drafts.test.ts`: the 13-test `shapeDrafts` block (`:63-167`) is replaced by parse
+  - [x] Tool description (`:154-162`) and `README.md`'s `list_drafts` row
+- [x] **TASK-9.1.4** — Ask for summaries (AC: 1, 10, 12)
+  - [x] `client.get('/api/v1/drafts', { signal, scope, query: { view: 'summary' } })`
+  - [x] The `src/server.test.ts` fetch stub answers the new URL with a summary
+- [x] **TASK-9.1.5** — Drop `PENDING` (AC: 8)
+  - [x] `get-draft.ts:28`, `write-result.ts:24`, and any test fixture that uses it
+- [x] **TASK-9.1.6** — Tests (AC: 2, 4, 5, 7, 13)
+  - [x] `list-drafts.test.ts`: the 13-test `shapeDrafts` block (`:63-167`) is replaced by parse
         tests over a summary fixture — `compileLogBytes` both `null` and not — and one that
         rejects a full-draft payload
-  - [ ] The two `formatDrafts` tests about notes (`:198`, `:202`) go with the branch
-- [ ] **TASK-9.1.7** — Smoke (AC: 9)
-  - [ ] `src/smoke.test.ts:71-72` requests `view: 'summary'`, parses, renders, and logs the raw
+  - [x] The two `formatDrafts` tests about notes (`:198`, `:202`) go with the branch
+- [x] **TASK-9.1.7** — Smoke (AC: 9)
+  - [x] `src/smoke.test.ts:71-72` requests `view: 'summary'`, parses, renders, and logs the raw
         byte size to stderr
 - [x] **TASK-9.1.8** — After the deploy, measure (AC: 11)
   - [x] Summary vs `view=full` bytes on the smoke account, and `view=bogus`'s status and
         envelope code, into §Implementation notes
 - [ ] **TASK-9.1.9** — Record and release (AC: all)
-  - [ ] `docs/CONTEXT.md`: the next free `D<N>` (D49 as of 2026-09-15), revising
+  - [x] `docs/CONTEXT.md`: the next free `D<N>` (D49 as of 2026-09-15), revising
         [D32](../../CONTEXT.md) — the cut moved to the server; `notes` stays, empty, until a
         major version removes it; and why no full-shape fallback ships
   - [ ] Bump the version in all five places (`VERSION`, `package.json`, `package-lock.json`,
@@ -249,7 +250,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 | AC-1, AC-12 | `npx vitest run src/server.test.ts` · `grep -rn "view: 'full'\|view=full" src` prints nothing |
 | AC-2, AC-4 – AC-7, AC-10, AC-13 | `npx vitest run src/tools/authoring/list-drafts.test.ts` |
 | AC-8 | `grep -rn PENDING src` prints nothing |
-| AC-9 | `npm run test:smoke` — the `[smoke] drafts` line |
+| AC-9 | `npm run test:smoke -- --reporter=verbose` — the `[smoke] drafts` line (see §Implementation notes: the default reporter prints no stderr for a passing test) |
 | AC-11 | Read §Implementation notes |
 | all | `npm run typecheck && npm test` |
 
@@ -263,8 +264,8 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - `list_drafts` requests `?view=summary`, so the server no longer sends up to 10 MiB of source
   for this tool to discard.
 - `list_drafts` output adds `sourceSha256`, `compileLogBytes`, `logTruncated` and
-  `attachments[].updatedAt`, and the text states each compile log's size. `notes` is kept and is
-  now always empty.
+  `attachments[].updatedAt`, and the text states each draft's source hash and compile-log size.
+  `notes` is kept and is now always empty.
 
 ### Removed
 - `PENDING` from `lastCompileStatus` in `get_draft`, `list_drafts` and the draft write tools.
@@ -296,6 +297,37 @@ live case here, not an edge.
 
 The document's `400` for `listDrafts` says only *"`view` is not `summary` or `full`, or was sent
 more than once"*; the envelope code `INVALID_BODY` is the service's, observed here.
+
+### Re-checked at implementation — 2026-09-15
+
+The served document, re-read before transcribing: `DraftSummary` and `DraftAttachmentSummary`
+are field-for-field what §Background transcribes, all fields required, and the string `PENDING`
+appears nowhere in it. The live collection, read-only with the smoke key: no `view` and
+`view=summary` both `200`, 1,616 B, 13 keys per item; `view=bogus` `400`.
+
+### Smoke — 2026-09-15
+
+After TASK-9.1.7, read-only (`SENTI_SMOKE_WRITES` unset), against `api.sentitrade.xyz`:
+
+```
+[smoke] drafts: 4 summaries, 1616 bytes
+```
+
+The same 1,616 B as the pre-start check. **The line prints only under a verbose reporter.**
+Vitest 4's default reporter shows no `console.error` output for a passing test, so a plain
+`npm run test:smoke` prints none of the `[smoke]` lines — not this one, and not the
+`breakdowns` and `timeseries` lines that predate this story. Run
+`npm run test:smoke -- --reporter=verbose` to read them.
+
+### Release — 2026-09-15
+
+`2.9.0`, a minor per [EPIC-9](../epics/EPIC-9.md) §Semver posture: `list_drafts` gains output
+fields and loses none, and `PENDING` leaves three enums that no server ever filled. The version
+moved in four of its five places on `feat/us-9.1-list-drafts-summary`, with the CHANGELOG
+section and the README in the same commit ([RELEASE.md](../../RELEASE.md) steps 1–4). **The
+tag, the push and the publish (steps 6–7) run from `main` after the branch merges** —
+`release:check` refuses a tag from any other branch — so the two TASK-9.1.9 items that name
+them stay open until then.
 
 ## Cross-references
 

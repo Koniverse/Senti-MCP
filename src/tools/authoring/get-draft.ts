@@ -25,7 +25,7 @@ export const DraftSchema = z.object({
   sourceCode: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  lastCompileStatus: z.enum(['PENDING', 'SUCCESS', 'FAILED']).nullable(),
+  lastCompileStatus: z.enum(['SUCCESS', 'FAILED']).nullable(),
   lastCompileLog: z.string().nullable(),
   logTruncated: z.boolean(),
   lastCompileDiagnostics: z.array(z.unknown()),
@@ -69,7 +69,6 @@ export function parseDraft(payload: unknown): Draft {
  * A note reports what was actually lost, not what the shaping code merely touched — an
  * attachment whose source is empty had nothing to cut, and a note about it would send the
  * model to `list_draft_attachments` for a file that returns nothing (CONTEXT D25).
- * `shapeDrafts` in `list-drafts.ts` applies the same rule to the same attachments.
  */
 export function shapeDraft(draft: Draft): ShapedDraft {
   const attachments = draft.attachments.map(({ sourceCode, ...kept }) => ({

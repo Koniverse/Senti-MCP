@@ -21,7 +21,7 @@ export const DraftWriteOutputSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   sourceBytes: z.number(),
-  lastCompileStatus: z.enum(['PENDING', 'SUCCESS', 'FAILED']).nullable(),
+  lastCompileStatus: z.enum(['SUCCESS', 'FAILED']).nullable(),
   compiledUpToDate: z.boolean(),
   eaDefinitionId: z.string().nullable(),
   attachments: z.array(AttachmentSizeSchema),

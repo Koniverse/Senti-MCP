@@ -15,9 +15,9 @@ import { DiagnosticSchema } from './get-draft.js';
 const AUTHORING_WRITE = 'authoring:write';
 
 /**
- * The one place the API types a diagnostic. `get_draft` and `list_drafts` parse
- * theirs loosely because their GET paths declare the array untyped; this route
- * declares the shape, so nothing here guesses.
+ * The one place the API types a diagnostic. `get_draft` parses its diagnostics loosely
+ * because its GET path declares the array untyped; `list_drafts` reads only a count. This
+ * route declares the shape, so nothing here guesses.
  */
 export const CompileResultSchema = z.object({
   ok: z.boolean(),
