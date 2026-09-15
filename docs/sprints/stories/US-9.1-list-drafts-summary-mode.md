@@ -134,7 +134,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
   `get_draft` for one draft's source.
 - [x] **AC-7** — **Given** an empty collection, **When** the text renders, **Then** it explains
   the empty result without claiming "this server has no write tools" (false since `2.5.0`).
-- [ ] **AC-8** — `grep -rn PENDING src` prints nothing.
+- [x] **AC-8** — `grep -rn PENDING src` prints nothing.
 - [ ] **AC-9** — **Given** `npm run test:smoke`, **When** the live leg runs, **Then** the
   collection parses through `parseDrafts` and renders, **And** stderr records its raw byte size.
 - [x] **AC-10** — **Given** the tool's `inputSchema`, **When** it is inspected, **Then** it is
@@ -168,8 +168,8 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - [x] **TASK-9.1.4** — Ask for summaries (AC: 1, 10, 12)
   - [x] `client.get('/api/v1/drafts', { signal, scope, query: { view: 'summary' } })`
   - [x] The `src/server.test.ts` fetch stub answers the new URL with a summary
-- [ ] **TASK-9.1.5** — Drop `PENDING` (AC: 8)
-  - [ ] `get-draft.ts:28`, `write-result.ts:24`, and any test fixture that uses it
+- [x] **TASK-9.1.5** — Drop `PENDING` (AC: 8)
+  - [x] `get-draft.ts:28`, `write-result.ts:24`, and any test fixture that uses it
 - [x] **TASK-9.1.6** — Tests (AC: 2, 4, 5, 7, 13)
   - [x] `list-drafts.test.ts`: the 13-test `shapeDrafts` block (`:63-167`) is replaced by parse
         tests over a summary fixture — `compileLogBytes` both `null` and not — and one that

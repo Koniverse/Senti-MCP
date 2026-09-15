@@ -25,7 +25,7 @@ export const DraftSchema = z.object({
   sourceCode: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  lastCompileStatus: z.enum(['PENDING', 'SUCCESS', 'FAILED']).nullable(),
+  lastCompileStatus: z.enum(['SUCCESS', 'FAILED']).nullable(),
   lastCompileLog: z.string().nullable(),
   logTruncated: z.boolean(),
   lastCompileDiagnostics: z.array(z.unknown()),
