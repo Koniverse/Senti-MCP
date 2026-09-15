@@ -2594,3 +2594,62 @@ answers Question 5 definitively: requirements in prose drift silently unless def
 **Date**: 2026-09-11
 **Version**: unreleased (tooling and documentation only)
 
+---
+
+## Phase 17 — The development host is retired (2026-09-15)
+
+### D48. `be-dev.sentitrade.xyz` is retired; production is the only host this repo names, and D45's pairing question is closed (revision of D45)
+
+**Context**: On 2026-09-15 the maintainer stated that `be-dev.sentitrade.xyz` is no longer in
+use. This repo still relied on it in four ways: `npm run test:smoke` defaulted to it; ten
+unit-test files used it as the placeholder base URL; `AGENTS.md`, `README.md` and
+`docs/SETUP.md` told developers to point `SENTI_API_BASE_URL` at it; and
+[D45](#d45-the-dashboard-host-is-appsentitradexyz-the-default-base-url-is-unverified-not-broken)
+left the default base URL "unverified, not broken", with a caveat in `README.md` and
+`docs/SETUP.md` naming the retired host as the verified pairing. D45's **Open** line said one
+authenticated call against `https://api.sentitrade.xyz/api/v1/accounts` would close it.
+
+**The observation**: 2026-09-15T03:07Z, the smoke key — issued by the API Keys dashboard —
+against `https://api.sentitrade.xyz/api/v1/accounts`: **`200`, 4 accounts**. The same key read
+`GET /api/v1/drafts` on that host the same day ([EPIC-9](sprints/epics/EPIC-9.md) §Re-checked —
+2026-09-15).
+
+**Decision**:
+
+1. **Production is the only host this repo names for live use.** `npm run test:smoke` takes
+   the config default, `https://api.sentitrade.xyz`, unless `SENTI_API_BASE_URL` says
+   otherwise. The write smoke therefore creates and deletes a real draft **on production** when
+   `SENTI_SMOKE_WRITES=1` — still opt-in twice (a key and the flag), and now said so in
+   `.env.example`, `docs/SETUP.md` and `AGENTS.md`. Chosen by the maintainer over requiring an
+   explicit host before a write.
+2. **Unit tests use `https://api.example.test`.** A `.test` name is reserved and never
+   resolves, and it has to differ from the default so `honours SENTI_API_BASE_URL` still tests
+   something.
+3. **D45 closes on a `200`.** The pairing caveat leaves `README.md` and `docs/SETUP.md`,
+   replaced by the verified pairing; `DEFAULT_BASE_URL` is unchanged and needs no story. The
+   general note — a key and the base URL must belong to the same deployment — stays, for anyone
+   pointing at another one.
+4. **Records are not rewritten** (maintainer, 2026-09-15). The retired host is still named in
+   `CHANGELOG.md` entries for released versions, closed stories, closed sprints, EPIC-2, EPIC-8,
+   the specs and plans, and seven times in this file, which RULE-7 does not allow to be edited.
+   Each names where a measurement was taken. **A development host named in a record dated
+   before 2026-09-15 is a host since retired — history, not an instruction.**
+
+**Alternatives considered**:
+
+- Scrub the records too — rejected. A record that no longer says where it was measured is less
+  true, and this file could not be scrubbed anyway.
+- Require `SENTI_API_BASE_URL` to be set explicitly before the write smoke runs — rejected; two
+  opt-ins already stand between a run and a write.
+
+**Impact**: [US-2.15](sprints/stories/US-2.15-retire-the-development-host.md).
+`src/smoke.test.ts`; ten unit-test files; comments in `src/core/client.ts` and
+`src/tools/performance/summary.test.ts`; `AGENTS.md`, `README.md`, `docs/SETUP.md`,
+`.env.example`; the open planning docs — EPIC-9, US-9.1, US-9.3 and sprint-2026-W38.
+[US-2.14](sprints/stories/US-2.14-api-keys-dashboard-host.md) §Remaining work is discharged.
+[EPIC-8](sprints/epics/EPIC-8.md)'s gap *"No write tool has been called against production"*
+is unchanged — the next `SENTI_SMOKE_WRITES=1` run closes it. No version is cut: nothing in
+`dist/` changes, and `README.md` rides the next release.
+
+**Date**: 2026-09-15
+**Version**: unreleased (tests and documentation only)

@@ -20,7 +20,7 @@ returns the log alone — at most 16 KiB.
 
 ## Background
 
-Senti US-46.49 — **live on both hosts since 2026-09-15** ([EPIC-9](../epics/EPIC-9.md)
+Senti US-46.49 — **live since 2026-09-15** ([EPIC-9](../epics/EPIC-9.md)
 §Re-checked — 2026-09-15) — adds `GET /api/v1/drafts/{draftId}/compile-log`,
 `operationId: getDraftCompileLog`, scope `authoring:read`. As served on 2026-09-15:
 
@@ -75,7 +75,7 @@ instead — it is never truncated."*
 ## Tasks
 
 - [ ] **TASK-9.3.1** — Transcribe the route (AC: 7)
-  - [x] [EPIC-9](../epics/EPIC-9.md) §Deploy check prints `compile-log: true` on both hosts —
+  - [x] [EPIC-9](../epics/EPIC-9.md) §Deploy check prints `compile-log: true` —
         2026-09-15
   - [ ] Transcribe the `200` response from the document on the day
 - [ ] **TASK-9.3.2** — `src/tools/authoring/get-draft-compile-log.ts` (AC: 1, 2, 3, 4)
@@ -103,7 +103,7 @@ instead — it is never truncated."*
 - **Builds on** [US-9.1](US-9.1-list-drafts-summary-mode.md) — only for the `list_drafts`
   compile-log line AC-9 repoints. The tool itself needs nothing from it.
 - **Required by** [US-9.6](US-9.6-operationid-docs-and-spec-drift-check.md) — the final counts.
-- **External**: Senti US-46.49 — deployed on both hosts, 2026-09-15.
+- **External**: Senti US-46.49 — deployed, 2026-09-15.
 
 ### What we explicitly did NOT do
 

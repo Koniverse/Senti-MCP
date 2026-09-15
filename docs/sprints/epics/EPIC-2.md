@@ -3,7 +3,7 @@ id: EPIC-2
 title: "Read-only Senti Quant access over MCP"
 status: done
 created: 2026-08-05
-updated: 2026-09-07
+updated: 2026-09-15
 ---
 
 ## Goal
@@ -123,6 +123,7 @@ most likely to break by copying an earlier one:
 | [US-2.12](../stories/US-2.12-get-performance-breakdowns-tool.md) | `get_performance_breakdowns` tool | P1 | 3 | ✅ done (v1.3.0) | — |
 | [US-2.13](../stories/US-2.13-get-equity-timeseries-tool.md) | `get_equity_timeseries` tool, and EPIC-2's close | P1 | 3 | ✅ done (v1.4.0) | — |
 | [US-2.14](../stories/US-2.14-api-keys-dashboard-host.md) | The API Keys dashboard host, and what the default base URL pairs with | P2 | 2 | ✅ done (v2.8.1) | — |
+| [US-2.15](../stories/US-2.15-retire-the-development-host.md) | Retire the development API host | P2 | 2 | ✅ done (no version — ships no runtime code) | — |
 
 The version in each Status cell is where that story *first* shipped
 ([CONTEXT D14](../../CONTEXT.md)). The last four rows have an empty Plan tasks column
@@ -151,6 +152,12 @@ touched. It corrects the API Keys dashboard host that
 ([CONTEXT D45](../../CONTEXT.md)). It is filed here rather than in a new epic because
 the onboarding path is what this epic delivered; a docs correction to it is
 maintenance of this scope, not new scope.
+
+**US-2.15 follows it**, in [sprint-2026-W38](../sprint-2026-W38.md), on the same terms. It
+closes the question US-2.14 left open — what the default base URL pairs with — with one
+authenticated read that answered `200`, and retires the development API host from everything
+still using it ([CONTEXT D48](../../CONTEXT.md)). Tests and docs only: no tool, schema or
+response is touched, and no version is cut.
 
 ## Remaining work
 

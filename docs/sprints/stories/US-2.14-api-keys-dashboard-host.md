@@ -8,7 +8,7 @@ points: 2
 sprint: sprint-2026-W35
 assignee: jindo9986
 created: 2026-08-25
-updated: 2026-09-07
+updated: 2026-09-15
 version_shipped: 2.8.1
 depends_on: [US-2.3]
 ---
@@ -155,6 +155,10 @@ A `200` means the default is correct and the pairing caveat can be deleted from
 `README.md` and `docs/SETUP.md` outright. A `401` means `DEFAULT_BASE_URL` is wrong
 and needs its own story. Either outcome supersedes [CONTEXT D45](../../CONTEXT.md)
 with a revision entry.
+
+**Discharged 2026-09-15** by [US-2.15](US-2.15-retire-the-development-host.md): the call
+returned `200` with a dashboard-issued key, the caveat left both docs, and
+[CONTEXT D48](../../CONTEXT.md) supersedes D45.
 
 ## Changelog entry
 

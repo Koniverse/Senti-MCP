@@ -49,8 +49,9 @@ cp .env.example .env.local
 SENTI_API_KEY=sq_live_…
 
 # Senti API root (added in v0.1.0) — optional.
-# Defaults to production, https://api.sentitrade.xyz.
-SENTI_API_BASE_URL=https://be-dev.sentitrade.xyz
+# Defaults to production, https://api.sentitrade.xyz — leave it unset unless you
+# are pointing at another deployment of the API, such as a local one.
+SENTI_API_BASE_URL=
 
 # Smoke-test key (added in v0.1.0) — optional, test-only.
 # Read by `npm run test:smoke`. Left unset (but this file present), that suite
@@ -62,10 +63,10 @@ SENTI_SMOKE_KEY=sq_live_…
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
 | `SENTI_API_KEY` | yes | — | First-party key, `sq_live_…`. The server exits 1 at startup without it. |
-| `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | API root. Set to `https://be-dev.sentitrade.xyz` for development. |
+| `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | API root. Override only to reach another deployment of the API, such as a local one. |
 | `SENTI_ENABLE_AUTHORING_WRITE` | no | unset (off) | **Added in v2.5.0.** `1` or `true` registers the authoring write tools; anything else, including `0`, `false`, `no` and `off`, leaves them unregistered. Requires `authoring:write` on the key. Enables **no** trading write — that surface has a flag of its own that does not exist yet. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only, read from `.env.local` by `npm run test:smoke`. |
-| `SENTI_SMOKE_WRITES` | no | unset (off) | **Added in v2.8.0.** Test-only. `1` makes `npm run test:smoke` additionally **create and delete a real draft** on the account the smoke key belongs to — create, attach, compile, delete — to cover the write path live. Needs `authoring:write`. Left unset, the read smoke runs alone and writes nothing. |
+| `SENTI_SMOKE_WRITES` | no | unset (off) | **Added in v2.8.0.** Test-only. `1` makes `npm run test:smoke` additionally **create and delete a real draft** on the account the smoke key belongs to — **on production** unless `SENTI_API_BASE_URL` says otherwise — create, attach, compile, delete — to cover the write path live. Needs `authoring:write`. Left unset, the read smoke runs alone and writes nothing. |
 
 > ### Six scopes, or seven with writes on
 >
@@ -104,21 +105,11 @@ SENTI_SMOKE_KEY=sq_live_…
 > before regenerating the key — the 401 is far more often a mismatched
 > environment than a bad key.
 >
-> **Which dashboard you use does not change this.** `app.sentitrade.xyz` and
-> `stage.sentitrade.xyz` both ship production builds carrying
-> `REACT_APP_API_URL: "https://be-dev.sentitrade.xyz"` — checked 2026-08-25 in
-> each host's served JS bundle — so a key from either is issued by the same
-> backend. The dashboard host is a front door, not an environment.
->
-> **Verified pairing:** a dashboard-issued key against
-> `https://be-dev.sentitrade.xyz` — the pairing this walkthrough's `.env.local`
-> uses, and the one `npm run test:smoke` has exercised twice, passing both
-> times. Whether the default, `https://api.sentitrade.xyz`, accepts the same key
-> is not established from outside the deployment: it answers every unauthenticated
-> probe byte-identically to `be-dev`, including an OpenAPI document whose embedded
-> client URL matches, which is consistent with one origin behind two hostnames but
-> does not prove it. If you are unsure, set `SENTI_API_BASE_URL` explicitly to the
-> host you know your key was issued against.
+> **Verified pairing:** a key from the API Keys dashboard (`app.sentitrade.xyz`)
+> against the default, `https://api.sentitrade.xyz` — checked on 2026-09-15 with an
+> authenticated `GET /api/v1/accounts` ([CONTEXT D48](CONTEXT.md)), and the pairing
+> `npm run test:smoke` uses. Leave `SENTI_API_BASE_URL` unset unless you run another
+> deployment of the API.
 
 `SENTI_API_BASE_URL` is validated at startup: it must be an absolute `https:` URL
 (`http:` is accepted for a local API, at the cost of sending the key in cleartext).

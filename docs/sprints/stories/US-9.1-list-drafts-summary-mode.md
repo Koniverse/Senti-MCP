@@ -17,17 +17,16 @@ After re-checking the served document and the live API on 2026-09-15
 ([EPIC-9](../epics/EPIC-9.md) §Re-checked — 2026-09-15), the following were locked into this
 story:
 
-- **Senti US-46.49 is deployed on both hosts, and `list_drafts` `2.8.1` is broken in
-  production.** Observed: `parseDrafts` throws at `0.sourceCode` against both
-  `api.sentitrade.xyz` and `be-dev.sentitrade.xyz`.
+- **Senti US-46.49 is deployed, and `list_drafts` `2.8.1` is broken in production.** Observed:
+  `parseDrafts` throws at `0.sourceCode` against `api.sentitrade.xyz`.
 - **The published `DraftSummary` has a field the hand-off did not: `compileLogBytes`**
   (`int32` | `null`). Senti added it in review because `logTruncated` is `false` for any log
   under 16 KiB, so a `FAILED` compile with no parsed diagnostics showed no output. Transcribed
   in AC-2, rendered by AC-13.
 - **The full-shape fallback is withdrawn (AC-3).** It existed so a release here would be safe
-  while a host still served full drafts; none does. It could not have been faithful either:
-  from a full `Draft` the adapter sees only the trailing 16 KiB of the log, so it cannot compute
-  `compileLogBytes` for a truncated one. Points 3 → 2.
+  while the API still served full drafts; it no longer does. It could not have been faithful
+  either: from a full `Draft` the adapter sees only the trailing 16 KiB of the log, so it cannot
+  compute `compileLogBytes` for a truncated one. Points 3 → 2.
 - AC-11's measurements were taken; see §Implementation notes.
 
 ## Goal
@@ -53,8 +52,8 @@ in a summary fail it, independently:
 - Every `attachments[]` item is parsed by `AttachmentSchema` (`get-draft.ts:7-12`), which
   requires `sourceCode`. A summary attachment carries none.
 
-So every call fails with the "API may have changed" message — observed live on both hosts on
-2026-09-15 — and so does the `list_drafts` leg of `src/smoke.test.ts:71`.
+So every call fails with the "API may have changed" message — observed live on 2026-09-15 —
+and so does the `list_drafts` leg of `src/smoke.test.ts:71`.
 
 ### The published summary
 
@@ -153,7 +152,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 ## Tasks
 
 - [ ] **TASK-9.1.1** — Transcribe the published summary (AC: 2)
-  - [x] Run [EPIC-9](../epics/EPIC-9.md) §Deploy check against both hosts — 2026-09-15, both
+  - [x] Run [EPIC-9](../epics/EPIC-9.md) §Deploy check — 2026-09-15,
         `DraftSummary: true compile-log: true`
   - [ ] Transcribe `DraftSummary` and `DraftAttachmentSummary` field by field; re-read the
         document on the day, in case either has moved since 2026-09-15
@@ -183,7 +182,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
   - [x] Summary vs `view=full` bytes on the smoke account, and `view=bogus`'s status and
         envelope code, into §Implementation notes
 - [ ] **TASK-9.1.9** — Record and release (AC: all)
-  - [ ] `docs/CONTEXT.md`: the next free `D<N>` (D48 as of 2026-09-15), revising
+  - [ ] `docs/CONTEXT.md`: the next free `D<N>` (D49 as of 2026-09-15), revising
         [D32](../../CONTEXT.md) — the cut moved to the server; `notes` stays, empty, until a
         major version removes it; and why no full-shape fallback ships
   - [ ] Bump the version in all five places (`VERSION`, `package.json`, `package-lock.json`,
@@ -200,9 +199,9 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
   would have to be dealt with explicitly. That reason now points the other way: the server owns
   the summary, a field Senti adds to `DraftSummary` is transcribed here, and a field added to
   `Draft` no longer reaches `list_drafts` at all.
-- **No full-shape fallback.** Withdrawn 2026-09-15 (§Story refresh). A host that serves full
-  drafts by default fails loudly with the "API may have changed" message, which is the honest
-  report of a contract that moved back.
+- **No full-shape fallback.** Withdrawn 2026-09-15 (§Story refresh). If the API ever serves
+  full drafts by default again, the tool fails loudly with the "API may have changed" message,
+  which is the honest report of a contract that moved back.
 - `list_drafts` no longer imports `DraftSchema`, `AttachmentSummarySchema` or `byteLength` from
   `get-draft.ts`.
 
@@ -216,7 +215,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
   `DraftSchema` in `get-draft.ts` (this story line 28, that one line 31). Land this one first.
   Once this ships, `list_drafts` no longer parses `DraftSchema`, so US-9.4's stricter parse
   cannot reach it.
-- **External**: Senti US-46.49 — deployed on both hosts, 2026-09-15.
+- **External**: Senti US-46.49 — deployed, 2026-09-15.
 
 ### Performance budget
 
@@ -231,7 +230,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - **No `view` parameter on the tool.** D32's refusal stands; AC-10 asserts it.
 - **No removal of `notes`.** It is a published output field; see [EPIC-9](../epics/EPIC-9.md)
   §Semver posture.
-- **No full-shape fallback.** Trigger to restore one: a host serving full drafts by default
+- **No full-shape fallback.** Trigger to restore one: the API serving full drafts by default
   again.
 - **No use of `sourceSha256` beyond passing it through.** Comparing it to a local file to
   answer "is my copy current" is a plausible later tool, not this story.
@@ -275,8 +274,8 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 
 ### Pre-start live check — 2026-09-15
 
-Taken during the planning pass, before any code, with the smoke key and read-only requests.
-Both hosts returned identical results — the same 4 drafts, byte for byte.
+Taken during the planning pass, before any code, with the smoke key and read-only requests
+against `api.sentitrade.xyz`.
 
 | Request | Result |
 |---|---|

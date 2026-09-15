@@ -66,7 +66,7 @@ the MT5 account number, not a key.
 | Variable | Required | Default | Purpose |
 |----------|----------|---------|---------|
 | `SENTI_API_KEY` | ✅ | — | First-party key. The server exits at startup without it. |
-| `SENTI_API_BASE_URL` | | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. |
+| `SENTI_API_BASE_URL` | | `https://api.sentitrade.xyz` | Override only to reach another deployment of the API, such as a local one. |
 | `SENTI_ENABLE_AUTHORING_WRITE` | | unset (off) | `1` or `true` registers the authoring write tools. See below. |
 
 ### Enabling the write path
@@ -106,12 +106,10 @@ authoring surface can delete what it creates.
 > regenerating the key — a `401` is far more often a mismatched environment than
 > a bad key.
 >
-> **Verified pairing:** a dashboard-issued key against
-> `https://be-dev.sentitrade.xyz` — that is the pairing `npm run test:smoke`
-> exercises, and it has passed twice. Whether the default,
-> `https://api.sentitrade.xyz`, accepts the same key is not established here, so
-> if you are unsure, set `SENTI_API_BASE_URL` to the host you know your key was
-> issued against.
+> **Verified pairing:** a key from the API Keys dashboard against the default,
+> `https://api.sentitrade.xyz` — checked on 2026-09-15 with an authenticated read
+> ([CONTEXT D48](docs/CONTEXT.md)). Leave `SENTI_API_BASE_URL` unset unless you
+> run another deployment of the API.
 
 See [docs/SETUP.md](docs/SETUP.md) for a full local setup walkthrough.
 

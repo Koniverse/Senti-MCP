@@ -118,7 +118,7 @@ export type SentiClient = {
  *
  * It deliberately does NOT derive from the request body. A content-derived key
  * would make an identical repeat replay the original 201 instead of colliding
- * with a 409, which sounds better and is not: measured against be-dev on
+ * with a 409, which sounds better and is not: measured live on
  * 2026-08-21, an idempotency record **outlives a delete**, so
  * create → delete → byte-identical create replayed a `draftId` that no longer
  * existed. See CONTEXT D43, which revises D41.

@@ -13,7 +13,17 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ## [Unreleased]
 
-Nothing pending.
+The development API host is retired ([CONTEXT D48](CONTEXT.md),
+[US-2.15](sprints/stories/US-2.15-retire-the-development-host.md)). Tests and documentation
+only; nothing in `dist/` changes.
+
+### Changed
+- `npm run test:smoke` targets production, `https://api.sentitrade.xyz`, unless
+  `SENTI_API_BASE_URL` is set. With `SENTI_SMOKE_WRITES=1` it now creates and deletes a real
+  draft **on production**.
+- The README and `docs/SETUP.md` no longer suggest a development value for
+  `SENTI_API_BASE_URL`, and the unverified-pairing caveat is gone: a dashboard-issued key is
+  verified against the default base URL.
 
 ## [2.8.1] — 2026-08-25 — the API Keys dashboard URL, and what the default base URL actually pairs with
 

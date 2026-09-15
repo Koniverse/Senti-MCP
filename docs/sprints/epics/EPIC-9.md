@@ -34,11 +34,11 @@ them:
 
 The Senti side has answered in five stories, **all five now deployed**. The fifth, US-46.49,
 changed the default response of `GET /api/v1/drafts` from full drafts to summaries, and — as
-the Senti owner decided, because this server has few users so far — it reached both hosts
+the Senti owner decided, because this server has few users so far — it reached production
 before this epic shipped: absent on 2026-09-14, live on 2026-09-15 (Senti `v0.3.6`). **Since
-that deploy, `list_drafts` `2.8.1` fails on every call**, observed live on both hosts
-(§Re-checked — 2026-09-15). That is why [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md)
-is P0, and the only reason.
+that deploy, `list_drafts` `2.8.1` fails on every call**, observed live (§Re-checked —
+2026-09-15). That is why [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md) is P0, and the
+only reason.
 
 This epic adds read tools and deletes workarounds. It adds no write tool and does not move
 the read/write split: trading writes stay [EPIC-3](EPIC-3.md)'s, and `register` stays
@@ -65,13 +65,12 @@ The hand-off that opened this epic was verified against this repo's `origin/main
 is recorded here once, so the stories cite it rather than re-derive it. This subsection is the
 record of that day; §Re-checked — 2026-09-15 below supersedes it where they differ.
 
-**The served document.** `https://api.sentitrade.xyz/api/v1/openapi.json` and
-`https://be-dev.sentitrade.xyz/api/v1/openapi.json` were byte-identical: 105,281 bytes, sha256
-`8c52928291c6f6318f2228041ad006f3ab6e433bd8b0eab0c3a0073008528faa`. 30 operations across 22
-paths. Seven named components — `Draft`, `DraftAttachment`, `CompileDiagnostic`,
-`AuthoringConventions`, `AuthoringLimits`, `ForbiddenConstruct`, `ErrorEnvelope`. Six tags.
-**No `DraftSummary`, no `/compile-log` path, no `view` parameter, and `PENDING` still in
-`Draft.lastCompileStatus`** — US-46.49 was not live on either host.
+**The served document.** `https://api.sentitrade.xyz/api/v1/openapi.json` served 105,281
+bytes, sha256 `8c52928291c6f6318f2228041ad006f3ab6e433bd8b0eab0c3a0073008528faa`. 30
+operations across 22 paths. Seven named components — `Draft`, `DraftAttachment`,
+`CompileDiagnostic`, `AuthoringConventions`, `AuthoringLimits`, `ForbiddenConstruct`,
+`ErrorEnvelope`. Six tags. **No `DraftSummary`, no `/compile-log` path, no `view` parameter,
+and `PENDING` still in `Draft.lastCompileStatus`** — US-46.49 was not live.
 
 **Held**, and not repeated below: `2.8.1`'s only `src/` change since `2.8.0` is
 `SERVER_VERSION` and the dashboard URL; every line reference in the hand-off except the two
@@ -86,7 +85,7 @@ cross-owner and wrong-draft ids with one description; `ticket` carries no `forma
 
 | The hand-off said | What the document or the code shows | Owner |
 |---|---|---|
-| US-46.49 deploys before this epic ships | True as a plan; not yet deployed on either host on 2026-09-14, so `list_drafts` still worked that day. It deployed by 2026-09-15 | [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md) |
+| US-46.49 deploys before this epic ships | True as a plan; not yet deployed on 2026-09-14, so `list_drafts` still worked that day. It deployed by 2026-09-15 | [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md) |
 | A summary lacks `sourceCode`, `lastCompileLog` and `lastCompileDiagnostics` | Also: every summary `attachments[]` item lacks `sourceCode`, which `AttachmentSchema` requires — a second, independent parse failure | [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md) |
 | Delete the *render-only* `DiagnosticSchema` duplication (`get-draft.ts:40`) | Not render-only: it is `compile_draft`'s strict schema (`compile-draft.ts:26`) and the smoke test's (`smoke.test.ts:411`). There is one schema, used two ways. It stays; only the `safeParse` fallback goes, and that spans `:94-112`, not `:94-102` | [US-9.4](../stories/US-9.4-typed-diagnostics-and-path-segments.md) |
 | US-46.47 answers F4, F2, F12 | `format` is **F3** in the review; F12 is `tags`. US-46.47 answers F2, F3, F4 and F12 | this epic |
@@ -107,7 +106,7 @@ cross-owner and wrong-draft ids with one description; `ticket` carries no `forma
 The maintainer reported a new deploy, and the document and the live API were checked again
 before any story was touched.
 
-**The served document.** Both hosts byte-identical again: 111,004 bytes, sha256
+**The served document.** 111,004 bytes, sha256
 `dd2e32275a8503bd9f7fc740c94607f9b14cabaac33b6cb2d802c348743dda80`. **31 operations across
 23 paths, 16 of them `GET`s.** Nine named components — the seven above plus `DraftSummary` and
 `DraftAttachmentSummary`. `PENDING` appears nowhere in it. `GET /drafts` takes `view`
@@ -123,8 +122,7 @@ lacks: **`compileLogBytes`** (`int32` | `null`, *"UTF-8 size of the last compile
 when there is none"*). Senti added it in review: `logTruncated` is `false` for any log under
 16 KiB, so without it a `FAILED` compile with no parsed diagnostics showed no output at all.
 
-**Live**, with the smoke key and read-only requests — identical on both hosts, down to the
-same 4 drafts:
+**Live**, with the smoke key and read-only requests against `api.sentitrade.xyz`:
 
 | Request | Result |
 |---|---|
@@ -138,12 +136,12 @@ same 4 drafts:
 
 **What that changes here:**
 
-- **The P0 is live.** Every `list_drafts` call against either host fails until
+- **The P0 is live.** Every `list_drafts` call fails until
   [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md) ships.
 - **US-9.1 drops its full-shape fallback**, and goes from 3 points to 2. The fallback existed
-  because a host might still serve full drafts; none does. It could not have been faithful
-  either: a full `Draft` shows only the trailing 16 KiB of the log, so `compileLogBytes` cannot
-  be computed for a truncated one.
+  because the API might still serve full drafts; it no longer does. It could not have been
+  faithful either: a full `Draft` shows only the trailing 16 KiB of the log, so
+  `compileLogBytes` cannot be computed for a truncated one.
 - **US-9.1 transcribes and renders `compileLogBytes`**, and
   [US-9.3](../stories/US-9.3-get-draft-compile-log-tool.md) no longer waits on Senti.
 - **The smoke account's ratio is 13.9×** (22,459 / 1,616 B, 4 drafts, no attachments). Senti's
@@ -151,23 +149,20 @@ same 4 drafts:
 
 ### Deploy check
 
-The two routes US-46.49 adds are the way to tell from outside whether it has landed on a host.
-Run from anywhere; no key needed.
+The two routes US-46.49 adds are the way to tell from outside whether it has landed. Run from
+anywhere; no key needed.
 
 ```bash
-for h in api.sentitrade.xyz be-dev.sentitrade.xyz; do
-  curl -s "https://$h/api/v1/openapi.json" | node -e '
-    let d = ""; process.stdin.on("data", (c) => (d += c)).on("end", () => {
-      const s = JSON.parse(d);
-      console.log(process.argv[1],
-        "DraftSummary:", Boolean(s.components?.schemas?.DraftSummary),
-        "compile-log:", Boolean(s.paths["/api/v1/drafts/{draftId}/compile-log"]));
-    });' "$h"
-done
+curl -s https://api.sentitrade.xyz/api/v1/openapi.json | node -e '
+  let d = ""; process.stdin.on("data", (c) => (d += c)).on("end", () => {
+    const s = JSON.parse(d);
+    console.log("DraftSummary:", Boolean(s.components?.schemas?.DraftSummary),
+      "compile-log:", Boolean(s.paths["/api/v1/drafts/{draftId}/compile-log"]));
+  });'
 ```
 
-On 2026-09-14 both hosts printed `DraftSummary: false compile-log: false`. On 2026-09-15 both
-printed `DraftSummary: true compile-log: true`.
+On 2026-09-14 it printed `DraftSummary: false compile-log: false`; on 2026-09-15,
+`DraftSummary: true compile-log: true`.
 
 ### Feature pillars
 
@@ -204,11 +199,11 @@ printed `DraftSummary: true compile-log: true`.
 Inherited from [EPIC-2](EPIC-2.md), [EPIC-7](EPIC-7.md) and [EPIC-8](EPIC-8.md), plus three
 this epic adds.
 
-- **Tolerate an old shape only while a host still serves it.** Where a route's response changes
-  shape and a host has not deployed the change, parse both, so a release here is safe in either
-  order. For `/drafts` the condition lapsed on 2026-09-15 — both hosts served summaries before
-  this repo released — so [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md) parses the
-  summary only.
+- **Tolerate an old shape only while the API still serves it.** Where a route's response
+  changes shape and the change has not been deployed yet, parse both, so a release here is safe
+  in either order. For `/drafts` the condition lapsed on 2026-09-15 — production served
+  summaries before this repo released — so [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md)
+  parses the summary only.
 - **Published tool surfaces only grow.** No tool is renamed, and no input or output field is
   removed. A field that stops meaning anything stays, documented as always empty, until a
   major version removes it deliberately.

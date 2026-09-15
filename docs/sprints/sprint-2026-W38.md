@@ -3,7 +3,7 @@ id: sprint-2026-W38
 status: planned
 start: 2026-09-14
 end: 2026-09-20
-goal: 'No committed scope at open — W37 closed on this file''s first day with its one row done, and the corpus holds no open story, so work that arises this week joins the one scope table below as a row; mid-window scope added 2026-09-14 commits to US-9.1, which restores list_drafts — broken in production since Senti''s drafts summary-mode deploy, live on both hosts by 2026-09-15'
+goal: 'No committed scope at open — W37 closed on this file''s first day with its one row done, and the corpus holds no open story, so work that arises this week joins the one scope table below as a row; mid-window scope added 2026-09-14 commits to US-9.1, which restores list_drafts — broken in production since Senti''s drafts summary-mode deploy on 2026-09-15; and US-2.15, added 2026-09-15, retires the development API host'
 ---
 
 ## Sprint scope
@@ -11,9 +11,10 @@ goal: 'No committed scope at open — W37 closed on this file''s first day with 
 | US | Title | Epic | Pri | Points | Status | Story file |
 | -- | ----- | ---- | --- | ------ | ------ | ---------- |
 | US-9.1 | list_drafts adopts the drafts summary mode *(added 2026-09-14)* | EPIC-9 | P0 | 2 | 🟢 ready | [US-9.1](stories/US-9.1-list-drafts-summary-mode.md) |
+| US-2.15 | Retire the development API host *(added 2026-09-15)* | EPIC-2 | P2 | 2 | ✅ done | [US-2.15](stories/US-2.15-retire-the-development-host.md) |
 
-**Total: 1 story / 2 points** (0 at open; US-9.1 added 2026-09-14 at 3 points, re-sized to 2 on
-2026-09-15 when its full-shape fallback was withdrawn). This sprint opened empty.
+**Total: 2 stories / 4 points** (0 at open; US-9.1 added 2026-09-14 at 3 points and re-sized to
+2 on 2026-09-15 when its full-shape fallback was withdrawn; US-2.15 added 2026-09-15). This sprint opened empty.
 Scope is not frozen ([CONTEXT D21](../CONTEXT.md) rule 1) — work that arises this week is
 appended here as a row annotated `_(added YYYY-MM-DD)_`, with the sprint `goal:` extended by a
 clause. **One table, one total, no second scope section** ([CONTEXT D30](../CONTEXT.md)),
@@ -97,14 +98,15 @@ closed ([EPIC-6](epics/EPIC-6.md)), so seven carry.
   needs a story that settles the delete-asymmetry question first
   ([EPIC-8](epics/EPIC-8.md) §What this close does not claim).
 - **No write tool has ever run against production.** Everything from `2.5.0` to `2.8.1` was
-  measured against `be-dev.sentitrade.xyz`. The smoke key holds `authoring:write` on
-  `api.sentitrade.xyz` by probe, but no draft has been created there by this server.
-- **One `curl` still settles [CONTEXT D45](../CONTEXT.md)** — now carried a fourth sprint. A
-  single authenticated call to `https://api.sentitrade.xyz/api/v1/accounts` decides whether
-  the pairing caveat is deleted from `README.md` and `docs/SETUP.md` (still present at
-  `docs/SETUP.md` §troubleshooting, re-checked at open) or whether `DEFAULT_BASE_URL` needs
-  its own story. Written up in [US-2.14](stories/US-2.14-api-keys-dashboard-host.md)
-  §Remaining work. Either outcome supersedes D45 by revision, never by edit (RULE-7).
+  measured against a development host that was retired on 2026-09-15
+  ([CONTEXT D48](../CONTEXT.md)). The smoke key holds `authoring:write` on
+  `api.sentitrade.xyz` by probe, but no draft has been created there by this server. Since
+  D48 the smoke suite defaults to production, so the next `SENTI_SMOKE_WRITES=1` run is the
+  first.
+- ✅ **[CONTEXT D45](../CONTEXT.md) is settled** — 2026-09-15, by [D48](../CONTEXT.md). The
+  authenticated call to `https://api.sentitrade.xyz/api/v1/accounts` returned `200`, so the
+  pairing caveat left `README.md` and `docs/SETUP.md`, and `DEFAULT_BASE_URL` needs no story
+  ([US-2.14](stories/US-2.14-api-keys-dashboard-host.md) §Remaining work is discharged).
 - **Ten [CONTEXT](../CONTEXT.md) entries still read `(planned)` on a version that has
   shipped** — D32, D33, and D36 → D43. Count re-checked at open: still ten. Whoever clears
   them decides once whether that field is metadata to complete or a record to revise under

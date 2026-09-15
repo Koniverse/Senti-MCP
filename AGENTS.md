@@ -400,9 +400,9 @@ that shows it, since the path is gitignored. `vitest.config.ts` scopes collectio
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
 | `SENTI_API_KEY` | yes | — | First-party key, `sq_live_…`. The server exits at startup without it. |
-| `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | Set to `https://be-dev.sentitrade.xyz` for development. Must be absolute `https:` or `http:`, with no query string or fragment. |
+| `SENTI_API_BASE_URL` | no | `https://api.sentitrade.xyz` | Override only to reach another deployment of the API, such as a local one. Must be absolute `https:` or `http:`, with no query string or fragment. |
 | `SENTI_ENABLE_AUTHORING_WRITE` | no | unset (off) | `1` or `true` registers the authoring write tools; anything else, including `0`, `false`, `no` and `off`, leaves them unregistered. Requires `authoring:write` on the key. Enables **no** trading write. |
-| `SENTI_SMOKE_WRITES` | no | unset (off) | Test-only. `1` makes `npm run test:smoke` additionally create and delete a real draft — create, attach, compile, delete — to cover the write path live. Needs `authoring:write`. |
+| `SENTI_SMOKE_WRITES` | no | unset (off) | Test-only. `1` makes `npm run test:smoke` additionally create and delete a real draft — **on production** unless `SENTI_API_BASE_URL` says otherwise — create, attach, compile, delete — to cover the write path live. Needs `authoring:write`. |
 | `SENTI_SMOKE_KEY` | no | — | Test-only. Read from a gitignored `.env.local` by `npm run test:smoke`. If `.env.local` exists but doesn't set this, the suite skips cleanly; if `.env.local` doesn't exist at all, `node --env-file` fails to start (`node: .env.local: not found`, exit 9) rather than skipping. |
 
 **The key must belong to the same environment `SENTI_API_BASE_URL` points at.** Keys
