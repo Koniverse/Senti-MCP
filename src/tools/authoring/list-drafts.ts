@@ -3,104 +3,54 @@ import * as z from 'zod/v4';
 import type { SentiClient } from '../../core/client.js';
 import { parseOrThrow } from '../../core/parse.js';
 import { registerReadTool } from '../../core/tool.js';
-import { AttachmentSummarySchema, byteLength, type Draft, DraftSchema } from './get-draft.js';
 
-export const DraftSummarySchema = DraftSchema.omit({
-  sourceCode: true,
-  lastCompileLog: true,
-  logTruncated: true,
-  lastCompileDiagnostics: true,
-  attachments: true,
-}).extend({
-  sourceBytes: z.number(),
-  diagnosticsCount: z.number(),
-  attachments: z.array(AttachmentSummarySchema),
+/** Transcribed from the published `DraftAttachmentSummary` component. */
+const DraftAttachmentSummarySchema = z.object({
+  id: z.string(),
+  filename: z.string(),
+  sourceBytes: z.number().int(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
+/**
+ * Transcribed from the published `DraftSummary` component, not derived from `DraftSchema`:
+ * the server owns the summary, so a field Senti adds to it is transcribed here, and a field
+ * added to `Draft` no longer reaches this tool (CONTEXT D49).
+ */
+export const DraftSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  sourceBytes: z.number().int(),
+  sourceSha256: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  lastCompileStatus: z.enum(['SUCCESS', 'FAILED']).nullable(),
+  compileLogBytes: z.number().int().nullable(),
+  logTruncated: z.boolean(),
+  diagnosticsCount: z.number().int(),
+  compiledUpToDate: z.boolean(),
+  eaDefinitionId: z.string().nullable(),
+  attachments: z.array(DraftAttachmentSummarySchema),
+});
+
+export type DraftSummary = z.infer<typeof DraftSummarySchema>;
+
+/**
+ * `notes` is always empty and stays declared. A note records information this tool lost
+ * (CONTEXT D25), and a summary route loses nothing the tool received; removing a published
+ * output field waits for a major version (CONTEXT D49).
+ */
 export const DraftsOutputSchema = z.object({
   drafts: z.array(DraftSummarySchema),
   notes: z.array(z.string()),
 });
 
-export type ShapedDrafts = z.infer<typeof DraftsOutputSchema>;
-
-export function parseDrafts(payload: unknown): Draft[] {
-  return parseOrThrow(z.array(DraftSchema), payload, 'draft list');
+export function parseDrafts(payload: unknown): DraftSummary[] {
+  return parseOrThrow(z.array(DraftSummarySchema), payload, 'draft list');
 }
 
-function summarise(draft: Draft): ShapedDrafts['drafts'][number] {
-  const {
-    sourceCode,
-    lastCompileLog: _log,
-    logTruncated: _truncated,
-    lastCompileDiagnostics,
-    attachments,
-    ...kept
-  } = draft;
-
-  return {
-    ...kept,
-    sourceBytes: byteLength(sourceCode),
-    diagnosticsCount: lastCompileDiagnostics.length,
-    attachments: attachments.map(({ sourceCode: source, ...rest }) => ({
-      ...rest,
-      sourceBytes: byteLength(source),
-    })),
-  };
-}
-
-/**
- * A note reports what was actually lost, not what the shaping code merely touched — a
- * draft with empty source and no log is not a cut just because the fields exist in the
- * schema (CONTEXT D25).
- */
-export function shapeDrafts(drafts: Draft[]): ShapedDrafts {
-  const summaries = drafts.map(summarise);
-
-  const draftsWithSource = drafts.filter((draft) => byteLength(draft.sourceCode) > 0);
-  const cutAttachments = drafts.flatMap((draft) =>
-    draft.attachments.filter((a) => byteLength(a.sourceCode) > 0),
-  );
-  const draftsWithLog = drafts.filter((draft) => byteLength(draft.lastCompileLog ?? '') > 0);
-  const draftsWithDiagnostics = drafts.filter((draft) => draft.lastCompileDiagnostics.length > 0);
-
-  const clauses: string[] = [];
-  if (draftsWithSource.length > 0 || cutAttachments.length > 0) {
-    const parts = [
-      draftsWithSource.length > 0 ? `${draftsWithSource.length} draft(s)` : undefined,
-      cutAttachments.length > 0 ? `${cutAttachments.length} attachment(s)` : undefined,
-    ].filter((part): part is string => part !== undefined);
-
-    clauses.push(`${parts.join(' and ')} had source dropped`);
-  }
-  if (draftsWithLog.length > 0) clauses.push(`${draftsWithLog.length} compile log(s) dropped`);
-  if (draftsWithDiagnostics.length > 0) {
-    clauses.push(`${draftsWithDiagnostics.length} draft(s)' diagnostics dropped`);
-  }
-
-  if (clauses.length === 0) return { drafts: summaries, notes: [] };
-
-  // Diagnostics are objects, not text, and are reduced to a count rather than measured —
-  // so the byte figure covers source and log only, and is stated as such. A cut that is
-  // diagnostics-only has no byte figure at all, rather than claiming "0 B in total".
-  const cutBytes =
-    draftsWithSource.reduce((sum, draft) => sum + byteLength(draft.sourceCode), 0) +
-    cutAttachments.reduce((sum, a) => sum + byteLength(a.sourceCode), 0) +
-    draftsWithLog.reduce((sum, draft) => sum + byteLength(draft.lastCompileLog ?? ''), 0);
-  const size = cutBytes >= 1024 ? `${Math.round(cutBytes / 1024)} KiB` : `${cutBytes} B`;
-  const total = cutBytes > 0 ? ` — ${size} of source and log in total` : '';
-
-  return {
-    drafts: summaries,
-    notes: [
-      `Source and compiler output were cut: ${clauses.join('; ')}${total}. ` +
-        'Call get_draft for one draft\'s source, log and diagnostics, or ' +
-        'list_draft_attachments for its indicator sources.',
-    ],
-  };
-}
-
-function readiness(draft: ShapedDrafts['drafts'][number]): string {
+function readiness(draft: DraftSummary): string {
   if (draft.lastCompileStatus === null) return 'never compiled';
 
   const upToDate = draft.compiledUpToDate ? 'source unchanged since' : 'source changed since';
@@ -112,7 +62,7 @@ function readiness(draft: ShapedDrafts['drafts'][number]): string {
   return `${draft.lastCompileStatus}, ${upToDate}${ready}`;
 }
 
-function block(draft: ShapedDrafts['drafts'][number]): string {
+function block(draft: DraftSummary): string {
   const registered = draft.eaDefinitionId ? `registered as ${draft.eaDefinitionId}` : 'not registered';
   const diagnostics = draft.diagnosticsCount > 0 ? ` · ${draft.diagnosticsCount} diagnostic(s)` : '';
 
@@ -124,24 +74,19 @@ function block(draft: ShapedDrafts['drafts'][number]): string {
   ].join('\n');
 }
 
-export function formatDrafts(shaped: ShapedDrafts): string {
-  if (shaped.drafts.length === 0) {
+export function formatDrafts(drafts: DraftSummary[]): string {
+  if (drafts.length === 0) {
     return (
       'No drafts on this API key. This is a real empty result rather than a truncated read — ' +
       'drafts are created in the Senti Quant web Studio, and this server has no write tools.'
     );
   }
 
-  const noun = shaped.drafts.length === 1 ? 'draft' : 'drafts';
-  const blocks = shaped.drafts.map(block).join('\n\n');
-  const notes =
-    shaped.notes.length === 0
-      ? ''
-      : `\n\nNotes:\n${shaped.notes.map((note) => `- ${note}`).join('\n')}`;
+  const noun = drafts.length === 1 ? 'draft' : 'drafts';
 
   return (
-    `${shaped.drafts.length} ${noun}, most recently updated first. Source code is not ` +
-    `included — call get_draft with a draftId to read one.\n\n${blocks}${notes}`
+    `${drafts.length} ${noun}, most recently updated first. Source code is not ` +
+    `included — call get_draft with a draftId to read one.\n\n${drafts.map(block).join('\n\n')}`
   );
 }
 
@@ -164,9 +109,9 @@ export function registerListDrafts(server: McpServer, client: SentiClient): void
     outputSchema: DraftsOutputSchema,
     run: async (_args, signal) => {
       const payload = await client.get('/api/v1/drafts', { signal, scope: AUTHORING_READ });
-      const shaped = shapeDrafts(parseDrafts(payload));
+      const drafts = parseDrafts(payload);
 
-      return { text: formatDrafts(shaped), structured: shaped };
+      return { text: formatDrafts(drafts), structured: { drafts, notes: [] } };
     },
   });
 }

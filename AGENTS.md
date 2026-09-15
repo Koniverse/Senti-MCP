@@ -183,9 +183,10 @@ src/
                           `Authoring` tag; publishes the `limits` the rest of
                           EPIC-7's tools size their cuts against. No cuts of its own.
                           get-draft.ts (v2.2.0) — owns DraftSchema/AttachmentSchema,
-                          imported by list-drafts.ts and list-draft-attachments.ts
-                          list-drafts.ts (v2.3.0) — the largest payload the API can
-                          produce; four cuts, one note (CONTEXT D32)
+                          imported by list-draft-attachments.ts and write-result.ts
+                          list-drafts.ts (v2.3.0) — returns the server's DraftSummary,
+                          transcribed, as its own output; the cut D32 made here moved
+                          to the server, and `notes` is always [] (CONTEXT D49)
                           list-draft-attachments.ts (v2.4.0) — a byte budget checked
                           after inclusion, not a truncation; closes EPIC-7
                           write-result.ts (v2.5.0) — the shaping every body-carrying

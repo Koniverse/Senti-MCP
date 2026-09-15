@@ -7,7 +7,7 @@ import {
   parseAttachments,
   shapeAttachments,
 } from './tools/authoring/list-draft-attachments.js';
-import { formatDrafts, parseDrafts, shapeDrafts } from './tools/authoring/list-drafts.js';
+import { formatDrafts, parseDrafts } from './tools/authoring/list-drafts.js';
 import { formatBrokers, parseBrokers } from './tools/brokers/list-brokers.js';
 import {
   formatAccountStrategies,
@@ -69,7 +69,7 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
     expect(formatConventions(conventions)).toMatch(/authoring contract/i);
 
     const drafts = parseDrafts(await client.get('/api/v1/drafts', { scope: 'authoring:read' }));
-    expect(formatDrafts(shapeDrafts(drafts)).length).toBeGreaterThan(0);
+    expect(formatDrafts(drafts).length).toBeGreaterThan(0);
 
     if (drafts.length > 0) {
       const draft = parseDraft(

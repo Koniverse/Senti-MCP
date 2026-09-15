@@ -116,17 +116,17 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - [ ] **AC-1** — **Given** the tool is called, **When** it requests the collection, **Then** the
   request is `GET /api/v1/drafts?view=summary` under `authoring:read`, **And** no code path in
   `src/` requests `view=full`.
-- [ ] **AC-2** — **Given** a response of `DraftSummary` items, **When** the tool returns,
+- [x] **AC-2** — **Given** a response of `DraftSummary` items, **When** the tool returns,
   **Then** each entry in `structuredContent.drafts` carries `id`, `name`, `sourceBytes`,
   `sourceSha256`, `createdAt`, `updatedAt`, `lastCompileStatus`, `compileLogBytes`,
   `logTruncated`, `diagnosticsCount`, `compiledUpToDate` and `eaDefinitionId`, **And** each
   attachment carries `id`, `filename`, `sourceBytes`, `createdAt` and `updatedAt`.
 - **AC-3** — *Withdrawn 2026-09-15* — the full-shape fallback. See §Story refresh. The number
   stays so later references hold.
-- [ ] **AC-4** — **Given** a payload that is not an array of summaries — an array of full drafts
+- [x] **AC-4** — **Given** a payload that is not an array of summaries — an array of full drafts
   included — **When** it is parsed, **Then** the tool returns `isError: true` with the "API may
   have changed" message naming `draft list`.
-- [ ] **AC-5** — **Given** any response, **When** the tool returns, **Then** `notes` is `[]`,
+- [x] **AC-5** — **Given** any response, **When** the tool returns, **Then** `notes` is `[]`,
   **And** `DraftsOutputSchema` still declares `notes`.
 - [ ] **AC-6** — **Given** the tool description and the README row, **When** they are read,
   **Then** neither describes a cut or says "There is no option to request the unshaped
@@ -151,17 +151,17 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 
 ## Tasks
 
-- [ ] **TASK-9.1.1** — Transcribe the published summary (AC: 2)
+- [x] **TASK-9.1.1** — Transcribe the published summary (AC: 2)
   - [x] Run [EPIC-9](../epics/EPIC-9.md) §Deploy check — 2026-09-15,
         `DraftSummary: true compile-log: true`
-  - [ ] Transcribe `DraftSummary` and `DraftAttachmentSummary` field by field; re-read the
+  - [x] Transcribe `DraftSummary` and `DraftAttachmentSummary` field by field; re-read the
         document on the day, in case either has moved since 2026-09-15
-- [ ] **TASK-9.1.2** — Schemas and parsing in `src/tools/authoring/list-drafts.ts` (AC: 2, 4)
-  - [ ] Replace the derived `DraftSummarySchema` (`:8-18`) with the transcription; `int32` fields
+- [x] **TASK-9.1.2** — Schemas and parsing in `src/tools/authoring/list-drafts.ts` (AC: 2, 4)
+  - [x] Replace the derived `DraftSummarySchema` (`:8-18`) with the transcription; `int32` fields
         as `z.number().int()`
-  - [ ] `parseDrafts`: `z.array(DraftSummarySchema)` through `parseOrThrow`
+  - [x] `parseDrafts`: `z.array(DraftSummarySchema)` through `parseOrThrow`
 - [ ] **TASK-9.1.3** — Delete the cut, and render the log size (AC: 5, 6, 7, 13)
-  - [ ] `summarise` and `shapeDrafts` (`:31-101`) go; `notes` is the literal `[]`
+  - [x] `summarise` and `shapeDrafts` (`:31-101`) go; `notes` is the literal `[]`
   - [ ] `formatDrafts`: drop the `Notes` branch; rewrite the empty-collection text (`:130-131`);
         add the compile-log line to `block`
   - [ ] Tool description (`:154-162`) and `README.md`'s `list_drafts` row
@@ -171,10 +171,10 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - [ ] **TASK-9.1.5** — Drop `PENDING` (AC: 8)
   - [ ] `get-draft.ts:28`, `write-result.ts:24`, and any test fixture that uses it
 - [ ] **TASK-9.1.6** — Tests (AC: 2, 4, 5, 7, 13)
-  - [ ] `list-drafts.test.ts`: the 13-test `shapeDrafts` block (`:63-167`) is replaced by parse
+  - [x] `list-drafts.test.ts`: the 13-test `shapeDrafts` block (`:63-167`) is replaced by parse
         tests over a summary fixture — `compileLogBytes` both `null` and not — and one that
         rejects a full-draft payload
-  - [ ] The two `formatDrafts` tests about notes (`:198`, `:202`) go with the branch
+  - [x] The two `formatDrafts` tests about notes (`:198`, `:202`) go with the branch
 - [ ] **TASK-9.1.7** — Smoke (AC: 9)
   - [ ] `src/smoke.test.ts:71-72` requests `view: 'summary'`, parses, renders, and logs the raw
         byte size to stderr
@@ -182,7 +182,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
   - [x] Summary vs `view=full` bytes on the smoke account, and `view=bogus`'s status and
         envelope code, into §Implementation notes
 - [ ] **TASK-9.1.9** — Record and release (AC: all)
-  - [ ] `docs/CONTEXT.md`: the next free `D<N>` (D49 as of 2026-09-15), revising
+  - [x] `docs/CONTEXT.md`: the next free `D<N>` (D49 as of 2026-09-15), revising
         [D32](../../CONTEXT.md) — the cut moved to the server; `notes` stays, empty, until a
         major version removes it; and why no full-shape fallback ships
   - [ ] Bump the version in all five places (`VERSION`, `package.json`, `package-lock.json`,

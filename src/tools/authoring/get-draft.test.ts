@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import { type Draft, formatDraft, parseDraft, shapeDraft } from './get-draft.js';
-import { shapeDrafts } from './list-drafts.js';
 
 const DRAFT: Draft = {
   id: 'd-1',
@@ -126,7 +125,7 @@ describe('shapeDraft', () => {
     expect(note).toContain('1 indicator file(s)');
   });
 
-  test('agrees with list_drafts that an empty attachment lost nothing', () => {
+  test('writes no note for an attachment whose source is empty', () => {
     const empty: Draft = {
       ...NO_ATTACHMENTS,
       sourceCode: '',
@@ -136,10 +135,8 @@ describe('shapeDraft', () => {
       attachments: [{ ...DRAFT.attachments[0]!, sourceCode: '' }],
     };
 
-    // The two tools shape the same attachments and must not disagree about whether
-    // reading them again would return anything.
+    // Reading an empty attachment again would return nothing, so there is nothing to note.
     expect(shapeDraft(empty).notes).toEqual([]);
-    expect(shapeDrafts([empty]).notes).toEqual([]);
   });
 });
 

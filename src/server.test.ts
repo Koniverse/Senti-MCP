@@ -94,6 +94,31 @@ const DRAFT = {
   ],
 };
 
+/** `DRAFT` as `GET /api/v1/drafts` summarises it — sizes and a hash, no bodies. */
+const DRAFT_SUMMARY = {
+  id: 'd-1',
+  name: 'RSI Reversal',
+  sourceBytes: 12,
+  sourceSha256: 'b5b0c2e6f0a41b8c8e4a3f1c7d2e9a6b0c3d5e7f9a1b2c4d6e8f0a2b4c6d8e0f',
+  createdAt: '2026-08-14T09:22:41.318Z',
+  updatedAt: '2026-08-18T04:07:55.902Z',
+  lastCompileStatus: 'FAILED',
+  compileLogBytes: 52,
+  logTruncated: false,
+  diagnosticsCount: 1,
+  compiledUpToDate: false,
+  eaDefinitionId: null,
+  attachments: [
+    {
+      id: 'a-1',
+      filename: 'Trend.mq5',
+      sourceBytes: 5,
+      createdAt: '2026-08-14T09:30:00.000Z',
+      updatedAt: '2026-08-14T09:30:00.000Z',
+    },
+  ],
+};
+
 const ATTACHMENT = {
   id: 'a-1',
   filename: 'Trend.mq5',
@@ -308,7 +333,7 @@ describe('get_authoring_conventions', () => {
 describe('list_drafts', () => {
   test('calls the collection path and returns both channels', async () => {
     const calls: string[] = [];
-    const client = await connect(authoringFetch([DRAFT], calls));
+    const client = await connect(authoringFetch([DRAFT_SUMMARY], calls));
 
     const result = (await client.callTool({ name: 'list_drafts' })) as ToolResult;
 
@@ -316,6 +341,26 @@ describe('list_drafts', () => {
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('RSI Reversal');
     expect(DraftsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
+  });
+
+  test("returns the server's summary as its own output, with no notes", async () => {
+    const client = await connect(authoringFetch([DRAFT_SUMMARY]));
+
+    const result = (await client.callTool({ name: 'list_drafts' })) as ToolResult;
+
+    // The summary route loses nothing the tool received, so there is nothing to note
+    // (CONTEXT D25) — `notes` stays declared and is always empty (CONTEXT D49).
+    expect(result.structuredContent).toEqual({ drafts: [DRAFT_SUMMARY], notes: [] });
+  });
+
+  test('fails loudly on a collection of full drafts rather than adapting it', async () => {
+    const client = await connect(authoringFetch([DRAFT]));
+
+    const result = (await client.callTool({ name: 'list_drafts' })) as ToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/draft list/);
+    expect(textOf(result)).toMatch(/API may have changed/);
   });
 
   test('takes no arguments', async () => {
@@ -1818,7 +1863,7 @@ const TOOL_CALLS: {
     outputSchema: ConventionsOutputSchema,
     successBody: CONVENTIONS,
   },
-  { name: 'list_drafts', outputSchema: DraftsOutputSchema, successBody: [DRAFT] },
+  { name: 'list_drafts', outputSchema: DraftsOutputSchema, successBody: [DRAFT_SUMMARY] },
   {
     name: 'get_draft',
     arguments: { draftId: 'abc-123' },

@@ -2653,3 +2653,58 @@ is unchanged — the next `SENTI_SMOKE_WRITES=1` run closes it. No version is cu
 
 **Date**: 2026-09-15
 **Version**: unreleased (tests and documentation only)
+
+---
+
+### D49. The drafts cut moves to the server: `list_drafts` returns its summary, `notes` stays empty, and no full-shape fallback ships (revision of D32)
+
+**Context**: [D32](#d32-list_drafts-returns-no-source-and-the-cut-is-not-optional) made
+`list_drafts` drop source, attachment source, the compile log and diagnostics, and listed
+"ask the API for a summary mode" as *done, and not waited on*. It shipped as Senti US-46.49,
+deployed by 2026-09-15 (Senti `v0.3.6`): `GET /api/v1/drafts` now returns an array of
+`DraftSummary` when `view` is absent or `summary`, and the pre-change `Draft` array only under
+`view=full`. `2.8.1` parses the collection as `z.array(DraftSchema)`, so every call failed —
+observed live on 2026-09-15 as *unexpected shape for the draft list at "0.sourceCode"*.
+
+Measured on the smoke account the same day: summary **1,616 B**, `view=full` **22,459 B**.
+Senti measured a 20-draft account seeded at every published cap: 24,221 B against
+10,879,661 B.
+
+**Decision**:
+
+1. **`list_drafts` returns the server's summary as its own output.** The output item is
+   transcribed from `components.schemas.DraftSummary` and `DraftAttachmentSummary`, not
+   derived from `DraftSchema` as [US-7.3](sprints/stories/US-7.3-list-drafts-tool.md) did.
+   US-7.3 derived it so an upstream field would have to be dealt with explicitly; that reason
+   now points the other way — a field Senti adds to `DraftSummary` is transcribed here, and a
+   field added to `Draft` no longer reaches this tool. `shapeDrafts` is deleted.
+2. **`notes` stays in the output schema and is always `[]`.** Under
+   [D25](#d25-breakdowns-is-cut-five-ways-not-four-only-a-cut-that-loses-something-writes-a-note)
+   a note records information the tool lost, and a summary route loses nothing the tool
+   received. Removing a published output field is reserved for a major version
+   ([EPIC-9](sprints/epics/EPIC-9.md) §Semver posture); the field leaves then, not before.
+3. **No full-shape fallback.** A collection of full drafts is an *API may have changed* error.
+   The fallback was planned so a release here would be safe while the API still served full
+   drafts, and the deploy came first. It could not have been faithful either: from a full
+   `Draft` the adapter sees only the log's trailing 16 KiB, so it cannot compute
+   `compileLogBytes` for a truncated log. **Trigger to restore one:** the API serving full
+   drafts by default again.
+4. **D32's refusal stands.** No tool parameter requests `view=full`, and no code path in `src/`
+   sends it. `get_draft` remains the way to read one draft whole.
+
+**Alternatives considered**:
+
+- **Parse either shape** — rejected, point 3.
+- **Drop `notes` now** — rejected; it is a published output field, and a model or host may
+  read it.
+- **Expose `view` as a tool parameter** — rejected for D32's reason: a model with an escape
+  hatch will use it.
+
+**Impact**: [US-9.1](sprints/stories/US-9.1-list-drafts-summary-mode.md) in
+[EPIC-9](sprints/epics/EPIC-9.md). `src/tools/authoring/list-drafts.ts` and its tests,
+`src/server.test.ts`, `src/smoke.test.ts`, the tool description and `README.md`'s
+`list_drafts` row. D32's measured cut (19,853 B → 1,898 B, 2026-08-20) is history: the tool
+no longer cuts anything. A minor version — fields are added to the output, none removed.
+
+**Date**: 2026-09-15
+**Version**: 2.9.0
