@@ -9,7 +9,7 @@ sprint:
 depends_on: [US-9.1]
 assignee: bluezdot
 created: 2026-09-14
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 ## Goal
@@ -148,10 +148,9 @@ story they send it to `get_draft_attachment`, by id:
 
 ### Architecture constraints
 
-- **`AttachmentSchema` is not widened to require `updatedAt`.** It is parsed by `get_draft`,
-  the `list_drafts` full-shape adapter and every attachment write. Making a field those tools
-  never read required would let one lagging host take all of them down. The new tool transcribes
-  its own schema instead.
+- **`AttachmentSchema` is not widened to require `updatedAt`.** It is parsed by `get_draft`
+  and every attachment write. Making a field those tools never read required would let one
+  lagging host take all of them down. The new tool transcribes its own schema instead.
 - **`attachmentId` inherits the path guard** through `draftPath(draftId, 'attachments',
   attachmentId)` ([EPIC-8](../epics/EPIC-8.md) §Cross-cutting invariants). Whether that guard
   becomes a UUID check is [US-9.4](US-9.4-typed-diagnostics-and-path-segments.md)'s call.

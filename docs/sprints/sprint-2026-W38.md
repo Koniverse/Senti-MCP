@@ -3,16 +3,17 @@ id: sprint-2026-W38
 status: planned
 start: 2026-09-14
 end: 2026-09-20
-goal: 'No committed scope at open — W37 closed on this file''s first day with its one row done, and the corpus holds no open story, so work that arises this week joins the one scope table below as a row; mid-window scope added 2026-09-14 commits to US-9.1, which keeps list_drafts working through Senti''s drafts summary-mode deploy'
+goal: 'No committed scope at open — W37 closed on this file''s first day with its one row done, and the corpus holds no open story, so work that arises this week joins the one scope table below as a row; mid-window scope added 2026-09-14 commits to US-9.1, which restores list_drafts — broken in production since Senti''s drafts summary-mode deploy, live on both hosts by 2026-09-15'
 ---
 
 ## Sprint scope
 
 | US | Title | Epic | Pri | Points | Status | Story file |
 | -- | ----- | ---- | --- | ------ | ------ | ---------- |
-| US-9.1 | list_drafts adopts the drafts summary mode *(added 2026-09-14)* | EPIC-9 | P0 | 3 | 🟢 ready | [US-9.1](stories/US-9.1-list-drafts-summary-mode.md) |
+| US-9.1 | list_drafts adopts the drafts summary mode *(added 2026-09-14)* | EPIC-9 | P0 | 2 | 🟢 ready | [US-9.1](stories/US-9.1-list-drafts-summary-mode.md) |
 
-**Total: 1 story / 3 points** (0 at open; US-9.1 added 2026-09-14). This sprint opened empty.
+**Total: 1 story / 2 points** (0 at open; US-9.1 added 2026-09-14 at 3 points, re-sized to 2 on
+2026-09-15 when its full-shape fallback was withdrawn). This sprint opened empty.
 Scope is not frozen ([CONTEXT D21](../CONTEXT.md) rule 1) — work that arises this week is
 appended here as a row annotated `_(added YYYY-MM-DD)_`, with the sprint `goal:` extended by a
 clause. **One table, one total, no second scope section** ([CONTEXT D30](../CONTEXT.md)),

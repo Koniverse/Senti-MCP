@@ -8,7 +8,7 @@ points: 2
 sprint:
 assignee: bluezdot
 created: 2026-09-14
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 ## Goal
@@ -21,11 +21,14 @@ names as `operationId`s, a check notices the day one of them — or its path —
 
 ### What the docs say that is no longer true
 
-Senti US-46.46 put an `operationId` on all 30 operations (31 once US-46.49 adds
-`getDraftCompileLog`). 21 are the camelCase of this repo's tool names — a deliberate choice on
-the Senti side, which makes those names a contract Senti now owns. The nine it coined are
-`linkAccount`, `deployStrategy`, `stopStrategy`, `closePosition`, `closeAllPositions`,
-`cancelOrder`, `cancelAllOrders`, `registerDraftAsEa` and `getDraftAttachment`.
+Senti US-46.46 put an `operationId` on every operation — 31 across 23 paths since US-46.49
+added `getDraftCompileLog` (served document of 2026-09-15). 21 are the camelCase of this repo's
+tool names — a deliberate choice on the Senti side, which makes those names a contract Senti
+now owns. The ten it coined are `linkAccount`, `deployStrategy`, `stopStrategy`,
+`closePosition`, `closeAllPositions`, `cancelOrder`, `cancelAllOrders`, `registerDraftAsEa`,
+`getDraftAttachment` and `getDraftCompileLog` — the last two the camelCase of the tools
+[US-9.2](US-9.2-get-draft-attachment-tool.md) and [US-9.3](US-9.3-get-draft-compile-log-tool.md)
+add, so after them the count of matching names is 23.
 
 - `docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md:47` — *"No `operationId`
   anywhere."* — and `:73`, where the rejected codegen alternative *"founders on the missing

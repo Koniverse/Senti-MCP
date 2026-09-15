@@ -8,7 +8,7 @@ points: 3
 sprint:
 assignee: bluezdot
 created: 2026-09-14
-updated: 2026-09-14
+updated: 2026-09-15
 ---
 
 ## Goal
@@ -38,10 +38,11 @@ described it. It is the one local transcription of that shape, already used stri
 What goes is `diagnosticLine`'s `safeParse` fallback (`:94-112`), which renders an unreadable
 entry as raw JSON.
 
-**The cost is the one D44 named.** `DraftSchema` is parsed all-or-nothing by `get_draft`, by
-`create_draft` and `update_draft` (through `parseWrittenDraft`, `write-result.ts:52-54`), and by
-the `list_drafts` full-shape adapter from [US-9.1](US-9.1-list-drafts-summary-mode.md). One
-malformed diagnostic will fail all of them. That is now the right trade: the document promises
+**The cost is the one D44 named.** `DraftSchema` is parsed all-or-nothing by `get_draft` and
+by `create_draft` and `update_draft` (through `parseWrittenDraft`, `write-result.ts:52-54`). One
+malformed diagnostic will fail all three. (`list_drafts` is out of reach: after
+[US-9.1](US-9.1-list-drafts-summary-mode.md) it parses `DraftSummary`, which carries only a
+count.) That is now the right trade: the document promises
 the shape, so a divergence is Senti's contract breaking, reported as such — not this server's
 guess failing.
 

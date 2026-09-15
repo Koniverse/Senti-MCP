@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-09-14 10:06:03 UTC
+> Last generated: 2026-09-15 02:51:45 UTC
 > Total stories: 41
 
 ## ⏰ Deadlines (0)
@@ -22,7 +22,7 @@ _No stories carry an explicit deadline._
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
-| US-9.1 | list_drafts adopts the drafts summary mode | EPIC-9 | P0 | 3 | sprint-2026-W38 | bluezdot |
+| US-9.1 | list_drafts adopts the drafts summary mode | EPIC-9 | P0 | 2 | sprint-2026-W38 | bluezdot |
 
 ## 🟡 In Progress (0)
 
