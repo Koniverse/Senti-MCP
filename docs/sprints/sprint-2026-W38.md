@@ -3,19 +3,22 @@ id: sprint-2026-W38
 status: planned
 start: 2026-09-14
 end: 2026-09-20
-goal: 'No committed scope at open — W37 closed on this file''s first day with its one row done, and the corpus holds no open story, so work that arises this week joins the one scope table below as a row'
+goal: 'No committed scope at open — W37 closed on this file''s first day with its one row done, and the corpus holds no open story, so work that arises this week joins the one scope table below as a row; mid-window scope added 2026-09-14 commits to US-9.1, which keeps list_drafts working through Senti''s drafts summary-mode deploy'
 ---
 
 ## Sprint scope
 
 | US | Title | Epic | Pri | Points | Status | Story file |
 | -- | ----- | ---- | --- | ------ | ------ | ---------- |
+| US-9.1 | list_drafts adopts the drafts summary mode *(added 2026-09-14)* | EPIC-9 | P0 | 3 | 🟢 ready | [US-9.1](stories/US-9.1-list-drafts-summary-mode.md) |
 
-**Total: 0 stories / 0 points.** This sprint opens empty. Scope is not frozen
-([CONTEXT D21](../CONTEXT.md) rule 1) — work that arises this week is appended here as a row
-annotated `_(added YYYY-MM-DD)_`, with the sprint `goal:` extended by a clause. **One table,
-one total, no second scope section** ([CONTEXT D30](../CONTEXT.md)), checked by
-`npm run agile:check-sprints` ([CONTEXT D47](../CONTEXT.md)).
+**Total: 1 story / 3 points** (0 at open; US-9.1 added 2026-09-14). This sprint opened empty.
+Scope is not frozen ([CONTEXT D21](../CONTEXT.md) rule 1) — work that arises this week is
+appended here as a row annotated `_(added YYYY-MM-DD)_`, with the sprint `goal:` extended by a
+clause. **One table, one total, no second scope section** ([CONTEXT D30](../CONTEXT.md)),
+checked by `npm run agile:check-sprints` ([CONTEXT D47](../CONTEXT.md)).
+[EPIC-9](epics/EPIC-9.md)'s other five stories were filed the same day as backlog and are not
+rows here.
 
 > AC and Tasks live inside each story file. This table is a planning surface only.
 
@@ -79,6 +82,11 @@ closed ([EPIC-6](epics/EPIC-6.md)), so seven carry.
     D47 on `main` four hours after the plan was written. The plan's own rule — any change
     after D47 reaches `main` is D48 — now means its decision takes the next free number.
   - **It targets W37 as the sprint US-9.1 joins.** W37 is closed; a promotion lands here.
+  - **Its epic id is taken.** `EPIC-9` was filed on 2026-09-14 for the Senti API contract
+    fixes ([EPIC-9](epics/EPIC-9.md)), because that work breaks a shipped tool and the CI
+    gate's epic was never filed. A promotion files the gate under the next free id —
+    `EPIC-10` / `US-10.1` as of today — and the spec and plan, which are records, keep the
+    number they were written with.
 
   The cost is concrete, not hypothetical: Dependabot's
   [PR #13](https://github.com/Koniverse/Senti-MCP/pull/13), open since 2026-09-11, shows

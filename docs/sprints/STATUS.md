@@ -1,20 +1,28 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-09-14 02:27:05 UTC
-> Total stories: 35
+> Last generated: 2026-09-14 10:06:03 UTC
+> Total stories: 41
 
 ## ⏰ Deadlines (0)
 
 _No stories carry an explicit deadline._
 
-## 📋 Backlog (0)
+## 📋 Backlog (5)
 
-_No stories_
+| ID | Title | Epic | Pri | Points | Sprint | Assignee |
+|---|---|---|---|---|---|---|
+| US-9.2 | get_draft_attachment, and list_draft_attachments becomes an index | EPIC-9 | P1 | 5 | — | bluezdot |
+| US-9.3 | get_draft_compile_log tool | EPIC-9 | P2 | 2 | — | bluezdot |
+| US-9.4 | Typed diagnostics, and the path-segment rationale | EPIC-9 | P2 | 3 | — | bluezdot |
+| US-9.5 | The forbidden-construct pattern contract | EPIC-9 | P2 | 2 | — | bluezdot |
+| US-9.6 | operationId doc corrections and a spec-drift check | EPIC-9 | P3 | 2 | — | bluezdot |
 
-## 🟢 Ready (0)
+## 🟢 Ready (1)
 
-_No stories_
+| ID | Title | Epic | Pri | Points | Sprint | Assignee |
+|---|---|---|---|---|---|---|
+| US-9.1 | list_drafts adopts the drafts summary mode | EPIC-9 | P0 | 3 | sprint-2026-W38 | bluezdot |
 
 ## 🟡 In Progress (0)
 
@@ -76,8 +84,8 @@ _No stories_
 
 ## Summary
 
-- 📋 **Backlog**: 0
-- 🟢 **Ready**: 0
+- 📋 **Backlog**: 5
+- 🟢 **Ready**: 1
 - 🟡 **In Progress**: 0
 - 👀 **Review**: 0
 - ✅ **Done**: 35
