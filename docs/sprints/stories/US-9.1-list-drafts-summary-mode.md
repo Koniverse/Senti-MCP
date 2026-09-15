@@ -145,7 +145,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - [ ] **AC-12** — **Given** `src/server.test.ts`, **When** it runs, **Then** `list_drafts` still
   passes the read-only-annotation, output-schema and key-absence assertions, with the stub
   answering `/api/v1/drafts?view=summary`.
-- [ ] **AC-13** — **Given** a draft whose `compileLogBytes` is not `null`, **When** the text
+- [x] **AC-13** — **Given** a draft whose `compileLogBytes` is not `null`, **When** the text
   renders, **Then** it states the log's size — including when `diagnosticsCount` is 0 — and names
   `get_draft` as where to read it; **Given** `null`, **Then** no log line is rendered.
 

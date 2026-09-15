@@ -62,15 +62,31 @@ function readiness(draft: DraftSummary): string {
   return `${draft.lastCompileStatus}, ${upToDate}${ready}`;
 }
 
+/**
+ * Keyed on `compileLogBytes`, not `diagnosticsCount`: a compile can leave a log that parsed
+ * into no diagnostics, and `logTruncated` is `false` for any log under 16 KiB — so neither of
+ * the other two fields says whether there is anything to read.
+ */
+function logLine(draft: DraftSummary): string[] {
+  if (draft.compileLogBytes === null) return [];
+
+  const where = draft.logTruncated
+    ? 'get_draft returns its trailing 16 KiB only'
+    : 'read it with get_draft';
+
+  return [`  compile log: ${draft.compileLogBytes} bytes — ${where}`];
+}
+
 function block(draft: DraftSummary): string {
   const registered = draft.eaDefinitionId ? `registered as ${draft.eaDefinitionId}` : 'not registered';
   const diagnostics = draft.diagnosticsCount > 0 ? ` · ${draft.diagnosticsCount} diagnostic(s)` : '';
 
   return [
     `- ${draft.name} (draftId ${draft.id})`,
-    `  updated ${draft.updatedAt} · ${draft.sourceBytes} bytes · ` +
+    `  updated ${draft.updatedAt} · ${draft.sourceBytes} bytes · sha256 ${draft.sourceSha256} · ` +
       `${draft.attachments.length} attachment(s)`,
     `  compile: ${readiness(draft)}${diagnostics} · ${registered}`,
+    ...logLine(draft),
   ].join('\n');
 }
 

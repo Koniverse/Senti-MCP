@@ -104,6 +104,35 @@ describe('formatDrafts', () => {
     expect(rendered).not.toContain('null');
   });
 
+  test('renders the source hash, so a caller can tell whether its copy is current', () => {
+    expect(formatDrafts([SUMMARY])).toContain(SUMMARY.sourceSha256);
+  });
+
+  test('states the compile log size and where to read it, even with no diagnostics', () => {
+    // The live smoke account's case: a SUCCESS compile, a 2,425-byte log, zero diagnostics.
+    // `diagnosticsCount` alone would say there is nothing to read.
+    const clean: DraftSummary = { ...SUMMARY, diagnosticsCount: 0 };
+    const line = formatDrafts([clean])
+      .split('\n')
+      .find((entry) => entry.includes('2425'));
+
+    expect(line).toMatch(/log/i);
+    expect(line).toMatch(/get_draft/);
+  });
+
+  test('says a truncated log comes back as its trailing 16 KiB only', () => {
+    const truncated: DraftSummary = { ...SUMMARY, compileLogBytes: 20480, logTruncated: true };
+    const line = formatDrafts([truncated])
+      .split('\n')
+      .find((entry) => entry.includes('20480'));
+
+    expect(line).toMatch(/trailing 16 KiB/);
+  });
+
+  test('renders no log line for a draft with no log', () => {
+    expect(formatDrafts([BARE])).not.toMatch(/log/i);
+  });
+
   test('agrees in number', () => {
     expect(formatDrafts([SUMMARY])).toContain('1 draft');
     expect(formatDrafts([SUMMARY, BARE])).toContain('2 drafts');
