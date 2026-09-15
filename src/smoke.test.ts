@@ -68,7 +68,17 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
     expect(conventions.limits.maxDrafts).toBeGreaterThan(0);
     expect(formatConventions(conventions)).toMatch(/authoring contract/i);
 
-    const drafts = parseDrafts(await client.get('/api/v1/drafts', { scope: 'authoring:read' }));
+    const rawDrafts = await client.get('/api/v1/drafts', {
+      scope: 'authoring:read',
+      query: { view: 'summary' },
+    });
+    const drafts = parseDrafts(rawDrafts);
+    // Re-read off a live account rather than trusting the figure in US-9.1 §Implementation
+    // notes: 1,616 B for the smoke account's 4 drafts on 2026-09-15.
+    console.error(
+      `[smoke] drafts: ${drafts.length} summaries, ` +
+        `${Buffer.byteLength(JSON.stringify(rawDrafts), 'utf8')} bytes`,
+    );
     expect(formatDrafts(drafts).length).toBeGreaterThan(0);
 
     if (drafts.length > 0) {

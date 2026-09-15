@@ -135,7 +135,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - [x] **AC-7** — **Given** an empty collection, **When** the text renders, **Then** it explains
   the empty result without claiming "this server has no write tools" (false since `2.5.0`).
 - [x] **AC-8** — `grep -rn PENDING src` prints nothing.
-- [ ] **AC-9** — **Given** `npm run test:smoke`, **When** the live leg runs, **Then** the
+- [x] **AC-9** — **Given** `npm run test:smoke`, **When** the live leg runs, **Then** the
   collection parses through `parseDrafts` and renders, **And** stderr records its raw byte size.
 - [x] **AC-10** — **Given** the tool's `inputSchema`, **When** it is inspected, **Then** it is
   empty.
@@ -175,8 +175,8 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
         tests over a summary fixture — `compileLogBytes` both `null` and not — and one that
         rejects a full-draft payload
   - [x] The two `formatDrafts` tests about notes (`:198`, `:202`) go with the branch
-- [ ] **TASK-9.1.7** — Smoke (AC: 9)
-  - [ ] `src/smoke.test.ts:71-72` requests `view: 'summary'`, parses, renders, and logs the raw
+- [x] **TASK-9.1.7** — Smoke (AC: 9)
+  - [x] `src/smoke.test.ts:71-72` requests `view: 'summary'`, parses, renders, and logs the raw
         byte size to stderr
 - [x] **TASK-9.1.8** — After the deploy, measure (AC: 11)
   - [x] Summary vs `view=full` bytes on the smoke account, and `view=bogus`'s status and
@@ -249,7 +249,7 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 | AC-1, AC-12 | `npx vitest run src/server.test.ts` · `grep -rn "view: 'full'\|view=full" src` prints nothing |
 | AC-2, AC-4 – AC-7, AC-10, AC-13 | `npx vitest run src/tools/authoring/list-drafts.test.ts` |
 | AC-8 | `grep -rn PENDING src` prints nothing |
-| AC-9 | `npm run test:smoke` — the `[smoke] drafts` line |
+| AC-9 | `npm run test:smoke -- --reporter=verbose` — the `[smoke] drafts` line (see §Implementation notes: the default reporter prints no stderr for a passing test) |
 | AC-11 | Read §Implementation notes |
 | all | `npm run typecheck && npm test` |
 
@@ -296,6 +296,27 @@ live case here, not an edge.
 
 The document's `400` for `listDrafts` says only *"`view` is not `summary` or `full`, or was sent
 more than once"*; the envelope code `INVALID_BODY` is the service's, observed here.
+
+### Re-checked at implementation — 2026-09-15
+
+The served document, re-read before transcribing: `DraftSummary` and `DraftAttachmentSummary`
+are field-for-field what §Background transcribes, all fields required, and the string `PENDING`
+appears nowhere in it. The live collection, read-only with the smoke key: no `view` and
+`view=summary` both `200`, 1,616 B, 13 keys per item; `view=bogus` `400`.
+
+### Smoke — 2026-09-15
+
+After TASK-9.1.7, read-only (`SENTI_SMOKE_WRITES` unset), against `api.sentitrade.xyz`:
+
+```
+[smoke] drafts: 4 summaries, 1616 bytes
+```
+
+The same 1,616 B as the pre-start check. **The line prints only under a verbose reporter.**
+Vitest 4's default reporter shows no `console.error` output for a passing test, so a plain
+`npm run test:smoke` prints none of the `[smoke]` lines — not this one, and not the
+`breakdowns` and `timeseries` lines that predate this story. Run
+`npm run test:smoke -- --reporter=verbose` to read them.
 
 ## Cross-references
 
