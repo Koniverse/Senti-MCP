@@ -17,7 +17,7 @@ Trading, and Authoring. An MCP host cannot call it directly: something has to ow
 API key, present typed tools whose descriptions let a model choose correctly, and turn
 API errors into text a model can act on. This server is that something.
 
-**Current state: `2.8.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
+**Current state: `2.9.0`.** `1.0.0` is the stable-surface cut and is tagged git-only;
 `1.0.1` is the version that carried it to the registry
 ([CONTEXT D11, D12](docs/CONTEXT.md)). **Fourteen read tools are registered unconditionally**
 in `src/server.ts`, and **seven write tools — `create_draft`, `update_draft`, `delete_draft`,
@@ -70,7 +70,10 @@ redeclare. `list_drafts` shipped in `2.3.0`
 `GET` operations and the largest payload the API can produce — up to 10.3 MiB across 20
 drafts. It cuts four things (source, attachment source, compile log, diagnostics) and
 notes all four in one sentence; measured live on 2026-08-20, 19,853 B → 1,898 B, 90.4%
-removed ([CONTEXT D32](docs/CONTEXT.md)). `list_draft_attachments` shipped in `2.4.0`
+removed ([CONTEXT D32](docs/CONTEXT.md)) — until `2.9.0`, when the cut moved to the server:
+the tool now asks for `view=summary` and returns the API's own `DraftSummary`, and `notes` is
+always empty ([US-9.1](docs/sprints/stories/US-9.1-list-drafts-summary-mode.md),
+[CONTEXT D49](docs/CONTEXT.md)). `list_draft_attachments` shipped in `2.4.0`
 ([US-7.4](docs/sprints/stories/US-7.4-list-draft-attachments-tool.md)), the fourth and
 last of that tag's `GET` operations. It returns the indicator source `get_draft` leaves
 out, bounded by a 64 KiB budget rather than a truncation — the running total is checked

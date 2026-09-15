@@ -227,7 +227,7 @@ this epic adds.
 
 | US | Title | Pri | Points | Status | Ships |
 |---|---|---|---|---|---|
-| [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md) | `list_drafts` adopts the drafts summary mode | P0 | 2 | 🚧 in-progress | — |
+| [US-9.1](../stories/US-9.1-list-drafts-summary-mode.md) | `list_drafts` adopts the drafts summary mode | P0 | 2 | ✅ done | `2.9.0` |
 | [US-9.2](../stories/US-9.2-get-draft-attachment-tool.md) | `get_draft_attachment`, and `list_draft_attachments` becomes an index | P1 | 5 | 📋 backlog | — |
 | [US-9.3](../stories/US-9.3-get-draft-compile-log-tool.md) | `get_draft_compile_log` | P2 | 2 | 📋 backlog | — |
 | [US-9.4](../stories/US-9.4-typed-diagnostics-and-path-segments.md) | Typed diagnostics, and the path-segment rationale | P2 | 3 | 📋 backlog | — |

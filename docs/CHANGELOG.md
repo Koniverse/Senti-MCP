@@ -13,11 +13,28 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ## [Unreleased]
 
-The development API host is retired ([CONTEXT D48](CONTEXT.md),
-[US-2.15](sprints/stories/US-2.15-retire-the-development-host.md)). Tests and documentation
-only; nothing in `dist/` changes.
+Nothing pending.
+
+## [2.9.0] — 2026-09-15 — `list_drafts` works again, on the API's draft summaries
+
+Senti US-46.49 made `GET /api/v1/drafts` return summaries by default, and `2.8.1` failed on
+every `list_drafts` call against them. The tool now asks for the summary by name and returns it
+as its own output; the cut it used to make is the server's now
+([US-9.1](sprints/stories/US-9.1-list-drafts-summary-mode.md), [CONTEXT D49](CONTEXT.md)).
+This release also carries the retirement of the development API host, which changed tests and
+documentation only ([CONTEXT D48](CONTEXT.md),
+[US-2.15](sprints/stories/US-2.15-retire-the-development-host.md)).
+
+### Fixed
+- `list_drafts` works again. The Senti API now returns draft summaries by default (Senti
+  US-46.49), and `2.8.1` failed on every call against them.
 
 ### Changed
+- `list_drafts` requests `?view=summary`, so the server no longer sends up to 10 MiB of source
+  for this tool to discard.
+- `list_drafts` output adds `sourceSha256`, `compileLogBytes`, `logTruncated` and
+  `attachments[].updatedAt`, and the text states each draft's source hash and compile-log size.
+  `notes` is kept and is now always empty.
 - `npm run test:smoke` targets production, `https://api.sentitrade.xyz`, unless
   `SENTI_API_BASE_URL` is set. With `SENTI_SMOKE_WRITES=1` it now creates and deletes a real
   draft **on production**.

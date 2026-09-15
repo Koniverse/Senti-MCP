@@ -2,13 +2,14 @@
 id: US-9.1
 title: "list_drafts adopts the drafts summary mode"
 epic: EPIC-9
-status: in-progress
+status: done
 priority: P0
 points: 2
 sprint: sprint-2026-W38
 assignee: bluezdot
 created: 2026-09-14
 updated: 2026-09-15
+version_shipped: 2.9.0
 ---
 
 ## Story refresh — 2026-09-15
@@ -263,8 +264,8 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - `list_drafts` requests `?view=summary`, so the server no longer sends up to 10 MiB of source
   for this tool to discard.
 - `list_drafts` output adds `sourceSha256`, `compileLogBytes`, `logTruncated` and
-  `attachments[].updatedAt`, and the text states each compile log's size. `notes` is kept and is
-  now always empty.
+  `attachments[].updatedAt`, and the text states each draft's source hash and compile-log size.
+  `notes` is kept and is now always empty.
 
 ### Removed
 - `PENDING` from `lastCompileStatus` in `get_draft`, `list_drafts` and the draft write tools.
@@ -317,6 +318,16 @@ Vitest 4's default reporter shows no `console.error` output for a passing test, 
 `npm run test:smoke` prints none of the `[smoke]` lines — not this one, and not the
 `breakdowns` and `timeseries` lines that predate this story. Run
 `npm run test:smoke -- --reporter=verbose` to read them.
+
+### Release — 2026-09-15
+
+`2.9.0`, a minor per [EPIC-9](../epics/EPIC-9.md) §Semver posture: `list_drafts` gains output
+fields and loses none, and `PENDING` leaves three enums that no server ever filled. The version
+moved in four of its five places on `feat/us-9.1-list-drafts-summary`, with the CHANGELOG
+section and the README in the same commit ([RELEASE.md](../../RELEASE.md) steps 1–4). **The
+tag, the push and the publish (steps 6–7) run from `main` after the branch merges** —
+`release:check` refuses a tag from any other branch — so the two TASK-9.1.9 items that name
+them stay open until then.
 
 ## Cross-references
 

@@ -134,7 +134,7 @@ No install step — `npx` fetches the published package on first run:
 Restart the client; all fourteen tools should appear — every `GET` operation the Senti
 Quant Public API exposes now has one, the last four added over the `Authoring` tag
 [EPIC-7](docs/sprints/epics/EPIC-7.md) shipped.
-`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.8.1` as
+`npx -y senti-mcp-server` resolves to whatever npm's `latest` tag points at — `2.9.0` as
 of this release.
 It carries `2.4.0`'s fourteen read tools plus **seven** write tools — `create_draft`,
 `update_draft`, `delete_draft`, `add_draft_attachment`, `update_draft_attachment`,
@@ -161,7 +161,7 @@ others existed, so check `npm view senti-mcp-server dist-tags` if a tool you
 expect is missing.
 
 Pin the version in `args` if you want to hold one —
-`["-y", "senti-mcp-server@2.8.1"]`. To put it on your `PATH` instead:
+`["-y", "senti-mcp-server@2.9.0"]`. To put it on your `PATH` instead:
 
 ```bash
 npm install -g senti-mcp-server

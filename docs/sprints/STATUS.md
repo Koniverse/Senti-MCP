@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-09-15 07:28:34 UTC
+> Last generated: 2026-09-15 08:07:18 UTC
 > Total stories: 42
 
 ## ⏰ Deadlines (0)
@@ -22,17 +22,15 @@ _No stories carry an explicit deadline._
 
 _No stories_
 
-## 🟡 In Progress (1)
+## 🟡 In Progress (0)
 
-| ID | Title | Epic | Pri | Points | Sprint | Assignee |
-|---|---|---|---|---|---|---|
-| US-9.1 | list_drafts adopts the drafts summary mode | EPIC-9 | P0 | 2 | sprint-2026-W38 | bluezdot |
+_No stories_
 
 ## 👀 Review (0)
 
 _No stories_
 
-## ✅ Done (36)
+## ✅ Done (37)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
@@ -72,6 +70,7 @@ _No stories_
 | US-8.2 | update_draft and delete_draft | EPIC-8 | P1 | 3 | sprint-2026-W34 | bluezdot |
 | US-8.3 | The three attachment writes | EPIC-8 | P1 | 3 | sprint-2026-W34 | bluezdot |
 | US-8.4 | compile_draft, write smoke test, and EPIC-8's close | EPIC-8 | P1 | 3 | sprint-2026-W34 | bluezdot |
+| US-9.1 | list_drafts adopts the drafts summary mode | EPIC-9 | P0 | 2 | sprint-2026-W38 | bluezdot |
 
 ## 🚫 Blocked (0)
 
@@ -87,12 +86,12 @@ _No stories_
 
 - 📋 **Backlog**: 5
 - 🟢 **Ready**: 0
-- 🟡 **In Progress**: 1
+- 🟡 **In Progress**: 0
 - 👀 **Review**: 0
-- ✅ **Done**: 36
+- ✅ **Done**: 37
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 
-✓ WIP: 1/3 stories in-progress.
+✓ WIP: 0/3 stories in-progress.
 
 ✓ No overdue stories.

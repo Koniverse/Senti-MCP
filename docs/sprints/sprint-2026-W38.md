@@ -10,7 +10,7 @@ goal: 'No committed scope at open — W37 closed on this file''s first day with 
 
 | US | Title | Epic | Pri | Points | Status | Story file |
 | -- | ----- | ---- | --- | ------ | ------ | ---------- |
-| US-9.1 | list_drafts adopts the drafts summary mode *(added 2026-09-14)* | EPIC-9 | P0 | 2 | 🚧 in-progress | [US-9.1](stories/US-9.1-list-drafts-summary-mode.md) |
+| US-9.1 | list_drafts adopts the drafts summary mode *(added 2026-09-14)* | EPIC-9 | P0 | 2 | ✅ done | [US-9.1](stories/US-9.1-list-drafts-summary-mode.md) |
 | US-2.15 | Retire the development API host *(added 2026-09-15)* | EPIC-2 | P2 | 2 | ✅ done | [US-2.15](stories/US-2.15-retire-the-development-host.md) |
 
 **Total: 2 stories / 4 points** (0 at open; US-9.1 added 2026-09-14 at 3 points and re-sized to
