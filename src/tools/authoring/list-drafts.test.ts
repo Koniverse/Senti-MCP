@@ -84,6 +84,10 @@ describe('formatDrafts', () => {
     expect(formatDrafts([])).toMatch(/no drafts/i);
   });
 
+  test('names create_draft as a way to make one, since this server has had write tools since 2.5.0', () => {
+    expect(formatDrafts([])).toMatch(/create_draft/);
+  });
+
   test('renders the draftId a caller needs for get_draft', () => {
     expect(formatDrafts([SUMMARY])).toContain('d-1');
   });

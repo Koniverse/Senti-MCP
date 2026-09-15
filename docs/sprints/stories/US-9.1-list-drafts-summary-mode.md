@@ -128,11 +128,11 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
   have changed" message naming `draft list`.
 - [x] **AC-5** — **Given** any response, **When** the tool returns, **Then** `notes` is `[]`,
   **And** `DraftsOutputSchema` still declares `notes`.
-- [ ] **AC-6** — **Given** the tool description and the README row, **When** they are read,
+- [x] **AC-6** — **Given** the tool description and the README row, **When** they are read,
   **Then** neither describes a cut or says "There is no option to request the unshaped
   response"; both say the list carries sizes and hashes rather than bodies, and name
   `get_draft` for one draft's source.
-- [ ] **AC-7** — **Given** an empty collection, **When** the text renders, **Then** it explains
+- [x] **AC-7** — **Given** an empty collection, **When** the text renders, **Then** it explains
   the empty result without claiming "this server has no write tools" (false since `2.5.0`).
 - [ ] **AC-8** — `grep -rn PENDING src` prints nothing.
 - [ ] **AC-9** — **Given** `npm run test:smoke`, **When** the live leg runs, **Then** the
@@ -160,17 +160,17 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
   - [x] Replace the derived `DraftSummarySchema` (`:8-18`) with the transcription; `int32` fields
         as `z.number().int()`
   - [x] `parseDrafts`: `z.array(DraftSummarySchema)` through `parseOrThrow`
-- [ ] **TASK-9.1.3** — Delete the cut, and render the log size (AC: 5, 6, 7, 13)
+- [x] **TASK-9.1.3** — Delete the cut, and render the log size (AC: 5, 6, 7, 13)
   - [x] `summarise` and `shapeDrafts` (`:31-101`) go; `notes` is the literal `[]`
-  - [ ] `formatDrafts`: drop the `Notes` branch; rewrite the empty-collection text (`:130-131`);
+  - [x] `formatDrafts`: drop the `Notes` branch; rewrite the empty-collection text (`:130-131`);
         add the compile-log line to `block`
-  - [ ] Tool description (`:154-162`) and `README.md`'s `list_drafts` row
+  - [x] Tool description (`:154-162`) and `README.md`'s `list_drafts` row
 - [ ] **TASK-9.1.4** — Ask for summaries (AC: 1, 10, 12)
   - [ ] `client.get('/api/v1/drafts', { signal, scope, query: { view: 'summary' } })`
   - [ ] The `src/server.test.ts` fetch stub answers the new URL with a summary
 - [ ] **TASK-9.1.5** — Drop `PENDING` (AC: 8)
   - [ ] `get-draft.ts:28`, `write-result.ts:24`, and any test fixture that uses it
-- [ ] **TASK-9.1.6** — Tests (AC: 2, 4, 5, 7, 13)
+- [x] **TASK-9.1.6** — Tests (AC: 2, 4, 5, 7, 13)
   - [x] `list-drafts.test.ts`: the 13-test `shapeDrafts` block (`:63-167`) is replaced by parse
         tests over a summary fixture — `compileLogBytes` both `null` and not — and one that
         rejects a full-draft payload

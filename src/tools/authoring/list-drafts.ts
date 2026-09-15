@@ -94,7 +94,8 @@ export function formatDrafts(drafts: DraftSummary[]): string {
   if (drafts.length === 0) {
     return (
       'No drafts on this API key. This is a real empty result rather than a truncated read — ' +
-      'drafts are created in the Senti Quant web Studio, and this server has no write tools.'
+      'drafts are created in the Senti Quant web Studio, or with create_draft where this ' +
+      'server\'s authoring write tools are enabled.'
     );
   }
 
@@ -114,13 +115,14 @@ export function registerListDrafts(server: McpServer, client: SentiClient): void
     title: 'List MQL5 authoring drafts',
     description:
       'List the MQL5 drafts this API key owns, most recently updated first, with each ' +
-      'draft\'s compile status, size, attachment count and registered-EA id. Use it to ' +
-      'find a `draftId`, or to answer "what am I working on" and "which of my drafts are ' +
-      'broken". THIS RESPONSE IS SHAPED: source code, compiler logs and diagnostics are ' +
-      'ALL dropped — the endpoint can return over 10 MB otherwise — and what was cut is ' +
-      'listed in `notes`. Call get_draft for one draft\'s source and compiler output, or ' +
-      'list_draft_attachments for its indicator sources. There is no option to request the ' +
-      'unshaped response.',
+      'draft\'s compile status, source size and SHA-256, compile-log size, attachment sizes ' +
+      'and registered-EA id. Use it to find a `draftId`, to answer "what am I working on" ' +
+      'and "which of my drafts are broken", or to tell whether a copy of a draft you hold is ' +
+      'current. The list carries sizes and hashes rather than bodies: no source code, ' +
+      'compiler log or diagnostics. A non-null `compileLogBytes` means the last compile left ' +
+      'a log to read, even when `diagnosticsCount` is 0. Call get_draft for one draft\'s ' +
+      'source, compiler log and diagnostics, and list_draft_attachments for its indicator ' +
+      'sources.',
     inputSchema: z.object({}),
     outputSchema: DraftsOutputSchema,
     run: async (_args, signal) => {
