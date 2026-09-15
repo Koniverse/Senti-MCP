@@ -24,19 +24,19 @@ describe('loadConfig', () => {
   test('honours SENTI_API_BASE_URL', () => {
     const config = loadConfig({
       SENTI_API_KEY: KEY,
-      SENTI_API_BASE_URL: 'https://be-dev.sentitrade.xyz',
+      SENTI_API_BASE_URL: 'https://api.example.test',
     });
 
-    expect(config.baseUrl).toBe('https://be-dev.sentitrade.xyz');
+    expect(config.baseUrl).toBe('https://api.example.test');
   });
 
   test('strips trailing slashes from the base URL', () => {
     const config = loadConfig({
       SENTI_API_KEY: KEY,
-      SENTI_API_BASE_URL: 'https://be-dev.sentitrade.xyz///',
+      SENTI_API_BASE_URL: 'https://api.example.test///',
     });
 
-    expect(config.baseUrl).toBe('https://be-dev.sentitrade.xyz');
+    expect(config.baseUrl).toBe('https://api.example.test');
   });
 
   test('rejects a base URL that is not absolute', () => {
@@ -76,7 +76,7 @@ describe('loadConfig', () => {
   test('rejects a base URL carrying a query string or fragment', () => {
     // `https://host?x=1` would otherwise be joined into the unreachable
     // `https://host/?x=1/api/v1/accounts`.
-    for (const value of ['https://be-dev.sentitrade.xyz?x=1', 'https://be-dev.sentitrade.xyz#frag']) {
+    for (const value of ['https://api.example.test?x=1', 'https://api.example.test#frag']) {
       expect(() => loadConfig({ SENTI_API_KEY: KEY, SENTI_API_BASE_URL: value })).toThrow(
         /must not carry a query string or fragment/,
       );

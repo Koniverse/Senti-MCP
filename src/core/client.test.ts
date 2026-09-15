@@ -14,7 +14,7 @@ import { loadConfig } from '../config.js';
 const KEY = 'sq_live_supersecret';
 const config = loadConfig({
   SENTI_API_KEY: KEY,
-  SENTI_API_BASE_URL: 'https://be-dev.sentitrade.xyz',
+  SENTI_API_BASE_URL: 'https://api.example.test',
 });
 
 function jsonResponse(body: unknown, status = 200, headers: Record<string, string> = {}) {
@@ -43,7 +43,7 @@ describe('createClient', () => {
 
     await createClient(config, { fetch: fetchImpl }).get('/api/v1/accounts');
 
-    expect(calls[0]?.url).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts');
+    expect(calls[0]?.url).toBe('https://api.example.test/api/v1/accounts');
     const headers = calls[0]?.init.headers as Record<string, string>;
     expect(headers.authorization).toBe(`Bearer ${KEY}`);
     expect(headers.accept).toBe('application/json');
@@ -316,7 +316,7 @@ describe('createClient', () => {
     });
 
     expect(calls[0]?.url).toBe(
-      'https://be-dev.sentitrade.xyz/api/v1/accounts/a/deals?limit=50&entry=out',
+      'https://api.example.test/api/v1/accounts/a/deals?limit=50&entry=out',
     );
   });
 
@@ -327,7 +327,7 @@ describe('createClient', () => {
       query: { from: undefined, to: undefined },
     });
 
-    expect(calls[0]?.url).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts');
+    expect(calls[0]?.url).toBe('https://api.example.test/api/v1/accounts');
   });
 
   test('percent-encodes query values rather than splicing them raw', async () => {
@@ -338,7 +338,7 @@ describe('createClient', () => {
     });
 
     expect(calls[0]?.url).toBe(
-      'https://be-dev.sentitrade.xyz/api/v1/accounts?reporting=US+D%26x%3D1',
+      'https://api.example.test/api/v1/accounts?reporting=US+D%26x%3D1',
     );
   });
 
@@ -350,7 +350,7 @@ describe('createClient', () => {
     });
 
     expect(calls[0]?.url).toBe(
-      'https://be-dev.sentitrade.xyz/api/v1/accounts?limit=0&reporting=',
+      'https://api.example.test/api/v1/accounts?limit=0&reporting=',
     );
   });
 });

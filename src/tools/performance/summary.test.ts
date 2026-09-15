@@ -8,7 +8,7 @@ import {
 
 /**
  * Transcribed from a live `GET /api/v1/accounts/{accountId}/performance` read on
- * 2026-08-10 against `be-dev.sentitrade.xyz`, not from the design spec's summary
+ * 2026-08-10, not from the design spec's summary
  * of it. Two things this fixture settles that no schema states: `winRate` is a
  * percentage (48 wins of 58 closed deals renders as 82.76, not 0.83), and so are
  * `roi` and both `irr` figures.

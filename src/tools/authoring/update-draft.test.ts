@@ -8,7 +8,7 @@ import { registerUpdateDraft } from './update-draft.js';
 const KEY = 'sq_live_supersecret';
 const config = loadConfig({
   SENTI_API_KEY: KEY,
-  SENTI_API_BASE_URL: 'https://be-dev.sentitrade.xyz',
+  SENTI_API_BASE_URL: 'https://api.example.test',
   SENTI_ENABLE_AUTHORING_WRITE: '1',
 });
 
@@ -66,7 +66,7 @@ describe('update_draft', () => {
 
     await client.callTool({ name: 'update_draft', arguments: ARGS });
 
-    expect(calls[0]?.url).toBe('https://be-dev.sentitrade.xyz/api/v1/drafts/d-1');
+    expect(calls[0]?.url).toBe('https://api.example.test/api/v1/drafts/d-1');
     expect(calls[0]?.init.method).toBe('PUT');
     expect(calls[0]?.init.body).toBe(
       JSON.stringify({ name: 'Gold Scalper', sourceCode: '// v2' }),

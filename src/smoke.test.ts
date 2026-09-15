@@ -52,7 +52,7 @@ describe.skipIf(!smokeKey)('smoke: live Senti API', () => {
   test('the whole W33 read path parses and renders against the live API', async () => {
     const config = loadConfig({
       SENTI_API_KEY: smokeKey,
-      SENTI_API_BASE_URL: process.env.SENTI_API_BASE_URL ?? 'https://be-dev.sentitrade.xyz',
+      SENTI_API_BASE_URL: process.env.SENTI_API_BASE_URL,
     });
     const client = createClient(config);
 
@@ -329,7 +329,7 @@ describe.skipIf(!smokeKey || !writeSmoke)('smoke: live Senti authoring write pat
   test('creates, attaches, compiles and deletes a real draft', async () => {
     const config = loadConfig({
       SENTI_API_KEY: smokeKey,
-      SENTI_API_BASE_URL: process.env.SENTI_API_BASE_URL ?? 'https://be-dev.sentitrade.xyz',
+      SENTI_API_BASE_URL: process.env.SENTI_API_BASE_URL,
       SENTI_ENABLE_AUTHORING_WRITE: '1',
     });
     const client = createClient(config);

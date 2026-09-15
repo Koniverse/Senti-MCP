@@ -8,7 +8,7 @@ import { compileAbortHint, registerCompileDraft } from './compile-draft.js';
 const KEY = 'sq_live_supersecret';
 const config = loadConfig({
   SENTI_API_KEY: KEY,
-  SENTI_API_BASE_URL: 'https://be-dev.sentitrade.xyz',
+  SENTI_API_BASE_URL: 'https://api.example.test',
   SENTI_ENABLE_AUTHORING_WRITE: '1',
 });
 
@@ -78,7 +78,7 @@ describe('compile_draft', () => {
 
     await client.callTool({ name: 'compile_draft', arguments: ARGS });
 
-    expect(calls[0]?.url).toBe('https://be-dev.sentitrade.xyz/api/v1/drafts/d-1/compile');
+    expect(calls[0]?.url).toBe('https://api.example.test/api/v1/drafts/d-1/compile');
     expect(calls[0]?.init.method).toBe('POST');
     expect(calls[0]?.init.body).toBeUndefined();
     expect((calls[0]?.init.headers as Record<string, string>)['idempotency-key']).toBeUndefined();

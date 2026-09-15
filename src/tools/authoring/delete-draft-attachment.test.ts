@@ -8,7 +8,7 @@ import { registerDeleteDraftAttachment } from './delete-draft-attachment.js';
 const KEY = 'sq_live_supersecret';
 const config = loadConfig({
   SENTI_API_KEY: KEY,
-  SENTI_API_BASE_URL: 'https://be-dev.sentitrade.xyz',
+  SENTI_API_BASE_URL: 'https://api.example.test',
   SENTI_ENABLE_AUTHORING_WRITE: '1',
 });
 
@@ -85,7 +85,7 @@ describe('delete_draft_attachment', () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]?.init.method).toBe('DELETE');
     expect(calls[0]?.url).toBe(
-      'https://be-dev.sentitrade.xyz/api/v1/drafts/d-1/attachments/a-1',
+      'https://api.example.test/api/v1/drafts/d-1/attachments/a-1',
     );
     expect(result.structuredContent).toEqual({ id: 'a-1', deleted: true, notes: [] });
   });

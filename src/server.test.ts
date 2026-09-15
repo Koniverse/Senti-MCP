@@ -20,7 +20,7 @@ import { createServer } from './server.js';
 
 const config = loadConfig({
   SENTI_API_KEY: 'sq_live_supersecret',
-  SENTI_API_BASE_URL: 'https://be-dev.sentitrade.xyz',
+  SENTI_API_BASE_URL: 'https://api.example.test',
 });
 
 const ACCOUNT = {
@@ -278,7 +278,7 @@ describe('get_authoring_conventions', () => {
 
     const result = (await client.callTool({ name: 'get_authoring_conventions' })) as ToolResult;
 
-    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/authoring/conventions');
+    expect(calls[0]).toBe('https://api.example.test/api/v1/authoring/conventions');
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('NO_DLL_IMPORT');
     expect(ConventionsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -312,7 +312,7 @@ describe('list_drafts', () => {
 
     const result = (await client.callTool({ name: 'list_drafts' })) as ToolResult;
 
-    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/drafts');
+    expect(calls[0]).toBe('https://api.example.test/api/v1/drafts');
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('RSI Reversal');
     expect(DraftsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -349,7 +349,7 @@ describe('get_draft', () => {
       arguments: { draftId: 'd-1' },
     })) as ToolResult;
 
-    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/drafts/d-1');
+    expect(calls[0]).toBe('https://api.example.test/api/v1/drafts/d-1');
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('RSI Reversal');
     expect(DraftOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -402,7 +402,7 @@ describe('list_draft_attachments', () => {
       arguments: { draftId: 'd-1' },
     })) as ToolResult;
 
-    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/drafts/d-1/attachments');
+    expect(calls[0]).toBe('https://api.example.test/api/v1/drafts/d-1/attachments');
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('Trend.mq5');
     expect(AttachmentsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -597,7 +597,7 @@ describe('list_account_strategies', () => {
       arguments: { accountId: 'abc-123' },
     })) as ToolResult;
 
-    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/strategies');
+    expect(calls[0]).toBe('https://api.example.test/api/v1/accounts/abc-123/strategies');
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('TrendRider');
     expect(AccountStrategiesOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -692,7 +692,7 @@ describe('list_positions', () => {
       arguments: { accountId: 'abc-123' },
     })) as ToolResult;
 
-    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/positions');
+    expect(calls[0]).toBe('https://api.example.test/api/v1/accounts/abc-123/positions');
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('ticket 123456');
     expect(PositionsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -785,7 +785,7 @@ describe('list_pending_orders', () => {
       arguments: { accountId: 'abc-123' },
     })) as ToolResult;
 
-    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/orders');
+    expect(calls[0]).toBe('https://api.example.test/api/v1/accounts/abc-123/orders');
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('ticket 987654');
     expect(OrdersOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -993,7 +993,7 @@ describe('get_account_performance', () => {
       arguments: { accountId: 'abc-123' },
     })) as ToolResult;
 
-    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance');
+    expect(calls[0]).toBe('https://api.example.test/api/v1/accounts/abc-123/performance');
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain('82.76%');
     expect(PerformanceOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -1027,7 +1027,7 @@ describe('get_account_performance', () => {
     // Not `to=undefined`, not `to=`, not present at all. The three are different
     // requests to the API and only the third is the one that was asked for.
     expect(calls[0]).toBe(
-      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance?from=2026-05-01',
+      'https://api.example.test/api/v1/accounts/abc-123/performance?from=2026-05-01',
     );
   });
 
@@ -1185,7 +1185,7 @@ describe('get_performance_breakdowns', () => {
     })) as ToolResult;
 
     expect(calls[0]).toBe(
-      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance/breakdowns',
+      'https://api.example.test/api/v1/accounts/abc-123/performance/breakdowns',
     );
     expect(result.isError).toBeFalsy();
     expect(BreakdownsOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -1217,7 +1217,7 @@ describe('get_performance_breakdowns', () => {
     });
 
     expect(calls[0]).toBe(
-      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance/breakdowns?to=2026-05-31',
+      'https://api.example.test/api/v1/accounts/abc-123/performance/breakdowns?to=2026-05-31',
     );
   });
 
@@ -1396,7 +1396,7 @@ describe('get_equity_timeseries', () => {
     })) as ToolResult;
 
     expect(calls[0]).toBe(
-      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance/timeseries',
+      'https://api.example.test/api/v1/accounts/abc-123/performance/timeseries',
     );
     expect(result.isError).toBeFalsy();
     expect(TimeseriesOutputSchema.safeParse(result.structuredContent).success).toBe(true);
@@ -1428,7 +1428,7 @@ describe('get_equity_timeseries', () => {
     });
 
     expect(calls[0]).toBe(
-      'https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/performance/timeseries?to=2026-05-31',
+      'https://api.example.test/api/v1/accounts/abc-123/performance/timeseries?to=2026-05-31',
     );
   });
 
@@ -1627,7 +1627,7 @@ describe('list_deals', () => {
 
     // Not `entry=undefined`, not `entry=`, not present at all. Only `limit`
     // survives, because only `limit` has a default.
-    expect(calls[0]).toBe('https://be-dev.sentitrade.xyz/api/v1/accounts/abc-123/deals?limit=50');
+    expect(calls[0]).toBe('https://api.example.test/api/v1/accounts/abc-123/deals?limit=50');
   });
 
   test('rejects a limit above 500 before the query is built, naming the maximum', async () => {
@@ -2017,7 +2017,7 @@ describe('invariants across every registered tool', () => {
 
 const writeConfig = loadConfig({
   SENTI_API_KEY: 'sq_live_supersecret',
-  SENTI_API_BASE_URL: 'https://be-dev.sentitrade.xyz',
+  SENTI_API_BASE_URL: 'https://api.example.test',
   SENTI_ENABLE_AUTHORING_WRITE: '1',
 });
 
