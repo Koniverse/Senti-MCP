@@ -65,10 +65,11 @@ function readiness(draft: DraftSummary): string {
 /**
  * Keyed on `compileLogBytes`, not `diagnosticsCount`: a compile can leave a log that parsed
  * into no diagnostics, and `logTruncated` is `false` for any log under 16 KiB — so neither of
- * the other two fields says whether there is anything to read.
+ * the other two fields says whether there is anything to read. A zero-byte log gets no line
+ * either: get_draft would show nothing for it.
  */
 function logLine(draft: DraftSummary): string[] {
-  if (draft.compileLogBytes === null) return [];
+  if (draft.compileLogBytes === null || draft.compileLogBytes === 0) return [];
 
   const where = draft.logTruncated
     ? 'get_draft returns its trailing 16 KiB only'

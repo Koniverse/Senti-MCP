@@ -137,6 +137,12 @@ describe('formatDrafts', () => {
     expect(formatDrafts([BARE])).not.toMatch(/log/i);
   });
 
+  test('renders no log line for a zero-byte log, since get_draft would show nothing', () => {
+    const empty: DraftSummary = { ...BARE, compileLogBytes: 0 };
+
+    expect(formatDrafts([empty])).not.toMatch(/log/i);
+  });
+
   test('agrees in number', () => {
     expect(formatDrafts([SUMMARY])).toContain('1 draft');
     expect(formatDrafts([SUMMARY, BARE])).toContain('2 drafts');
