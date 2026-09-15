@@ -146,9 +146,9 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - [x] **AC-12** — **Given** `src/server.test.ts`, **When** it runs, **Then** `list_drafts` still
   passes the read-only-annotation, output-schema and key-absence assertions, with the stub
   answering `/api/v1/drafts?view=summary`.
-- [x] **AC-13** — **Given** a draft whose `compileLogBytes` is not `null`, **When** the text
+- [x] **AC-13** — **Given** a draft whose `compileLogBytes` is above 0, **When** the text
   renders, **Then** it states the log's size — including when `diagnosticsCount` is 0 — and names
-  `get_draft` as where to read it; **Given** `null`, **Then** no log line is rendered.
+  `get_draft` as where to read it; **Given** `null` or 0, **Then** no log line is rendered.
 
 ## Tasks
 
@@ -182,14 +182,14 @@ string. It leaves `DraftSchema` (`get-draft.ts:28`) and `DraftWriteOutputSchema`
 - [x] **TASK-9.1.8** — After the deploy, measure (AC: 11)
   - [x] Summary vs `view=full` bytes on the smoke account, and `view=bogus`'s status and
         envelope code, into §Implementation notes
-- [ ] **TASK-9.1.9** — Record and release (AC: all)
+- [x] **TASK-9.1.9** — Record and release (AC: all)
   - [x] `docs/CONTEXT.md`: the next free `D<N>` (D49 as of 2026-09-15), revising
         [D32](../../CONTEXT.md) — the cut moved to the server; `notes` stays, empty, until a
         major version removes it; and why no full-shape fallback ships
-  - [ ] Bump the version in all five places (`VERSION`, `package.json`, `package-lock.json`,
+  - [x] Bump the version in all five places (`VERSION`, `package.json`, `package-lock.json`,
         `SERVER_VERSION`, the tag) — a minor, per [EPIC-9](../epics/EPIC-9.md) §Semver posture;
         `docs/CHANGELOG.md` from §Changelog entry below; `AGENTS.md` §Current state
-  - [ ] Walk [docs/RELEASE.md](../../RELEASE.md)
+  - [x] Walk [docs/RELEASE.md](../../RELEASE.md)
 
 ## Dev notes
 
@@ -328,6 +328,16 @@ section and the README in the same commit ([RELEASE.md](../../RELEASE.md) steps 
 tag, the push and the publish (steps 6–7) run from `main` after the branch merges** —
 `release:check` refuses a tag from any other branch — so the two TASK-9.1.9 items that name
 them stay open until then.
+
+**Released 2026-09-15.** `v2.9.0` is an annotated tag on `7256c48`, the merge commit of PR #14.
+The `release.yml` run succeeded, the GitHub Release is up, and npm `latest` is `2.9.0` with
+provenance. Before the merge, review added `0469ed1`: a `compileLogBytes` of 0 renders no log
+line, since `get_draft` would show nothing for it (AC-13 now says so).
+
+The tagged CHANGELOG section lacked this story's `### Removed` entry for `PENDING`, so the
+Release body the workflow built from it lacked it too. The entry was added to
+`docs/CHANGELOG.md` afterwards and the Release body edited to match. The npm package is
+unaffected: its tarball carries nothing from `docs/`.
 
 ## Cross-references
 

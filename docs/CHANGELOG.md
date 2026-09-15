@@ -42,6 +42,10 @@ documentation only ([CONTEXT D48](CONTEXT.md),
   `SENTI_API_BASE_URL`, and the unverified-pairing caveat is gone: a dashboard-issued key is
   verified against the default base URL.
 
+### Removed
+- `PENDING` from `lastCompileStatus` in `get_draft`, `list_drafts` and the draft write tools.
+  No server ever sent it, and the API no longer declares it.
+
 ## [2.8.1] — 2026-08-25 — the API Keys dashboard URL, and what the default base URL actually pairs with
 
 The startup error for a missing `SENTI_API_KEY` sent people to
