@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-09-16 07:24:31 UTC
+> Last generated: 2026-09-16 07:30:53 UTC
 > Total stories: 43
 
 ## ⏰ Deadlines (0)
@@ -26,17 +26,16 @@ _No stories_
 
 _No stories_
 
-## 👀 Review (1)
+## 👀 Review (0)
 
-| ID | Title | Epic | Pri | Points | Sprint | Assignee |
-|---|---|---|---|---|---|---|
-| US-10.1 | A pull-request CI gate on main | EPIC-10 | P1 | 3 | sprint-2026-W38 | bluezdot |
+_No stories_
 
-## ✅ Done (37)
+## ✅ Done (38)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
 | US-1.1 | Adopt koni-docs as this repo's documentation framework | EPIC-1 | P1 | 3 | sprint-2026-W32 | bluezdot |
+| US-10.1 | A pull-request CI gate on main | EPIC-10 | P1 | 3 | sprint-2026-W38 | bluezdot |
 | US-2.1 | Authenticated Senti API client substrate | EPIC-2 | P1 | 5 | sprint-2026-W32 | bluezdot |
 | US-2.2 | list_accounts tool over MCP stdio | EPIC-2 | P1 | 5 | sprint-2026-W32 | bluezdot |
 | US-2.3 | Live smoke test, README, and the v0.1.0 release | EPIC-2 | P2 | 2 | sprint-2026-W32 | bluezdot |
@@ -89,8 +88,8 @@ _No stories_
 - 📋 **Backlog**: 5
 - 🟢 **Ready**: 0
 - 🟡 **In Progress**: 0
-- 👀 **Review**: 1
-- ✅ **Done**: 37
+- 👀 **Review**: 0
+- ✅ **Done**: 38
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 
