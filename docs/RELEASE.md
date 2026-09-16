@@ -48,6 +48,19 @@ git status --porcelain                       # must print nothing
 npm ci                                       # or npm install, if you know why
 ```
 
+**Check that `main`'s head is green before you start.** Every pull request into `main` and
+every push to it runs `.github/workflows/ci.yml`, whose `verify` job is the same
+`typecheck` → `test` → `build` → `release:verify-pack` sequence this release's `build` and
+`verify` jobs will run, and a ruleset makes it a merge requirement
+([CONTEXT D50](CONTEXT.md)):
+
+```bash
+gh run list --workflow ci.yml --branch main --limit 1
+```
+
+A red or missing run there means the release will fail at `build` or `verify`. Fix `main`
+first — admins can bypass the ruleset, so a green `main` is checked, not assumed.
+
 **Read this once, then never think about it again:** npm forbids republishing a version
 number **forever**, and allows unpublish only within **72 hours** of the original publish.
 Every check below runs *before* `npm publish` for that reason alone. §6 is what to do when
@@ -280,8 +293,6 @@ this.
 - **`DEPLOY.md`.** See the note at the top of this file.
 - **Automated version bumping** (`changesets`, `semantic-release`). Such a tool would have
   assigned `0.7.1` exactly where [D11](CONTEXT.md) chose `1.0.0`.
-- **CI on every push.** This repo runs one workflow, and it runs on a tag. Whether pushes
-  and pull requests should also run CI is its own decision.
 
 ---
 

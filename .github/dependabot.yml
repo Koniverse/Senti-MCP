@@ -2,24 +2,26 @@
 # Added by US-5.3 (EPIC-5), so that dependency currency stops being something a
 # person has to remember to check.
 #
-# READ THIS BEFORE MERGING ONE OF ITS PULL REQUESTS
-# =================================================
+# WHAT A GREEN DEPENDABOT PR PROVES
+# =================================
 #
-# **A green Dependabot PR here proves almost nothing.** No workflow runs on a
-# pull request in this repository — `release.yml` is triggered by `push` on a
-# `v*` tag and by nothing else. So a PR opened by this bot gets no typecheck, no
-# test run, and no tarball verification; the only checks it can show are the
-# ones GitHub adds on its own. Two defects already reached `main` through that
-# gap (sprint-2026-W33 §Phase 2 retrospective §Followups).
+# Every PR this bot opens runs `.github/workflows/ci.yml`, and its `verify` job
+# is a required check on `main` (CONTEXT D50). Green means, on the 22.11.0
+# floor and with no Senti credential: both tsconfigs typecheck, the unit suite
+# passes, `tsc` emits a runnable `dist/`, and the packed tarball installs into a
+# clean directory and serves the tool list its README claims.
 #
-# Until a push/PR workflow exists, treat every PR from this bot as unverified
-# and run the suite locally before merging:
+# It does NOT prove three things, so they are still yours before merging:
 #
-#     git fetch origin && git checkout <dependabot-branch>
-#     npm ci && npm run typecheck && npm test && npm run release:verify-pack
+#   - The live API. `test:smoke` needs a key, and CI has none, deliberately.
+#   - A TRANSITIVE dependency's `engines` against the floor — see the next
+#     section. npm only warns on an `engines` mismatch, so a `vite` that no
+#     longer admits 22.11.0 can install, and even pass, here.
+#   - Anything above the floor. CI runs one Node version.
 #
-# Adding that workflow is EPIC-4's open followup, not this file's job. The
-# trigger to go do it is the first Dependabot PR that merges broken.
+# Before US-10.1 (2026-09-16) no workflow ran on a pull request here at all, and
+# this header told you to run the suite locally instead. Two defects had reached
+# `main` through that gap (sprint-2026-W33 §Phase 2 retrospective §Followups).
 #
 # THE FLOOR IS A CONSTRAINT ON DEPENDENCIES, NOT ONLY ON USERS
 # ============================================================
