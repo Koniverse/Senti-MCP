@@ -1,7 +1,7 @@
 ---
 id: EPIC-10
 title: "Verification before merge"
-status: in-progress
+status: done
 created: 2026-09-16
 updated: 2026-09-16
 ---
@@ -75,11 +75,30 @@ Each is a decision from the 2026-09-11 brainstorm, not an omission
 
 | US | Title | Pri | Points | Status | Sprint |
 |---|---|---|---|---|---|
-| [US-10.1](../stories/US-10.1-pr-ci-gate.md) | A pull-request CI gate on `main` | P1 | 3 | 👀 review | sprint-2026-W38 |
+| [US-10.1](../stories/US-10.1-pr-ci-gate.md) | A pull-request CI gate on `main` | P1 | 3 | ✅ done | sprint-2026-W38 |
 
 One story. The workflow and the ruleset are not independently useful: a workflow nobody is
 required to wait for is the status quo with extra minutes, and a ruleset requiring a check
 that does not exist blocks every PR.
+
+### What US-10.1 closed, 2026-09-16
+
+Every pull request into `main` and every push to it now runs `verify`, and ruleset
+`23525361` makes it a merge requirement. It was proven three ways, each recorded in
+[US-10.1](../stories/US-10.1-pr-ci-gate.md) §Implementation notes: green on its own PR
+([#15](https://github.com/Koniverse/Senti-MCP/pull/15), 27s), red **and `BLOCKED`** on a PR
+carrying one deliberate type error ([#16](https://github.com/Koniverse/Senti-MCP/pull/16),
+failing at `typecheck`, closed unmerged), and green on `main` after a merge that used no
+bypass. The design's two open questions were settled by observation on the way: the rulesets
+API accepted the body as designed, and the check run is named exactly `verify` from app
+`15368`.
+
+**What this close does not claim.** It is not a lock: every account with access to this
+repository is an admin and can bypass ([CONTEXT D50](../../CONTEXT.md)). It does not check
+the live API, version or Node-floor agreement (`release:check`, still tag-time only), a
+transitive dependency's `engines`, or Node above the floor. The version-free half of
+`release:check` — and `npm run agile:check-sprints`, which arrived in W37 and nothing runs
+either — are the strongest candidates for this epic's next story.
 
 ## Cross-references
 

@@ -295,7 +295,7 @@ and the symptom is a client that fails to connect for no visible reason.
   (supported runtime and dependency currency, W33 §Phase 4), EPIC-6 (sprint files as
   planning surfaces, done), EPIC-7 (authoring read path, done),
   EPIC-8 (authoring write path, W34), EPIC-9 (adopting the Senti API contract fixes —
-  US-9.1 in W38, the rest backlog), EPIC-10 (verification before merge, W38)
+  US-9.1 in W38, the rest backlog), EPIC-10 (verification before merge, done)
 - [docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design
 - [docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md](docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 plan, task by task
