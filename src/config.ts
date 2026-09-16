@@ -56,3 +56,6 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     authoringWrite: TRUTHY.includes((env.SENTI_ENABLE_AUTHORING_WRITE ?? '').trim().toLowerCase()),
   });
 }
+
+// US-10.1 AC-5 negative test. Never merge.
+export const US_10_1_NEGATIVE_TEST: number = 'not a number';
