@@ -12,7 +12,7 @@ goal: 'No committed scope at open — W37 closed on this file''s first day with 
 | -- | ----- | ---- | --- | ------ | ------ | ---------- |
 | US-9.1 | list_drafts adopts the drafts summary mode *(added 2026-09-14)* | EPIC-9 | P0 | 2 | ✅ done | [US-9.1](stories/US-9.1-list-drafts-summary-mode.md) |
 | US-2.15 | Retire the development API host *(added 2026-09-15)* | EPIC-2 | P2 | 2 | ✅ done | [US-2.15](stories/US-2.15-retire-the-development-host.md) |
-| US-10.1 | A pull-request CI gate on main *(added 2026-09-16)* | EPIC-10 | P1 | 3 | 🟡 in-progress | [US-10.1](stories/US-10.1-pr-ci-gate.md) |
+| US-10.1 | A pull-request CI gate on main *(added 2026-09-16)* | EPIC-10 | P1 | 3 | 👀 review | [US-10.1](stories/US-10.1-pr-ci-gate.md) |
 
 **Total: 3 stories / 7 points** (0 at open; US-9.1 added 2026-09-14 at 3 points and re-sized to
 2 on 2026-09-15 when its full-shape fallback was withdrawn; US-2.15 added 2026-09-15; US-10.1 added 2026-09-16). This sprint opened empty.

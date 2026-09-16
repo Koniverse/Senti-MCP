@@ -1,7 +1,7 @@
 # Sprint Status
 
 > **AUTO-GENERATED** by `koni-docs status`. Do not hand-edit (RULE-5).
-> Last generated: 2026-09-16 02:21:53 UTC
+> Last generated: 2026-09-16 07:24:31 UTC
 > Total stories: 43
 
 ## ⏰ Deadlines (0)
@@ -22,15 +22,15 @@ _No stories carry an explicit deadline._
 
 _No stories_
 
-## 🟡 In Progress (1)
+## 🟡 In Progress (0)
+
+_No stories_
+
+## 👀 Review (1)
 
 | ID | Title | Epic | Pri | Points | Sprint | Assignee |
 |---|---|---|---|---|---|---|
 | US-10.1 | A pull-request CI gate on main | EPIC-10 | P1 | 3 | sprint-2026-W38 | bluezdot |
-
-## 👀 Review (0)
-
-_No stories_
 
 ## ✅ Done (37)
 
@@ -88,12 +88,12 @@ _No stories_
 
 - 📋 **Backlog**: 5
 - 🟢 **Ready**: 0
-- 🟡 **In Progress**: 1
-- 👀 **Review**: 0
+- 🟡 **In Progress**: 0
+- 👀 **Review**: 1
 - ✅ **Done**: 37
 - 🚫 **Blocked**: 0
 - 🗑️ **Deprecated**: 0
 
-✓ WIP: 1/3 stories in-progress.
+✓ WIP: 0/3 stories in-progress.
 
 ✓ No overdue stories.
