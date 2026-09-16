@@ -75,7 +75,7 @@ Each is a decision from the 2026-09-11 brainstorm, not an omission
 
 | US | Title | Pri | Points | Status | Sprint |
 |---|---|---|---|---|---|
-| [US-10.1](../stories/US-10.1-pr-ci-gate.md) | A pull-request CI gate on `main` | P1 | 3 | 🟡 in-progress | sprint-2026-W38 |
+| [US-10.1](../stories/US-10.1-pr-ci-gate.md) | A pull-request CI gate on `main` | P1 | 3 | 👀 review | sprint-2026-W38 |
 
 One story. The workflow and the ruleset are not independently useful: a workflow nobody is
 required to wait for is the status quo with extra minutes, and a ruleset requiring a check
