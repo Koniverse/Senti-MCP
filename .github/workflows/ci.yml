@@ -1,0 +1,66 @@
+# Verification before merge for senti-mcp-server. See CONTEXT D50 for why it is
+# shaped this way, and EPIC-10 for the invariants it holds.
+#
+# Every pull request into main, and every push to it, runs one job: `verify`.
+# Its steps are release.yml's `build` and `verify` jobs, concatenated, on the
+# same pins — so a green `verify` here means those two jobs will be green on the
+# same commit when it is tagged. Change one set of steps and you change the
+# other, in the same commit. `gate`, `publish` and `announce` have no
+# counterpart: they are about a tag, and this runs before there is one.
+#
+# A ruleset on main makes this job's check a merge requirement. Read it back:
+#   gh api repos/Koniverse/Senti-MCP/rulesets --jq '.[] | {id, name, enforcement}'
+name: ci
+
+on:
+  # `pull_request`, never `pull_request_target`. This job needs no secret, so
+  # fork and Dependabot PRs run it with a read-only token; `pull_request_target`
+  # would run a fork's code with a token that can write to this repository.
+  #
+  # No `paths` / `paths-ignore`, deliberately. A required check whose workflow
+  # a path filter skips stays Pending forever and blocks the PR. A docs-only PR
+  # runs the whole suite; that costs about two minutes.
+  pull_request:
+    branches: [main]
+  # Admins can bypass the ruleset and push to main directly. This is what
+  # verifies such a push after it lands, and it gives main's head a status.
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # A newer push to a PR branch makes the older run moot. Every commit on main
+  # gets its own verdict, so pushes to main never cancel each other.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    # LOAD-BEARING. `verify` is the exact check name the ruleset on main
+    # requires. Rename this job and the required check never reports, so every
+    # PR blocks until the ruleset is updated to match. Change both together.
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Pinned by commit SHA, copied character for character from release.yml.
+      # When one file moves a pin, the other moves in the same commit.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          # The consumer floor (CONTEXT D27) — the pin release.yml's `build` and
+          # `verify` use. One version, no matrix: add a leg the first time a
+          # defect reproduces only above the floor.
+          node-version: 22.11.0
+          cache: npm
+      - run: npm ci
+      # No SENTI_API_KEY and no SENTI_SMOKE_KEY, deliberately — the same as
+      # release.yml's `build`. The suite is hermetic and the smoke test skips.
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      # Packs, installs into a clean directory, spawns the installed binary and
+      # compares tools/list against the build and the README's tool table.
+      - run: npm run release:verify-pack

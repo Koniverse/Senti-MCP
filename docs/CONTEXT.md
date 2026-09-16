@@ -2708,3 +2708,142 @@ no longer cuts anything. A minor version — fields are added to the output, non
 
 **Date**: 2026-09-15
 **Version**: 2.9.0
+
+---
+
+## Phase 18 — Verification before merge (2026-09-16)
+
+### D50. Every pull request into `main` runs `ci.yml`, and a ruleset makes `verify` a merge requirement — with admin bypass
+
+**Context**: `.github/workflows/` held `release.yml` alone, triggered by a `v*` tag, so
+`typecheck`, `test`, `build` and `release:verify-pack` first ran on a commit already on
+`main` and already tagged. [EPIC-4](sprints/epics/EPIC-4.md) §Out of scope deferred the
+question on purpose — *"whether every push should run CI is a separate decision"* — and
+[RELEASE.md](RELEASE.md) §7 repeated it. [D16](#d16-release-by-tag-triggered-github-actions-with-oidc-trusted-publishing)
+chose the release workflow and said nothing about pushes, so this entry revises no earlier
+one. Since the deferral: two defects reached `main` in W33 and were caught only by
+rehearsing a release ([LESSONS 5](LESSONS.md), [LESSONS 6](LESSONS.md)); Dependabot opens
+weekly PRs under a header saying a green one *"proves almost nothing"*
+([US-5.3](sprints/stories/US-5.3-devdependency-currency-and-dependabot.md) §AC-6);
+[D29](#d29-adopt-typescript-7-because-the-emit-is-byte-identical-and-the-build-is-36-faster) records that a TypeScript 7 emit regression would not be
+caught before a tag; PRs #8, #9, #13 (Dependabot, **0 checks**) and #14 (`2.9.0`) merged
+unchecked. Sprints W33 through W38 each carried the gap forward with no story owning it. The
+2026-09-11 spec and plan named this D47 / EPIC-9 / US-9.1; `main` took those ids before it
+was filed, and the spec keeps them as written. `main` had no branch protection and no ruleset.
+
+**Decision**: six parts, settled in the 2026-09-11 brainstorm
+([spec](superpowers/specs/2026-09-11-pr-ci-gate-design.md)).
+
+1. **`.github/workflows/ci.yml`** runs on `pull_request` into `main` and on `push` to
+   `main`: one job, `verify`, on Node `22.11.0` — `npm ci`, `typecheck`, `test`, `build`,
+   `release:verify-pack`. Those are `release.yml`'s `build` and `verify` jobs concatenated,
+   on the same SHA pins, so a green `verify` means those two jobs will be green on the same
+   commit.
+2. **No path filter; `pull_request`, never `pull_request_target`; no `SENTI_*` variable;**
+   `cancel-in-progress` for pull requests only.
+3. **A repository ruleset on `refs/heads/main`** requires the `verify` check from the GitHub
+   Actions app, requires changes to arrive by pull request with 0 approvals, blocks
+   force-push and deletion, and does not require a branch to be up to date.
+4. **Repository admins bypass it, in mode `always`.**
+5. **The live ruleset is the source of truth.** No copy is committed under `.github/`.
+6. **[EPIC-10](sprints/epics/EPIC-10.md) and [US-10.1](sprints/stories/US-10.1-pr-ci-gate.md)
+   own the work.** EPIC-4 stays `done`.
+
+**Rationale**: the release path already defines what *working* means for this package;
+running that definition earlier narrows the gap without inventing a second one, and the
+invariant in part 1 is only true because the steps are copied rather than re-derived.
+`release:verify-pack` is in because packaging and emit defects are exactly the TypeScript 7
+risk D29 left open. A gate rather than a signal because a check nobody has to wait for is
+the status quo with extra minutes.
+
+**What part 4 means, stated rather than implied**: every account with access holds
+`admin` — four on 2026-09-16: `bluezdot`, `hieudd`, `jindo9986`, `saltict` (checked with
+`gh api repos/Koniverse/Senti-MCP/collaborators --jq '.[] | "\(.login) \(.role_name)"'`;
+it was two on 2026-09-11, when the spec was written). *Admins may bypass*
+is therefore *everyone may bypass*, and the ruleset is not a lock. Merging a red or pending
+PR takes a deliberate tick on *"Merge without waiting for requirements to be met (bypass
+rules)"* and is logged in the ruleset's insights. A direct push to `main` lands — git
+prints `Bypassed rule violations` — is logged, and is verified after it lands, because
+part 1 runs on `push`. Dependabot and any non-admin cannot merge red at all. A lock would
+need a role change first, which is a people decision outside this entry.
+
+Part 2: a required check whose workflow a path filter skips stays *Pending* forever and
+blocks the PR, so a docs-only PR runs the whole suite (about two minutes, free on a public
+repository). `pull_request_target` would run a fork's code with a write token; this job
+needs no secret, so the read-only token `pull_request` gives fork and Dependabot PRs is
+enough. Part 3: 0 approvals because nobody can approve their own PR; strict mode off
+because at this repo's traffic *up to date before merge* is rebase churn, and the case it
+covers — two PRs green apart, red together — is caught by the `push` run; force-push and
+deletion blocked because `release.yml`'s gate checks a tag is an ancestor of `origin/main`,
+which assumes `main` only grows. Part 5: a committed copy nothing compares to the live
+setting is the [LESSONS 4](LESSONS.md) shape.
+
+**Alternatives considered**:
+- **Build only** (no `release:verify-pack`) — rejected: packaging and emit defects would
+  still surface first at a tag.
+- **Also `agile:validate` and a version-free Node-floor check** — rejected for now: pulls a
+  refactor of `scripts/release-check.mjs` into scope. The floor check is the strongest
+  candidate for a later EPIC-10 story.
+- **Signal only, no ruleset** — rejected: leaves *nothing gates a merge* true.
+- **A second story for the ruleset** — rejected: neither half is useful alone.
+- **US-4.6 under a reopened EPIC-4** — rejected: EPIC-4 excluded this deliberately.
+- **No bypass** — rejected by the maintainer: every sprint open/close becomes a PR.
+- **Bypass mode `pull_request`** — rejected: blocks every direct push, contradicting part 4.
+- **Two jobs mirroring `release.yml`** — rejected: two required checks, `npm ci` twice,
+  and `release:verify-pack` rebuilds anyway.
+- **A reusable `workflow_call` shared with `release.yml`** — rejected: edits the
+  irreversible publish path, which only a real tag run proves — the W33 lesson.
+- **Classic branch protection** — rejected: no role-based bypass, readable only by admins.
+- **A Node matrix** — deferred; trigger is the first defect that reproduces only above the
+  floor.
+
+**The ruleset, as applied** (the live one wins; read it back with the commands below):
+
+```json
+{
+  "name": "main: verify before merge",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["refs/heads/main"], "exclude": [] } },
+  "bypass_actors": [
+    { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" }
+  ],
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": false,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": false
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "required_status_checks": [{ "context": "verify", "integration_id": 15368 }]
+      }
+    }
+  ]
+}
+```
+
+```bash
+gh api repos/Koniverse/Senti-MCP/rulesets --jq '.[] | {id, name, enforcement}'
+gh api repos/Koniverse/Senti-MCP/rulesets/<id> --jq '{name, enforcement, conditions, bypass_actors, rules}'
+```
+
+**Impact**: `.github/workflows/ci.yml` (new); one ruleset on `main`;
+`.github/dependabot.yml`'s header; [RELEASE.md](RELEASE.md) §2 and §7; `AGENTS.md`;
+[CHANGELOG](CHANGELOG.md) `## [Unreleased]`; EPIC-10 and US-10.1. `release.yml`, `src/` and
+the tarball are unchanged, and `VERSION` stays `2.9.0`. EPIC-4, EPIC-5, US-5.3, D29 and
+sprints W33–W37 still say nothing runs on a pull request — each was true when written and
+is left as a record. The ruleset's id and the observed runs are in US-10.1 §Implementation
+notes.
+
+**Date**: 2026-09-16
+**Version**: unreleased (CI and repository settings only)

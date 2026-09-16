@@ -229,6 +229,13 @@ docs/                   ← all documentation (see docs/README.md)
   superpowers/           ← design specs and implementation plans
 .agents/skills/koni-docs/  ← vendored koni-docs skill (real files, do not edit)
 .claude/skills/koni-docs   → relative symlink into .agents/
+.github/
+  workflows/release.yml ← tag-triggered publish: gate → build → verify → publish →
+                          announce (CONTEXT D16)
+  workflows/ci.yml      ← every PR into main and every push to it; one job, `verify`,
+                          a required check on main (CONTEXT D50). Its steps are
+                          release.yml's build + verify — change both together
+  dependabot.yml        ← weekly npm updates; its header says what a green PR proves
 .env.example            ← env var template (committed); .env.local is the real one
 skills-lock.json        ← skill provenance: source + content hash
 tsconfig.json           ← build config; EXCLUDES *.test.ts so they stay out of dist/
@@ -288,13 +295,15 @@ and the symptom is a client that fails to connect for no visible reason.
   (supported runtime and dependency currency, W33 §Phase 4), EPIC-6 (sprint files as
   planning surfaces, done), EPIC-7 (authoring read path, done),
   EPIC-8 (authoring write path, W34), EPIC-9 (adopting the Senti API contract fixes —
-  US-9.1 in W38, the rest backlog)
+  US-9.1 in W38, the rest backlog), EPIC-10 (verification before merge, W38)
 - [docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design
 - [docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md](docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 plan, task by task
 - [docs/superpowers/plans/2026-08-06-senti-read-tools-w33.md](docs/superpowers/plans/2026-08-06-senti-read-tools-w33.md) — W33 plan, task by task
 - [docs/superpowers/specs/2026-08-21-senti-authoring-write-tools-design.md](docs/superpowers/specs/2026-08-21-senti-authoring-write-tools-design.md) — the authoring **write** design
 - [docs/superpowers/plans/2026-08-21-senti-authoring-write-tools-w34.md](docs/superpowers/plans/2026-08-21-senti-authoring-write-tools-w34.md) — its plan, task by task
+- [docs/superpowers/specs/2026-09-11-pr-ci-gate-design.md](docs/superpowers/specs/2026-09-11-pr-ci-gate-design.md) — the pull-request CI gate design
+- [docs/superpowers/plans/2026-09-11-pr-ci-gate-w37.md](docs/superpowers/plans/2026-09-11-pr-ci-gate-w37.md) — its plan, task by task (filed as EPIC-10 / US-10.1)
 - [VERSION](VERSION) — current semver
 
 There is still no `PRD.md`, `ARCHITECTURE.md`, or `DEPLOY.md`. Each absence is a
@@ -397,6 +406,7 @@ that shows it, since the path is gitignored. `vitest.config.ts` scopes collectio
 | Add a **trading** write tool | Don't. See §The read/write split — [EPIC-3](docs/sprints/epics/EPIC-3.md) has no flag yet |
 | Ship a version | **Walk [docs/RELEASE.md](docs/RELEASE.md)** — it does not end at the bump. Bump [VERSION](VERSION) + the CHANGELOG entry in the same commit (RULE-1); the version lives in **five** places — `VERSION`, `package.json`, `package-lock.json`, `SERVER_VERSION` in `src/config.ts`, and the git tag. `src/config.test.ts` fails if the first, second and fourth drift; `release:check` covers all five. Then `npm run release:check` and `npm run release:verify-pack` must exit 0, and the annotated `vX.Y.Z` tag push is what publishes |
 | Add an env var | [docs/SETUP.md](docs/SETUP.md) **and** `.env.example`, same commit (RULE-11) |
+| Open a pull request | `verify` must be green before it merges — a ruleset on `main` requires it ([CONTEXT D50](docs/CONTEXT.md)). Run `npm run typecheck && npm test && npm run release:verify-pack` first; it is the same sequence. Admins can bypass, and every bypass is logged. Never add a path filter to `ci.yml` |
 | Commit | Walk the checklist in [docs/README.md](docs/README.md) |
 
 ## Environment

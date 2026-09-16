@@ -3,7 +3,7 @@ id: sprint-2026-W38
 status: planned
 start: 2026-09-14
 end: 2026-09-20
-goal: 'No committed scope at open — W37 closed on this file''s first day with its one row done, and the corpus holds no open story, so work that arises this week joins the one scope table below as a row; mid-window scope added 2026-09-14 commits to US-9.1, which restores list_drafts — broken in production since Senti''s drafts summary-mode deploy on 2026-09-15; and US-2.15, added 2026-09-15, retires the development API host'
+goal: 'No committed scope at open — W37 closed on this file''s first day with its one row done, and the corpus holds no open story, so work that arises this week joins the one scope table below as a row; mid-window scope added 2026-09-14 commits to US-9.1, which restores list_drafts — broken in production since Senti''s drafts summary-mode deploy on 2026-09-15; and US-2.15, added 2026-09-15, retires the development API host; and US-10.1, added 2026-09-16, puts a CI gate on every pull request into main'
 ---
 
 ## Sprint scope
@@ -12,9 +12,10 @@ goal: 'No committed scope at open — W37 closed on this file''s first day with 
 | -- | ----- | ---- | --- | ------ | ------ | ---------- |
 | US-9.1 | list_drafts adopts the drafts summary mode *(added 2026-09-14)* | EPIC-9 | P0 | 2 | ✅ done | [US-9.1](stories/US-9.1-list-drafts-summary-mode.md) |
 | US-2.15 | Retire the development API host *(added 2026-09-15)* | EPIC-2 | P2 | 2 | ✅ done | [US-2.15](stories/US-2.15-retire-the-development-host.md) |
+| US-10.1 | A pull-request CI gate on main *(added 2026-09-16)* | EPIC-10 | P1 | 3 | 👀 review | [US-10.1](stories/US-10.1-pr-ci-gate.md) |
 
-**Total: 2 stories / 4 points** (0 at open; US-9.1 added 2026-09-14 at 3 points and re-sized to
-2 on 2026-09-15 when its full-shape fallback was withdrawn; US-2.15 added 2026-09-15). This sprint opened empty.
+**Total: 3 stories / 7 points** (0 at open; US-9.1 added 2026-09-14 at 3 points and re-sized to
+2 on 2026-09-15 when its full-shape fallback was withdrawn; US-2.15 added 2026-09-15; US-10.1 added 2026-09-16). This sprint opened empty.
 Scope is not frozen ([CONTEXT D21](../CONTEXT.md) rule 1) — work that arises this week is
 appended here as a row annotated `_(added YYYY-MM-DD)_`, with the sprint `goal:` extended by a
 clause. **One table, one total, no second scope section** ([CONTEXT D30](../CONTEXT.md)),
@@ -93,6 +94,10 @@ closed ([EPIC-6](epics/EPIC-6.md)), so seven carry.
   The cost is concrete, not hypothetical: Dependabot's
   [PR #13](https://github.com/Koniverse/Senti-MCP/pull/13), open since 2026-09-11, shows
   **0 checks**.
+
+  **Owned by [US-10.1](stories/US-10.1-pr-ci-gate.md) from 2026-09-16**
+  ([EPIC-10](epics/EPIC-10.md), [CONTEXT D50](../CONTEXT.md)) — filed under the next free
+  ids, as this bullet says a promotion would be.
 - **`register` — the eighth authoring write — is unimplemented and owned by no story.**
   [EPIC-8](epics/EPIC-8.md) shipped seven of the `Authoring` tag's eight writes. The eighth
   needs a story that settles the delete-asymmetry question first

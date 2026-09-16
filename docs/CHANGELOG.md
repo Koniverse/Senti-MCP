@@ -13,7 +13,23 @@ plus the git tag are the join keys — `git log --grep '0.1.0'` finds the commit
 
 ## [Unreleased]
 
-Nothing pending.
+Nothing in the package changes — no tool, schema, response, dependency or tarball file —
+so no version is cut for this. It rides the next release.
+
+### Added
+- **A pull-request CI gate on `main`** (`.github/workflows/ci.yml`). Every pull request into
+  `main`, and every push to it, runs one job — `verify` — on the Node `22.11.0` floor:
+  `npm ci`, `typecheck`, `test`, `build`, `release:verify-pack`. Those are `release.yml`'s
+  `build` and `verify` jobs on the same pins, so a green `verify` means the tag workflow's
+  build and verify will be green on the same commit. A repository ruleset makes `verify` a
+  merge requirement, with admin bypass ([CONTEXT D50](CONTEXT.md),
+  [US-10.1](sprints/stories/US-10.1-pr-ci-gate.md)). Until now nothing ran on a pull request
+  here, and the first run of any check was on a tagged commit.
+
+### Changed
+- **`.github/dependabot.yml`'s header** now states what a green Dependabot PR proves, and
+  keeps the three things it still does not: the live API, a transitive dependency's
+  `engines`, and Node above the floor.
 
 ## [2.9.0] — 2026-09-15 — `list_drafts` works again, on the API's draft summaries
 
