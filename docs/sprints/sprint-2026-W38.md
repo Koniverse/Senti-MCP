@@ -1,6 +1,6 @@
 ---
 id: sprint-2026-W38
-status: planned
+status: closed
 start: 2026-09-14
 end: 2026-09-20
 goal: 'No committed scope at open — W37 closed on this file''s first day with its one row done, and the corpus holds no open story, so work that arises this week joins the one scope table below as a row; mid-window scope added 2026-09-14 commits to US-9.1, which restores list_drafts — broken in production since Senti''s drafts summary-mode deploy on 2026-09-15; and US-2.15, added 2026-09-15, retires the development API host; and US-10.1, added 2026-09-16, puts a CI gate on every pull request into main'
@@ -124,19 +124,80 @@ closed ([EPIC-6](epics/EPIC-6.md)), so seven carry.
 
 ## Retrospective
 
-<!-- Filled on sprint close. -->
+**Written at the close on 2026-09-25, five days after the window elapsed.** All of this
+window's work landed on two days, 2026-09-15 and 2026-09-16. The retrospective covers those
+two days and the four quiet days after them.
 
 ### What went well
 
-- TBD
+- **An empty open absorbed three stories in three days, and all three shipped.** US-9.1
+  (P0, 2 points), US-2.15 (P2, 2 points) and US-10.1 (P1, 3 points): 7 points, with every
+  row `done` by 2026-09-16. It is the largest mid-window intake since W34.
+- **A production break was found, fixed and released the same day.** Senti's drafts
+  summary-mode deploy broke every `list_drafts` call on `2.8.1`. [US-9.1](stories/US-9.1-list-drafts-summary-mode.md)
+  shipped the fix as **`2.9.0` on 2026-09-15**, the first release since `2.8.1` on
+  2026-08-25 and the first change under `src/` since 2026-08-26
+  ([CONTEXT D49](../CONTEXT.md)).
+- **The item carried longest in §Open work closed.** Six sprints had carried "nothing runs on
+  a pull request". [US-10.1](stories/US-10.1-pr-ci-gate.md) filed the gate under the next free
+  ids, EPIC-10 and D50 (as this file's open had said a promotion would), and built it. It
+  was then proven in three steps: `verify` went green on its own PR, the ruleset was read
+  back from `main`, and a red PR was shown to be blocked ([CONTEXT D50](../CONTEXT.md)).
+  Both stale points in the plan (the D47 number and the W37 target) were fixed before Task 1
+  (`e367581`).
+- **The development host is gone, and D45 is settled.** [US-2.15](stories/US-2.15-retire-the-development-host.md)
+  removed `be-dev.sentitrade.xyz` from the repo, and an authenticated call to production closed
+  the pairing question D45 had left open ([CONTEXT D48](../CONTEXT.md)).
+- **Dependabot's PR #13 was merged, not left waiting.** W37's followup asked for a decision on
+  it, and it merged on 2026-09-15 (`33e0b4f`).
 
 ### What didn't
 
-- TBD
+- **Nothing reached `main` after 2026-09-16 15:34.** That left four idle days in the window,
+  plus five more before this close. Only W35's close, eight days late, came later than this one.
+  LESSONS 10's shape recurs one level up: nothing prompts a close.
+- **This file's `status:` read `planned` for the whole window, again.** It was W37's
+  observation, and the idea W37 logged under §Followups (have `agile:check-sprints` flag a
+  sprint whose `end` has passed while it is not `closed`) is still only an idea.
+- **Commit hygiene slipped on the busy day.** `0bbe579` is prefixed `feat:` but changes only
+  story files. `097ffb8` has no prefix at all (RULE-14). US-9.1's CHANGELOG entry was missing
+  when it merged and was restored afterwards (`e2666f8`). This is the same day-one pattern
+  W37 recorded.
+- **The five EPIC-9 backlog stories were filed but not worked.** US-9.2 → US-9.6 (14 points)
+  were written on 2026-09-14 and refined on 09-15. `0bbe579`'s subject names a
+  `get_draft_compile_log` tool, but no such tool exists under `src/`. EPIC-9 stays
+  `in-progress`.
+- **The CI gate is unreleased.** It sits under CHANGELOG `[Unreleased]` with no version cut,
+  which is correct for a change that ships nothing in the package. It rides the next release.
 
 ### Followups
 
-- TBD
+- **EPIC-9's five backlog stories are W39's obvious candidates.** US-9.2 (P1, 5 points) comes
+  first. Promotion is the maintainer's call ([CONTEXT D21](../CONTEXT.md) rule 2) and was not
+  part of this close.
+- **Two Dependabot branches are waiting on origin.** One bumps vitest 4 → 5 (a major, pushed
+  2026-09-16). The other is a minor-and-patch group, pushed 2026-09-18. They are the first
+  dependency PRs opened since the gate went live. Their PR state was not checked at close.
+- **`agile:check-sprints` still does not read `status:` or `end`.** Carried as an idea, not
+  scope.
+
+## Sprint close — 2026-09-25
+
+Closed by the maintainer on 2026-09-25, **five days after the window elapsed on
+2026-09-20**. The close was done together with the open of [W39](sprint-2026-W39.md), so no
+two sprints are live at once.
+
+**3 stories / 7 points. One release (`2.9.0`), three decisions ([D48](../CONTEXT.md),
+[D49](../CONTEXT.md), [D50](../CONTEXT.md)), no lesson.** After this file's open
+(`4a0118f`), 26 commits reached `main`, all on 2026-09-15 and 2026-09-16. PRs #13 and #14
+merged on 09-15. EPIC-10 opened and closed inside the window. EPIC-9 opened and stays
+`in-progress`. `status:` goes straight from `planned` to `closed`.
+
+**Nothing carries as scope**, because every row is `done`. What carries is §Open work,
+unassigned, into [W39](sprint-2026-W39.md). It holds six items: the CI gate and the settled
+D45 drop out, and the Dependabot branches are added. Every section above §Retrospective is
+left as authored; this section is the amendment, not a rewrite
+([CONTEXT D21](../CONTEXT.md), RULE-7).
 
 ## Cross-references
 
@@ -148,4 +209,7 @@ closed ([EPIC-6](epics/EPIC-6.md)), so seven carry.
 - [CONTEXT D45](../CONTEXT.md) — the dashboard host, and the base-URL pairing left unverified
 - [PR CI gate spec](../superpowers/specs/2026-09-11-pr-ci-gate-design.md) · [plan](../superpowers/plans/2026-09-11-pr-ci-gate-w37.md) — designed in W37, not filed, not built
 - [EPIC-3](epics/EPIC-3.md) — `backlog`, the trading write path
-- [CHANGELOG](../CHANGELOG.md) — `2.8.1` is the version this sprint opens on
+- [CONTEXT D48](../CONTEXT.md) · [D49](../CONTEXT.md) · [D50](../CONTEXT.md) — the three decisions made in this window
+- [EPIC-9](epics/EPIC-9.md) — opened 2026-09-14, `in-progress` at close · [EPIC-10](epics/EPIC-10.md) — opened and closed 2026-09-16
+- [CHANGELOG](../CHANGELOG.md) — `2.8.1` is the version this sprint opens on; `2.9.0` shipped 2026-09-15
+- [sprint-2026-W39](sprint-2026-W39.md) — successor sprint, opened 2026-09-25

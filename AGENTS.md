@@ -272,10 +272,13 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
-- [docs/sprints/sprint-2026-W38.md](docs/sprints/sprint-2026-W38.md) — **the active
-  sprint** (2026-09-14 → 2026-09-20), opened with no committed scope; the scope table
-  takes rows as work arrives ([CONTEXT D21](docs/CONTEXT.md) rule 1,
-  [D30](docs/CONTEXT.md))
+- [docs/sprints/sprint-2026-W39.md](docs/sprints/sprint-2026-W39.md) — **the active
+  sprint** (2026-09-21 → 2026-09-27), opened 2026-09-25 with no committed scope; EPIC-9's
+  five backlog stories are the candidates, and the scope table takes rows as work arrives
+  ([CONTEXT D21](docs/CONTEXT.md) rule 1, [D30](docs/CONTEXT.md))
+- [docs/sprints/sprint-2026-W38.md](docs/sprints/sprint-2026-W38.md) — `closed`
+  2026-09-25 (2026-09-14 → 2026-09-20): 3 stories / 7 points, US-9.1 shipped `2.9.0`,
+  US-2.15 retired the development host, US-10.1 closed EPIC-10
 - [docs/sprints/sprint-2026-W37.md](docs/sprints/sprint-2026-W37.md) — `closed`
   2026-09-14 (2026-09-07 → 2026-09-13): 1 story / 3 points, US-6.3 closed EPIC-6; no
   release
@@ -295,7 +298,7 @@ and the symptom is a client that fails to connect for no visible reason.
   (supported runtime and dependency currency, W33 §Phase 4), EPIC-6 (sprint files as
   planning surfaces, done), EPIC-7 (authoring read path, done),
   EPIC-8 (authoring write path, W34), EPIC-9 (adopting the Senti API contract fixes —
-  US-9.1 in W38, the rest backlog), EPIC-10 (verification before merge, done)
+  US-9.1 done in W38, the rest backlog), EPIC-10 (verification before merge, done)
 - [docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md](docs/superpowers/specs/2026-08-05-senti-mcp-server-design.md) — v1 design
 - [docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md](docs/superpowers/specs/2026-08-05-senti-read-tools-expansion-design.md) — the W33/W34 read-tool expansion design
 - [docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md](docs/superpowers/plans/2026-08-05-senti-mcp-server-v1.md) — v1 plan, task by task
