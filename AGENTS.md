@@ -272,10 +272,14 @@ and the symptom is a client that fails to connect for no visible reason.
 - [docs/CONTEXT.md](docs/CONTEXT.md) — decision log, append-only
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — release history
 - [docs/sprints/STATUS.md](docs/sprints/STATUS.md) — kanban, **auto-generated**
-- [docs/sprints/sprint-2026-W39.md](docs/sprints/sprint-2026-W39.md) — **the active
-  sprint** (2026-09-21 → 2026-09-27), opened 2026-09-25 with no committed scope; EPIC-9's
-  five backlog stories are the candidates, and the scope table takes rows as work arrives
-  ([CONTEXT D21](docs/CONTEXT.md) rule 1, [D30](docs/CONTEXT.md))
+- [docs/sprints/sprint-2026-W41.md](docs/sprints/sprint-2026-W41.md) — **the active
+  sprint** (2026-10-05 → 2026-10-11), opened with no committed scope; EPIC-9's five
+  backlog stories are the candidates, and the scope table takes rows as work arrives
+  ([CONTEXT D21](docs/CONTEXT.md) rule 1, [D30](docs/CONTEXT.md)). W40 has no sprint file
+  ([D51](docs/CONTEXT.md))
+- [docs/sprints/sprint-2026-W39.md](docs/sprints/sprint-2026-W39.md) — `closed`
+  2026-10-05 (2026-09-21 → 2026-09-27): **0 stories / 0 points**, the second empty sprint;
+  PR #17 merged through the gate
 - [docs/sprints/sprint-2026-W38.md](docs/sprints/sprint-2026-W38.md) — `closed`
   2026-09-25 (2026-09-14 → 2026-09-20): 3 stories / 7 points, US-9.1 shipped `2.9.0`,
   US-2.15 retired the development host, US-10.1 closed EPIC-10

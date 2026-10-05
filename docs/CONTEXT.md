@@ -2847,3 +2847,45 @@ notes.
 
 **Date**: 2026-09-16
 **Version**: unreleased (CI and repository settings only)
+
+### D51. W40 gets no sprint file: W39 closes and W41 opens on 2026-10-05, and the sequence skips a number
+
+**Context**: [sprint-2026-W39](sprints/sprint-2026-W39.md) (2026-09-21 → 2026-09-27) opened
+late, on 2026-09-25, and was never closed while its window ran. The next window, W40
+(2026-09-28 → 2026-10-04), then elapsed with no sprint file at all, and nothing reached
+`main` during it. On 2026-10-05, the Monday that starts W41, the maintainer asked to close
+the current sprint and open the newest one.
+
+**Decision**: close W39 at `0 stories / 0 points`, open
+[sprint-2026-W41](sprints/sprint-2026-W41.md) for 2026-10-05 → 2026-10-11, and create **no
+file for W40**. The sprint files now run W38 → W39 → W41. W41 also opens at
+`status: in-progress` instead of `planned`, because its window is live from the open.
+
+**Rationale**: [D46](#d46-close-w35-and-w36-together-us-214s-credit-stays-with-w35-and-an-empty-sprint-closes-empty)
+kept W36 as an empty closed file because W36 *had been opened*: it existed, it described a
+live window, and deleting it would have erased that. W40 is a different case, since it was
+never opened. Writing a W40 file now would mean opening and closing a sprint in one breath,
+and the maintainer asked for neither
+([D21](#d21-a-sprints-scope-stays-open-only-the-maintainer-opens-or-closes-one) rule 2). The
+gap is still recorded, in W39's §Sprint close and W41's §Sprint goal recap, so the missing
+number reads as a fact about the project and not as a lost file.
+
+The `in-progress` status follows the sprint template (`planned | in-progress | closed`). W38
+and W39 both read `planned` for their whole windows, and both retrospectives called that a
+defect.
+
+**Alternatives considered**:
+- **Write W40 as an empty `closed` file, as with W36.** Rejected: it opens a sprint nobody
+  asked to open, and it implies a window that someone planned for.
+- **Open W40 now, as the "next" sprint.** Rejected: its window ended on 2026-10-04, and the
+  request was for the newest sprint.
+- **Stretch W39 over W40.** Rejected for the reason D46 gives: it invents a sprint length no
+  other file uses.
+
+**Impact**: `sprints/sprint-2026-W39.md` is `closed`, with a retrospective and a §Sprint close
+section. `sprints/sprint-2026-W41.md` is created. The active-sprint pointers move to W41 in
+`CLAUDE.md` (`active_sprint`), `AGENTS.md` and `README.md`, and `sprints/STATUS.md` is
+regenerated. No story or epic changes, and `VERSION` stays `2.9.0`.
+
+**Date**: 2026-10-05
+**Version**: unreleased (documentation only)

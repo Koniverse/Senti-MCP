@@ -29,7 +29,8 @@ docs/
     ├── sprint-2026-W36.md   ← closed empty (0 stories / 0 points)
     ├── sprint-2026-W37.md   ← closed (1 story / 3 points; US-6.3 closed EPIC-6)
     ├── sprint-2026-W38.md   ← closed (3 stories / 7 points; 2.9.0, EPIC-10)
-    ├── sprint-2026-W39.md   ← the active sprint, opened with no committed scope
+    ├── sprint-2026-W39.md   ← closed empty (0 stories / 0 points)
+    ├── sprint-2026-W41.md   ← the active sprint, opened with no committed scope (no W40 — D51)
     ├── epics/           ← EPIC-N.md
     └── stories/         ← US-X.Y-<slug>.md (canonical AC + Tasks source)
 
@@ -150,9 +151,12 @@ npx koni-docs --version   # confirm which CLI you actually have
 - [CHANGELOG.md](CHANGELOG.md) — release history
 - [CONTEXT.md](CONTEXT.md) — decision log
 - [sprints/STATUS.md](sprints/STATUS.md) — current kanban (generated)
-- [sprints/sprint-2026-W39.md](sprints/sprint-2026-W39.md) — the active sprint
-  (2026-09-21 → 2026-09-27), opened 2026-09-25 with no committed scope; the one scope table
-  takes rows as work arrives ([CONTEXT D21](CONTEXT.md) rule 1)
+- [sprints/sprint-2026-W41.md](sprints/sprint-2026-W41.md) — the active sprint
+  (2026-10-05 → 2026-10-11), opened with no committed scope; the one scope table takes rows
+  as work arrives ([CONTEXT D21](CONTEXT.md) rule 1). W40 has no sprint file
+  ([CONTEXT D51](CONTEXT.md))
+- [sprints/sprint-2026-W39.md](sprints/sprint-2026-W39.md) — closed 2026-10-05
+  (2026-09-21 → 2026-09-27): 0 stories / 0 points, the second empty sprint
 - [sprints/sprint-2026-W38.md](sprints/sprint-2026-W38.md) — closed 2026-09-25
   (2026-09-14 → 2026-09-20): 3 stories / 7 points, `2.9.0`, EPIC-10 closed
 - [sprints/sprint-2026-W37.md](sprints/sprint-2026-W37.md) — closed 2026-09-14

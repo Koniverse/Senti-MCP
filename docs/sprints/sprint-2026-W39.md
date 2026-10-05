@@ -1,6 +1,6 @@
 ---
 id: sprint-2026-W39
-status: planned
+status: closed
 start: 2026-09-21
 end: 2026-09-27
 goal: 'No committed scope at open — W38 closed on 2026-09-25, day five of this window, with all three rows done; EPIC-9''s five backlog stories are the ready candidates, and work that arises this week joins the one scope table below as a row'
@@ -98,19 +98,68 @@ One item is new, for six in all.
 
 ## Retrospective
 
-<!-- Filled on sprint close. -->
+**Written at the close on 2026-10-05, eight days after the window elapsed.** The window held
+one merge, on the day this file opened. Most of what there is to say concerns the gate's
+first week of Dependabot traffic, and the eight quiet days that followed.
 
 ### What went well
 
-- TBD
+- **The gate blocked its first red pull request.** Dependabot's
+  [PR #21](https://github.com/Koniverse/Senti-MCP/pull/21) (vitest 4.1.10 → 5.0.1, opened
+  2026-09-25) fails `verify` at test startup: vitest 5 cannot load its `rolldown` native
+  binding after `npm ci`. The ruleset holds it at `BLOCKED`. Before
+  [CONTEXT D50](../CONTEXT.md), it would have shown 0 checks, as PR #13 did.
+- **The first Dependabot PR to merge through the gate merged green.**
+  [PR #17](https://github.com/Koniverse/Senti-MCP/pull/17) (the minor-and-patch group, two
+  updates, `package-lock.json` only) passed `verify` and merged on 2026-09-25 (`b98acf6`).
+- **The stale Dependabot branches cleared themselves.** PR #18 (vitest 5.0.0) closed on
+  2026-09-25 in favour of #21, and PR #20 closed on 2026-10-02 in favour of #22. W39's open
+  listed two unmerged branches. One merged and the other was superseded, so neither is
+  open now.
 
 ### What didn't
 
-- TBD
+- **The second empty sprint: 0 stories / 0 points.** W36 was the first. This file opened on
+  day five with two days left. It named EPIC-9's five backlog stories (14 points) as the
+  candidates, and none was promoted.
+- **Nothing reached `main` after 2026-09-25 10:33.** That is ten days up to this close: two
+  inside the window and eight after it.
+- **This close ties W35's for the latest: eight days after the window elapsed.** W40's whole
+  window (2026-09-28 → 2026-10-04) then passed with no sprint file at all
+  ([CONTEXT D51](../CONTEXT.md)). This is [LESSONS 10](../LESSONS.md)'s shape a third time:
+  nothing prompts a close, and nothing prompts an open either.
+- **`status:` read `planned` for the whole window**, the third sprint in a row.
+- **[PR #22](https://github.com/Koniverse/Senti-MCP/pull/22) is green and mergeable, but
+  unmerged.** It has been open since 2026-10-02 with `verify` passing and merge state `CLEAN`.
 
 ### Followups
 
-- TBD
+- **PR #22 can merge as it stands.** It is the minor-and-patch group with four updates, and
+  `verify` is green.
+- **PR #21 needs a decision before anyone retries it.** The failure is `Cannot find native
+  binding` / `@rolldown/binding-wasm32-wasi`, the npm optional-dependency bug that the error
+  message itself points to (npm/cli#4828). The options are a regenerated lockfile or holding
+  vitest at 4. No story owns it.
+- **EPIC-9's five backlog stories are still the candidates**, unchanged since W39's open.
+  Promotion is the maintainer's call ([CONTEXT D21](../CONTEXT.md) rule 2).
+- **`agile:check-sprints` still does not read `status:` or `end`.** It is now carried by a
+  fourth sprint, still as an idea and not as scope.
+
+## Sprint close — 2026-10-05
+
+Closed by the maintainer on 2026-10-05, **eight days after the window elapsed on
+2026-09-27**. The close was done together with the open of [W41](sprint-2026-W41.md), so no
+two sprints are live at once. W40 was never opened and gets no file
+([CONTEXT D51](../CONTEXT.md)).
+
+**0 stories / 0 points. No release, no decision, no lesson.** One commit reached `main`
+after this file's open (`3449af8`): `b98acf6`, which merged PR #17 on 2026-09-25. `VERSION`
+entered and left the window at `2.9.0`. `status:` goes straight from `planned` to `closed`.
+
+**Nothing carries as scope**, because there were no rows. What carries is §Open work,
+unassigned, into [W41](sprint-2026-W41.md). It holds six items, with the Dependabot item
+rewritten for PRs #21 and #22. Every section above §Retrospective is left as authored; this
+section is the amendment, not a rewrite ([CONTEXT D21](../CONTEXT.md), RULE-7).
 
 ## Cross-references
 
@@ -121,4 +170,6 @@ One item is new, for six in all.
 - [CONTEXT D47](../CONTEXT.md) — the convention is checked by `npm run agile:check-sprints`
 - [CONTEXT D50](../CONTEXT.md) — every PR into `main` runs `verify`, a merge requirement
 - [EPIC-9](epics/EPIC-9.md) — `in-progress`, five backlog stories · [EPIC-3](epics/EPIC-3.md) — `backlog`, the trading write path
-- [CHANGELOG](../CHANGELOG.md) — `2.9.0` is the version this sprint opens on; `[Unreleased]` holds the CI gate
+- [CHANGELOG](../CHANGELOG.md) — `2.9.0` is the version this sprint opens **and** closes on; `[Unreleased]` holds the CI gate
+- [CONTEXT D51](../CONTEXT.md) — W40 gets no sprint file; this file closes and W41 opens on 2026-10-05
+- [sprint-2026-W41](sprint-2026-W41.md) — successor sprint, opened 2026-10-05
